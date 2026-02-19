@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Briefcase, User, Search, PlusCircle, X } from 'lucide-react';
+import { Briefcase, User, Search, PlusCircle, X, Menu } from 'lucide-react';
 import Image from 'next/image';
 
 const Header = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false); // Para mobile
-
+    const [isDockOpen, setIsDockOpen] = useState(false);
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 20);
         window.addEventListener('scroll', handleScroll);
@@ -78,9 +78,9 @@ const Header = () => {
 
             {/* --- MOBILE TOP BAR --- */}
             <div className="md:hidden fixed top-0 w-full flex justify-between items-center p-5 z-40 bg-white/70 backdrop-blur-lg border-b border-gray-100">
-                <span className="text-xl font-black text-gray-900 leading-none">
-                    Área do <span className="text-indigo-600">Trabalhador</span>
-                </span>
+                <Link href="/" className="text-xl font-black tracking-tight text-gray-900">
+                    Em<span className="text-gray-700">pre</span><span className="text-indigo-600">gado</span>
+                </Link>
                 <div className="flex gap-3">
                     {/* Botão para abrir busca no mobile */}
                     <button
@@ -124,21 +124,49 @@ const Header = () => {
                 </div>
             )}
 
-            {/* --- MOBILE FLOATING DOCK --- */}
-            <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] h-16 bg-gray-900/90 backdrop-blur-xl rounded-2xl flex items-center justify-around px-4 shadow-2xl z-50 border border-white/10">
-                <Link href="/" className="flex flex-col items-center gap-1 text-white">
-                    <Briefcase className="w-6 h-6" />
-                    <span className="text-[10px] font-medium">Vagas</span>
-                </Link>
-                <Link href="/anunciar" className="flex flex-col items-center gap-1 text-indigo-400">
-                    <PlusCircle className="w-7 h-7" />
-                    <span className="text-[10px] font-medium">Anunciar</span>
-                </Link>
-                <Link href="/perfil" className="flex flex-col items-center gap-1 text-white/70">
-                    <User className="w-6 h-6" />
-                    <span className="text-[10px] font-medium">Perfil</span>
-                </Link>
-            </nav>
+            {/* --- MOBILE FLOATING DOCK (FAB STYLE) --- */}
+            <div className="md:hidden fixed bottom-6 right-6 flex flex-col items-end z-50">
+
+                {/* Itens do Menu (Aparecem quando aberto) */}
+                <div className={`flex flex-col gap-3 mb-4 transition-all duration-300 transform ${isDockOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-0 opacity-0 translate-y-10 pointer-events-none'
+                    }`}>
+                    <Link href="/" className="flex items-center gap-3 bg-white shadow-xl border border-gray-100 py-3 px-5 rounded-2xl text-gray-800">
+                        <span className="text-sm font-bold">Vagas</span>
+                        <Briefcase className="w-5 h-5 text-indigo-600" />
+                    </Link>
+
+                    <Link href="/anunciar" className="flex items-center gap-3 bg-white shadow-xl border border-gray-100 py-3 px-5 rounded-2xl text-gray-800">
+                        <span className="text-sm font-bold">Anunciar</span>
+                        <PlusCircle className="w-5 h-5 text-indigo-600" />
+                    </Link>
+
+                    <Link href="/perfil" className="flex items-center gap-3 bg-white shadow-xl border border-gray-100 py-3 px-5 rounded-2xl text-gray-800">
+                        <span className="text-sm font-bold">Perfil</span>
+                        <User className="w-5 h-5 text-indigo-600" />
+                    </Link>
+                </div>
+
+                {/* Botão Principal (Trigger) */}
+                <button
+                    onClick={() => setIsDockOpen(!isDockOpen)}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center shadow-2xl transition-all duration-700 ${isDockOpen ? 'bg-red-500 rotate-90' : 'bg-gray-900 rotate-0'
+                        }`}
+                >
+                    {isDockOpen ? (
+                        <X className="w-9 h-9 text-white" />
+                    ) : (
+                        <Menu className="w-7 h-7 text-white" />
+                    )}
+                </button>
+            </div>
+
+            {/* Overlay para fechar ao clicar fora */}
+            {isDockOpen && (
+                <div
+                    className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-40 md:hidden"
+                    onClick={() => setIsDockOpen(false)}
+                />
+            )}
         </>
     );
 };

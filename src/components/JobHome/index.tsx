@@ -14,10 +14,12 @@ import {
 } from "lucide-react"
 import { jobs } from "@/data/jobs";
 import JobApplyModal from "../JobApplyModal";
+import JobDetailsModal from "../JobsDetailsModal";
 
 const PAGE_SIZE = 10
 const JobHome = () => {
   const [open, setOpen] = useState(false)
+  const [openJobModal, setOpenJobModal] = useState(false)
   const [selectedJob, setSelectedJob] = useState(jobs[0])
   const [step, setStep] = useState(1)
   const steps = [
@@ -63,7 +65,12 @@ const JobHome = () => {
             {paginatedJobs.map(job => (
               <div
                 key={job.id}
-                onClick={() => setSelectedJob(job)}
+                onClick={() => {
+                  setSelectedJob(job)
+                  if (window.innerWidth < 1024) {
+                    setOpenJobModal(true)
+                  }
+                }}
                 className={`cursor-pointer border rounded-xl p-4 transition ${selectedJob?.id === job.id
                   ? "border-indigo-600 bg-indigo-50"
                   : "border-gray-200 hover:bg-gray-50"
@@ -210,11 +217,27 @@ const JobHome = () => {
             </div>
           </div>
         </section>
+        <JobDetailsModal
+          open={openJobModal}
+          onClose={() => setOpenJobModal(false)}
+          job={selectedJob}
+          onApply={() => {
+            setOpenJobModal(false)
+            setOpen(true)
+          }}
+        />
+
         <JobApplyModal
           open={open}
           onClose={() => setOpen(false)}
           job={selectedJob}
         />
+        <JobApplyModal
+          open={open}
+          onClose={() => setOpen(false)}
+          job={selectedJob}
+        />
+
         <section className="grid md:grid-cols-3 gap-6 pt-12 border-t border-gray-100">
           <div className="bg-indigo-600 p-6 rounded-xl text-white">
             <GraduationCap className="w-7 h-7 mb-3 opacity-80" />
