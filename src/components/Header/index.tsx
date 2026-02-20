@@ -35,15 +35,15 @@ const Header = () => {
                     {/* Logo */}
                     <Link href="/" className="flex-shrink-0 flex items-center gap-2 group">
                         <Image
-                            src="/img/logo.png"
+                            src="/img/logop.png"
                             alt="Logo"
                             width={0}
                             height={0}
                             sizes="40px"
-                            className="left-3 top-1/2 -translate-y-1/8 w-12 h-12 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                            className="left-3 top-1/2 -translate-y-1/8 w-8 h-8 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
 
-                        <span className="text-xl font-black tracking-tight text-gray-900">
-                            Em<span className="text-gray-700">pre</span><span className="text-indigo-600">gado</span>
+                        <span className="text-2xl semibold font-black tracking-tight text-gray-900">
+                            Jobs<span className="text-gray-700">da</span><span className="text-indigo-600">hora</span>
                         </span>
                     </Link>
 

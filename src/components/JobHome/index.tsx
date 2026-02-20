@@ -51,15 +51,18 @@ const JobHome = () => {
     "final",
   ].filter(Boolean);
 
-  // Efeito para atualizar o job selecionado ao mudar de página ou carregar
   useEffect(() => {
     if (paginatedJobs.length > 0) {
-      // Se não houver job selecionado ou o selecionado não estiver na página atual
-      if (!selectedJob || !paginatedJobs.find(j => j.uid === selectedJob?.uid)) {
-        setSelectedJob(paginatedJobs[0])
+      // Verificamos se o job atual ainda é válido para a nova lista
+      const isJobInCurrentPage = paginatedJobs.some(j => j.uid === selectedJob?.uid);
+
+      if (!selectedJob || !isJobInCurrentPage) {
+        setSelectedJob(paginatedJobs[0]);
       }
     }
-  }, [currentPage, paginatedJobs, selectedJob])
+    // Removemos 'selectedJob' daqui. 
+    // Queremos reagir apenas quando a página ou os dados da lista mudarem.
+  }, [currentPage, paginatedJobs]);
 
   // --- 2. RETORNOS CONDICIONAIS DE UI (DEPOIS DOS HOOKS) ---
   if (loading) {
@@ -189,10 +192,11 @@ const JobHome = () => {
                       Experiência & Requisitos
                     </h4>
                     <ul className="space-y-2">
-                      {selectedJob?.requisitos?.map((req: string, i: number) => (
+                      {selectedJob?.requisitos?.map((req: any, i: number) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
                           <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5" />
-                          {req}
+                          {/* Aqui estava o erro: antes era req, agora é req.description */}
+                          {typeof req === 'object' ? req.description : req}
                         </li>
                       ))}
                     </ul>
@@ -204,10 +208,11 @@ const JobHome = () => {
                         Benefícios
                       </h4>
                       <ul className="space-y-2">
-                        {selectedJob.beneficios.map((benefit: string, i: number) => (
+                        {selectedJob.beneficios.map((benefit: any, i: number) => (
                           <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
                             <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
-                            {benefit}
+                            {/* Aqui também: benefit.description */}
+                            {typeof benefit === 'object' ? benefit.description : benefit}
                           </li>
                         ))}
                       </ul>

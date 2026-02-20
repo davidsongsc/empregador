@@ -24,3 +24,11 @@ export async function getJobs(page: number) {
   // Passamos 'true' como terceiro argumento para indicar que é uma rota pública
   return await api(`/vagas/?page=${page}`, { method: "GET" }, true);
 }
+
+export async function createJob(jobData: any) {
+  // Chamada POST para a nova rota de criação
+  return await api("/vagas/postar/", {
+    method: "POST",
+    body: JSON.stringify(jobData),
+  });
+}

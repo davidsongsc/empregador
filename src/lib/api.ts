@@ -1,29 +1,21 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-// Interface simples para erros da API
 interface ApiError {
     detail?: string;
     [key: string]: any;
 }
 
-/**
- * Função principal de fetch
- * @param url - Caminho relativo (ex: '/vagas/')
- * @param options - Opções do fetch (method, body, headers...)
- * @param isPublic - Se true, não tentará refresh de token em caso de 401
- */
 export async function api(
     url: string,
     options: RequestInit = {},
     isPublic = false
 ) {
-    // Configuração padrão de headers
     const defaultHeaders: HeadersInit = {
         "Content-Type": "application/json",
     };
 
     const config: RequestInit = {
-        credentials: "include", // Importante para cookies (session/refresh token)
+        credentials: "include",
         ...options,
         headers: {
             ...defaultHeaders,
@@ -33,7 +25,6 @@ export async function api(
 
     const response = await fetch(`${API_URL}${url}`, config);
 
-    // Tenta extrair o JSON da resposta
     let data = null;
     try {
         data = await response.json();
@@ -41,25 +32,42 @@ export async function api(
         data = null;
     }
 
-    // --- LÓGICA DE AUTH/REFRESH ---
+    // --- LÓGICA ANTI-LOOP DE REFRESH ---
 
-    // Se for 401 (Não autorizado)
     if (response.status === 401) {
-        // Se o erro for token inválido e a rota for pública, não tente refresh.
-        // Apenas lance o erro para o hook tratar ou ignore.
+        // 1. Se for pública, não tentamos nada, apenas lançamos o erro
         if (isPublic) {
-            throw data ?? { detail: "Acesso público com token inválido" };
+            throw data ?? { detail: "Acesso público não autorizado" };
         }
 
         const isAuthRoute = url.includes("/auth/refresh/") || url.includes("/auth/login/");
-        if (!isAuthRoute) {
+        
+        // 2. Verificamos se esta já é uma tentativa de repetição (retry)
+        // Se já tentamos dar refresh e falhou de novo, paramos aqui
+        const isRetry = options.headers && (options.headers as any)["X-Retry"];
+
+        if (!isAuthRoute && !isRetry) {
             const refreshed = await refreshToken();
-            if (refreshed) return api(url, options, isPublic);
+
+            if (refreshed) {
+                // 3. Repetimos a chamada original adicionando a flag X-Retry
+                return api(url, {
+                    ...options,
+                    headers: {
+                        ...options.headers,
+                        "X-Retry": "true", // Trava para não entrar em loop
+                    },
+                }, isPublic);
+            } else {
+                // Se o refresh falhou (ex: refresh token expirado), 
+                // aqui você poderia limpar o estado de login ou redirecionar
+                console.warn("Refresh token inválido. O usuário precisa logar novamente.");
+            }
         }
     }
+
     // --- TRATAMENTO DE ERRO FINAL ---
     if (!response.ok) {
-        // Lança o objeto de erro para ser capturado pelo catch do seu Hook
         const errorPayload: ApiError = data ?? { detail: "Erro inesperado no servidor" };
         throw errorPayload;
     }
@@ -67,9 +75,6 @@ export async function api(
     return data;
 }
 
-/**
- * Função interna para renovar o token via Cookie HttpOnly
- */
 async function refreshToken(): Promise<boolean> {
     try {
         const res = await fetch(`${API_URL}/auth/refresh/`, {
