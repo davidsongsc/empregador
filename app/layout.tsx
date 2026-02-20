@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   title: "Empregado - Portal de vagas",
   description: "Encontre as melhores oportunidades de emprego e impulsione sua carreira com nosso portal de vagas. Cadastre-se, explore ofertas e conquiste seu próximo desafio profissional.",
 }
-
+// incluso para evitar erros de CORS em rotas públicas, já que o frontend e backend estão em portas diferentes durante o desenvolvimento.
 export default function RootLayout({
   children,
 }: {
