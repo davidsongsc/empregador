@@ -4,7 +4,7 @@ export const jobs = [
         cargo: "Auxiliar Serviços Gerais (ASG)",
         salario: 1650,
         turno: "6x1 - (44h/semana)",
-        empresa: "TechSoluções",
+        empresa: null,
         local: "Rio de Janeiro, Centro",
         descricao:
             "Profissional responsável pela limpeza, organização e conservação do ambiente administrativo, garantindo um espaço limpo, seguro e adequado para o desempenho das atividades da equipe. Atua no apoio às rotinas do escritório, cuidando da higienização de salas, banheiros e áreas comuns, organização de materiais, reposição de insumos e auxílio em demandas simples do dia a dia, prezando pela disciplina, pontualidade e bom relacionamento interpessoal.",

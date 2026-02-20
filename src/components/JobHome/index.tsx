@@ -125,43 +125,19 @@ const JobHome = () => {
           <div className="hidden lg:flex lg:col-span-7 border border-gray-200 rounded-xl sticky top-24 bg-white">
             <div className="flex flex-col h-full w-full p-8">
               <header className="space-y-1">
+                <h4 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">
+                  Sobre a vaga
+                </h4>
                 <h2 className="text-2xl font-bold text-gray-900">
                   {selectedJob?.cargo}
                 </h2>
 
-                <p className="text-gray-600">
-                  <span className="font-semibold">{selectedJob?.empresa}</span> •{" "}
-                  {selectedJob?.local}
-                </p>
+
               </header>
-
-              <section className="flex gap-4 mt-6">
-                <div className="flex-1 bg-gray-50 rounded-lg p-4">
-                  <p className="text-[11px] uppercase font-semibold text-gray-400 mb-1">
-                    Salário
-                  </p>
-                  <p className="font-semibold text-gray-800">
-                    {selectedJob?.salario
-                      ? `R$ ${selectedJob.salario}`
-                      : "A combinar"}
-                  </p>
-                </div>
-
-                <div className="flex-1 bg-gray-50 rounded-lg p-4">
-                  <p className="text-[11px] uppercase font-semibold text-gray-400 mb-1">
-                    Jornada
-                  </p>
-                  <p className="font-semibold text-gray-800">
-                    {selectedJob?.turno || "Indefinido"}
-                  </p>
-                </div>
-              </section>
 
               <section className="flex-1 overflow-y-auto mt-8 space-y-8 pr-2">
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">
-                    Sobre a vaga
-                  </h4>
+
                   <p className="text-gray-600 leading-relaxed">
                     {selectedJob?.descricao}
                   </p>
@@ -208,9 +184,40 @@ const JobHome = () => {
                 </div>
               </section>
 
+              <section className="flex gap-4 mt-6">
+                <div className="flex-1 bg-gray-50 rounded-lg p-4">
+                  <p className="text-[11px] uppercase font-semibold text-gray-400 mb-1">
+                    Jornada
+                  </p>
+                  <p className="font-semibold text-gray-800">
+                    {selectedJob?.turno || "Indefinido"}
+                  </p>
+                </div>
+                <div className="flex-1 bg-gray-50 rounded-lg p-4">
+                  <p className="text-[11px] uppercase font-semibold text-gray-400 mb-1">
+                    Salário
+                  </p>
+                  <p className="font-semibold text-gray-800">
+                    {selectedJob?.salario
+                      ? `R$ ${selectedJob.salario}`
+                      : "A combinar"}
+                  </p>
+                </div>
+              </section>
+              
+              <section className="flex gap-4 mt-6">
+                <div className="flex-1 bg-gray-50 rounded-lg p-4 justify-center items-center">
+                  <p className="text-gray-600">
+                    <span className="font-semibold">{selectedJob?.empresa}</span>
+                  </p>
+                  <p className="text-gray-600">
+                    {selectedJob?.local}
+                  </p>
+                </div>
+              </section>
               <button
                 onClick={() => setOpen(true)}
-                className="mt-6 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                className="mt-6 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition cursor-pointer"
               >
                 Candidatar-se
               </button>

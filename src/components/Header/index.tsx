@@ -4,7 +4,13 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Briefcase, User, Search, PlusCircle, X, Menu } from 'lucide-react';
 import Image from 'next/image';
+import { useAuth } from "@/contexts/AuthContext";
 
+/**
+ * Header component, containing the main navigation and logo.
+ * Includes a mobile-specific search input and a floating dock for the main menu items.
+ * @returns {JSX.Element} The Header component.
+ */
 const Header = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false); // Para mobile
@@ -14,6 +20,8 @@ const Header = () => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    const { user, isAuthenticated, logoutUser } = useAuth();
 
     return (
         <>
@@ -38,6 +46,7 @@ const Header = () => {
                             Em<span className="text-gray-700">pre</span><span className="text-indigo-600">gado</span>
                         </span>
                     </Link>
+
 
                     {/* Menu Central + Busca */}
                     <div className="flex items-center gap-8">
@@ -65,10 +74,15 @@ const Header = () => {
                     </div>
 
                     {/* Ações */}
-                    <div className="flex items-center gap-4">
-                        <Link href="/login" className="text-sm font-bold text-gray-700 hover:text-indigo-600 px-4">
-                            Entrar
-                        </Link>
+                    <div className="flex items-center gap-4 text-black">
+                        {isAuthenticated ? (
+                            <div className="flex gap-4 items-center">
+                                <span>{user?.whatsapp_number}</span>
+                                <button className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-600 transition-colors shadow-md" onClick={logoutUser}>Sair</button>
+                            </div>
+                        ) : (
+                            <Link href="/login" className='text-black'>Entrar</Link>
+                        )}
                         <Link href="/anunciar" className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-600 transition-colors shadow-md">
                             Postar Vaga
                         </Link>
