@@ -8,6 +8,7 @@ type UserProfile = {
   name?: string;
   last_name?: string;
   full_name?: string;
+  ocupation?: string;
   role?: string;
   bio?: string;
   foto?: string | null;
