@@ -21,28 +21,26 @@ export async function registerUser(
     }
 }
 
-export async function login(
-    whatsappNumber: string,
-    password: string
-) {
+export async function login(whatsappNumber: string, password: string) {
     return api("/auth/login/", {
         method: "POST",
-        credentials: "include",
+        credentials: "include", // CORRETO: Permite receber os cookies
         body: JSON.stringify({
             whatsapp_number: whatsappNumber,
             password,
         }),
     });
 }
-
 export async function logout() {
+    // O logout precisa limpar os cookies no servidor
     return api("/auth/logout/", {
         method: "POST",
+        credentials: "include",
     });
 }
-
 export async function checkSession() {
     return api("/auth/me/", {
         method: "GET",
+        credentials: "include", // OBRIGATÓRIO: Para enviar o cookie 'access'
     });
 }

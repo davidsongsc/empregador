@@ -178,6 +178,25 @@ const JobHome = () => {
                   {selectedJob?.cargo}
                 </h2>
               </header>
+              <section className="grid grid-cols-2 gap-4 mt-6">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-[11px] uppercase font-semibold text-gray-400 mb-1">Jornada</p>
+                  <p className="font-semibold text-gray-800">{selectedJob?.turno || "Indefinido"}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-[11px] uppercase font-semibold text-gray-400 mb-1">Salário</p>
+                  <p className="font-semibold text-gray-800">
+                    {selectedJob?.salario ? `R$ ${selectedJob.salario}` : "A combinar"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setOpen(true)}
+                  className="col-span-2 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition cursor-pointer"
+                >
+                  Candidatar-se
+                </button>
+              </section>
+
 
               <section className="flex-1 overflow-y-auto mt-8 space-y-8 pr-2">
                 <div>
@@ -221,25 +240,7 @@ const JobHome = () => {
                 </div>
               </section>
 
-              <section className="grid grid-cols-2 gap-4 mt-6">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-[11px] uppercase font-semibold text-gray-400 mb-1">Jornada</p>
-                  <p className="font-semibold text-gray-800">{selectedJob?.turno || "Indefinido"}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-[11px] uppercase font-semibold text-gray-400 mb-1">Salário</p>
-                  <p className="font-semibold text-gray-800">
-                    {selectedJob?.salario ? `R$ ${selectedJob.salario}` : "A combinar"}
-                  </p>
-                </div>
-              </section>
 
-              <button
-                onClick={() => setOpen(true)}
-                className="mt-6 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition cursor-pointer"
-              >
-                Candidatar-se
-              </button>
             </div>
           </div>
         </section>

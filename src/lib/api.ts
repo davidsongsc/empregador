@@ -2,79 +2,112 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface ApiError {
     detail?: string;
+    code?: string;
     [key: string]: any;
 }
 
+// --- ESTADO GLOBAL PARA CONTROLE DE FILA E REFRESH ---
+let isRefreshing = false;
+let refreshSubscribers: (() => void)[] = [];
+
+// Adiciona requisições à fila enquanto o refresh acontece
+function subscribeTokenRefresh(cb: () => void) {
+    refreshSubscribers.push(cb);
+}
+
+// Avisa as requisições na fila que podem tentar novamente
+function onRefreshed() {
+    refreshSubscribers.forEach((cb) => cb());
+    refreshSubscribers = [];
+}
+
+/**
+ * Função principal de API com Interceptor de 401 e proteção contra loop
+ */
 export async function api(
     url: string,
     options: RequestInit = {},
-    isPublic = false
+    isPublic = false,
+    isRetry = false // Trava de segurança para evitar loops infinitos
 ) {
-    const defaultHeaders: HeadersInit = {
-        "Content-Type": "application/json",
-    };
-
     const config: RequestInit = {
-        credentials: "include",
+        credentials: "include", // Essencial para lidar com Cookies HttpOnly
         ...options,
         headers: {
-            ...defaultHeaders,
+            "Content-Type": "application/json",
             ...options.headers,
         },
     };
 
-    const response = await fetch(`${API_URL}${url}`, config);
-
-    let data = null;
     try {
-        data = await response.json();
-    } catch (e) {
-        data = null;
-    }
+        const response = await fetch(`${API_URL}${url}`, config);
 
-    // --- LÓGICA ANTI-LOOP DE REFRESH ---
-
-    if (response.status === 401) {
-        // 1. Se for pública, não tentamos nada, apenas lançamos o erro
-        if (isPublic) {
-            throw data ?? { detail: "Acesso público não autorizado" };
+        // 1. Caso de sucesso ou erros que não sejam 401
+        if (response.ok) {
+            if (response.status === 204) return null;
+            return await response.json();
         }
 
-        const isAuthRoute = url.includes("/auth/refresh/") || url.includes("/auth/login/");
-        
-        // 2. Verificamos se esta já é uma tentativa de repetição (retry)
-        // Se já tentamos dar refresh e falhou de novo, paramos aqui
-        const isRetry = options.headers && (options.headers as any)["X-Retry"];
+        // 2. Tratamento de erro 401 (Unauthorized/Expired)
+        if (response.status === 401 && !isPublic) {
+            
+            // Se o erro vier da própria rota de LOGIN, não tenta refresh
+            if (url.includes("/auth/login/")) {
+                const errorData = await response.json().catch(() => ({}));
+                throw errorData;
+            }
 
-        if (!isAuthRoute && !isRetry) {
+            // SEGUNDA TENTATIVA FALHOU? (Proteção contra loop infinito)
+            if (isRetry) {
+                console.error("Loop detectado: O token continua inválido após refresh.");
+                handleLogoutRedirect();
+                throw new Error("Infinite loop blocked");
+            }
+
+            // Se o erro vier da rota de REFRESH, significa que o refresh token morreu
+            if (url.includes("/auth/refresh/")) {
+                handleLogoutRedirect();
+                throw new Error("Refresh token expired");
+            }
+
+            // Se já existir um processo de renovação em curso, entra na fila
+            if (isRefreshing) {
+                return new Promise((resolve) => {
+                    subscribeTokenRefresh(() => {
+                        resolve(api(url, options, isPublic, true));
+                    });
+                });
+            }
+
+            // --- INÍCIO DO PROCESSO DE REFRESH ---
+            isRefreshing = true;
+
             const refreshed = await refreshToken();
+            
+            isRefreshing = false;
 
             if (refreshed) {
-                // 3. Repetimos a chamada original adicionando a flag X-Retry
-                return api(url, {
-                    ...options,
-                    headers: {
-                        ...options.headers,
-                        "X-Retry": "true", // Trava para não entrar em loop
-                    },
-                }, isPublic);
+                onRefreshed(); // Libera quem estava na fila
+                return api(url, options, isPublic, true); // Tenta de novo com a trava isRetry=true
             } else {
-                // Se o refresh falhou (ex: refresh token expirado), 
-                // aqui você poderia limpar o estado de login ou redirecionar
-                console.warn("Refresh token inválido. O usuário precisa logar novamente.");
+                handleLogoutRedirect();
+                throw new Error("Refresh failed");
             }
         }
-    }
 
-    // --- TRATAMENTO DE ERRO FINAL ---
-    if (!response.ok) {
-        const errorPayload: ApiError = data ?? { detail: "Erro inesperado no servidor" };
-        throw errorPayload;
-    }
+        // 3. Outros erros (400, 403, 404, 500...)
+        const errorData = await response.json().catch(() => ({}));
+        throw errorData;
 
-    return data;
+    } catch (error) {
+        // Se for um erro de rede ou o erro lançado acima
+        throw error;
+    }
 }
 
+/**
+ * Chama o endpoint do Django para renovar o cookie de acesso
+ */
 async function refreshToken(): Promise<boolean> {
     try {
         const res = await fetch(`${API_URL}/auth/refresh/`, {
@@ -82,9 +115,22 @@ async function refreshToken(): Promise<boolean> {
             credentials: "include",
         });
 
+        // O Django deve responder 200 OK e enviar o Set-Cookie: access
         return res.ok;
     } catch (error) {
-        console.error("Erro crítico ao tentar refresh token:", error);
+        console.error("Erro crítico no fetch de refresh:", error);
         return false;
+    }
+}
+
+/**
+ * Redireciona para o login e limpa estados se necessário
+ */
+function handleLogoutRedirect() {
+    if (typeof window !== "undefined") {
+        // Evita redirecionar se já estiver na página de login
+        if (!window.location.pathname.includes('/login')) {
+            window.location.href = "/login?session=expired";
+        }
     }
 }

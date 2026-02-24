@@ -1,5 +1,5 @@
 "use client"
-import { CheckCircle2, MapPin } from "lucide-react"
+import { CheckCircle2 } from "lucide-react"
 
 type Props = {
   open: boolean
@@ -47,53 +47,59 @@ const JobDetailsModal = ({ open, onClose, job, onApply }: Props) => {
               {job.turno || "Indefinido"}
             </p>
           </div>
+          <button
+            onClick={onApply}
+            className="cursor-pointer w-1/4 bg-indigo-600 text-white py-3 rounded-lg font-semibold"
+          >
+            Candidatar-se
+          </button>
         </div>
 
         <div className="mt-6">
-          <h4 className="text-sm font-semibold text-gray-900 uppercase mb-2">
+          <h4 className="text-sm font-black text-gray-900 uppercase mb-2 tracking-widest">
             Sobre a vaga
           </h4>
-          <p className="text-gray-600 leading-relaxed">
+          {/* A classe whitespace-pre-line resolve 90% dos casos */}
+          <p className="text-gray-600 leading-relaxed whitespace-pre-line text-sm">
             {job.descricao}
           </p>
         </div>
 
-        <div className="mt-6">
-          <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">
-            Requisitos
-          </h4>
-          <ul className="space-y-2">
-            {job.requisitos.map((req: string, i: number) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5" />
-                {req}
-              </li>
-            ))}
-          </ul>
-        </div>
 
+        {/* --- CORREÇÃO AQUI: BENEFÍCIOS --- */}
         {job.beneficios?.length > 0 && (
           <div className="mt-6">
             <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">
               Benefícios
             </h4>
             <ul className="space-y-2">
-              {job.beneficios.map((b: string, i: number) => (
+              {job.beneficios.map((b: any, i: number) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
                   <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
-                  {b}
+                  {/* Mesma lógica para benefícios */}
+                  {typeof b === 'object' ? b.description : b}
                 </li>
               ))}
             </ul>
           </div>
         )}
+        {/* --- CORREÇÃO AQUI: REQUISITOS --- */}
+        <div className="mt-6">
+          <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">
+            Requisitos
+          </h4>
+          <ul className="space-y-2">
+            {job.requisitos?.map((req: any, i: number) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5" />
+                {/* Verifica se é objeto e pega a descrição, senão renderiza o valor puro */}
+                {typeof req === 'object' ? req.description : req}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-        <button
-          onClick={onApply}
-          className="mt-8 w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold"
-        >
-          Candidatar-se
-        </button>
+
       </div>
     </div>
   )

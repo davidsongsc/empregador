@@ -19,8 +19,8 @@ const LoginUser = () => {
 
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [whatsapp, setWhatsapp] = useState("");
-  const [password, setPassword] = useState("");
+  const [whatsapp, setWhatsapp] = useState("5521983108439");
+  const [password, setPassword] = useState("22558888");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +54,7 @@ const LoginUser = () => {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-white">
+    <div className="min-h-screen grid lg:grid-cols-2 bg-white mt-25">
       {/* LADO ESQUERDO */}
       <div className="hidden lg:flex flex-col justify-between bg-gray-700 p-12 text-white relative overflow-hidden">
         <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-indigo-500 rounded-full opacity-50 blur-3xl"></div>
