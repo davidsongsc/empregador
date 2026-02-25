@@ -15,6 +15,7 @@ import { useJobs } from "@/hooks/useJobs";
 import JobApplyModal from "../JobApplyModal";
 import JobDetailsModal from "../JobsDetailsModal";
 import AdBanner from "../AdBanner";
+import SkeletonJob from "../Loading";
 
 type StepId = "curriculo" | "dados" | "perguntas" | "upsell";
 
@@ -67,9 +68,7 @@ const JobHome = () => {
   // --- 2. RETORNOS CONDICIONAIS DE UI (DEPOIS DOS HOOKS) ---
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <h1 className="text-2xl font-bold animate-pulse">Carregando vagas...</h1>
-      </div>
+      <SkeletonJob />
     )
   }
 
