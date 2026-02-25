@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { checkSession, logout } from "@/services/auth";
 
-// --- TIPAGENS ---
+
 type UserProfile = {
   name?: string;
   last_name?: string;
