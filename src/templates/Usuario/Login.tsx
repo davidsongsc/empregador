@@ -19,8 +19,8 @@ const LoginUser = () => {
 
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [whatsapp, setWhatsapp] = useState("5521983108439");
-  const [password, setPassword] = useState("22558888");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
