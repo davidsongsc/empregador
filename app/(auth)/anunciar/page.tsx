@@ -46,7 +46,7 @@ const PostJobPage = () => {
       salario: salario ? parseFloat(salario) : null,
       turno,
       empresa,
-      local,
+      endereco: local,
       descricao,
       // Transformando strings em objetos exigidos pelo Django
       beneficios: beneficios.map(b => ({ description: b })),
