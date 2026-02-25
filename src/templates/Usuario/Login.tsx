@@ -24,7 +24,7 @@ const LoginUser = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   if (isAuthenticated) {
-    router.push("/vagas");
+    router.push("/");
     return null;
   }
   const handleSubmit = async (e: React.FormEvent) => {

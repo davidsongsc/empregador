@@ -4,6 +4,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { checkSession, logout } from "@/services/auth";
 import SkeletonJob from "@/components/Loading";
 import { useRouter } from "next/navigation";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import Header from "@/components/Header";
 
 
 type UserProfile = {
@@ -93,7 +95,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         mostramos a animação de loading para evitar que o 
         usuário veja flash de conteúdo não autorizado.
       */}
-      {loading ? <SkeletonJob /> : children}
+      {loading ? <>
+        <Header />
+        <LoadingSpinner /> </> : children}
     </AuthContext.Provider>
   );
 }
