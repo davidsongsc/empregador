@@ -15,7 +15,7 @@ import { login } from "@/services/auth";
 import { useAuth } from "@/contexts/AuthContext";
 
 const LoginUser = () => {
-  const { refreshSession } = useAuth();
+  const { refreshSession, isAuthenticated } = useAuth();
 
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
@@ -23,7 +23,10 @@ const LoginUser = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  if (isAuthenticated) {
+    router.push("/vagas");
+    return null;
+  }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
