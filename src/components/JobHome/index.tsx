@@ -131,16 +131,16 @@ const JobHome = () => {
 
                 <p className="text-sm text-indigo-600 font-bold">
                   {/* Ajustado para empresa_nome */}
-                  {job.empresa_nome}
+                  {job.tipo_vaga_display}
                 </p>
 
                 <div className="flex flex-wrap gap-y-2 gap-x-4 text-[12px] text-gray-500 mt-3">
                   <span className="flex items-center gap-1.5 font-medium">
                     <MapPin className="w-3.5 h-3.5 text-gray-400" />
                     {/* Fallback para quando o endereço estruturado for null */}
-                    {job.endereco ? `${job.endereco.cidade}, ${job.endereco.estado}` : (job.endereco || "Remoto")}
+                    {job.endereco ? `${job.endereco.cidade}, ${job.endereco.estado}` : (job.endereco || "Presencial")}
                   </span>
-                 
+
                   <span className="flex items-center gap-1.5 font-medium">
                     <Clock className="w-3.5 h-3.5 text-gray-400" />
                     {job.turno || "A definir"}
@@ -188,6 +188,9 @@ const JobHome = () => {
             ) : (
               <div className="flex flex-col h-full w-full p-10">
                 <header className="relative">
+                  <div className="inline-block bg-red-100 text-orange-800 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest mb-4 mr-2">
+                    {selectedJob.tipo_vaga_display || ""}
+                  </div>
                   <div className="inline-block bg-indigo-100 text-indigo-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest mb-4">
                     {selectedJob.role_details?.category || "Oportunidade"}
                   </div>

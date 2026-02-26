@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react';
 import {
   Search, MapPin, Loader2, Briefcase,
   ChevronRight, Building2, Sparkles, Clock,
-  ArrowLeft, SearchX
+  ArrowLeft, SearchX,
+  Lock
 } from 'lucide-react';
 import { useJobs } from '@/hooks/useJobs';
 
@@ -12,7 +13,6 @@ const VagasPage = () => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
   const { jobs, loading, error } = useJobs(currentPage);
 
   // --- LÓGICA DE EXIBIÇÃO ADAPTATIVA ---
@@ -157,24 +157,41 @@ const VagasPage = () => {
                 return (
                   <div
                     key={job.uid}
-                    className="bg-white p-7 rounded-[32px] border-2 border-transparent hover:border-indigo-600 transition-all shadow-sm flex flex-col justify-between animate-in fade-in slide-in-from-bottom-2"
+                    className="bg-white p-4 rounded-[32px] border-2 border-transparent hover:border-indigo-600 transition-all shadow-sm flex flex-col justify-between animate-in fade-in slide-in-from-bottom-2"
                   >
                     <div>
                       <div className="flex justify-between items-start mb-4">
                         <h3 className="font-black text-gray-900 leading-tight text-lg">{job.cargo_exibicao}</h3>
-                        <span className={`text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider ${job.salario
+                      </div>
+                      <div className="flex justify-between items-start mb-4">
+                        <span className='font-bold text-black'>
+                          {job.tipo_vaga}
+                        </span>
+                        <span className={`text-[11px] font-black px-2 py-1 rounded-lg uppercase tracking-wider ${job.salario
                           ? 'text-green-600 bg-green-50'
                           : 'text-red-600 bg-red-50'
                           }`}>
                           {job.salario ? `R$ ${job.salario}` : 'A combinar'}
-                        </span>                      </div>
+                        </span>
+                      </div>
                       <div className="space-y-3 mb-8">
-                        {job.empresa_nome && (
-                          <div className="flex items-center gap-2 text-sm text-indigo-600 font-bold">
-                            <Building2 className="w-4 h-4 opacity-40" />
-                            {job.empresa_nome}
-                          </div>
-                        )}
+
+                        <div className="flex items-center gap-2 text-sm font-bold">
+                          {job.empresa_nome ? (
+                            // Caso exista o nome da empresa
+                            <div className="flex items-center gap-2 text-indigo-600">
+                              <Building2 className="w-4 h-4 opacity-40" />
+                              {job.empresa_nome}
+                            </div>
+                          ) : (
+                            // Caso não exista (Confidencial)
+                            <div className="flex items-center gap-2 text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">
+                              <Lock className="w-3.5 h-3.5 opacity-70" />
+                              <span className="uppercase tracking-wider text-[10px]">Confidencial</span>
+                            </div>
+                          )}
+                        </div>
+
                         <div className="flex items-center gap-2 text-xs text-gray-400 font-medium">
                           <MapPin className="w-4 h-4 opacity-40" /> {job.endereco ? job.endereco.cidade : (job.local || "Remoto")}
                         </div>

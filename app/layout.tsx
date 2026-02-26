@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { AuthProvider } from "@/contexts/AuthContext";
 import Script from 'next/script';
 import "./globals.css"
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 
 const geistSans = Geist({
@@ -30,13 +32,17 @@ export default function RootLayout({
       <head>
         <Script
           id="adsbygoogle-init"
-          strategy="afterInteractive" 
+          strategy="afterInteractive"
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
           crossOrigin="anonymous"
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <Header />
+          {children}
+          <Footer />
+        </AuthProvider>
 
       </body>
     </html>

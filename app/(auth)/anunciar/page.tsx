@@ -1,44 +1,32 @@
 "use client";
 
-import { useState, useMemo } from 'react';
-import { 
-  Briefcase, MapPin, DollarSign, Rocket, Plus, X, 
-  Loader2, Building2, AlertCircle, CheckCircle, 
-  ChevronRight, ChevronLeft, ShieldCheck, MessageSquare, 
-  Mail, Search, Sparkles 
+import { useState, useMemo, useEffect } from 'react';
+import {
+  Briefcase, MapPin, DollarSign, Rocket, Plus, X,
+  Loader2, Building2, AlertCircle, CheckCircle,
+  ChevronRight, ChevronLeft, ShieldCheck, MessageSquare,
+  Mail, Search, Sparkles,
+  Clock10
 } from 'lucide-react';
 import { usePostJob } from '@/hooks/usePostJob';
 import { useRoles } from '@/hooks/useRoles';
 import { createRole } from '@/services/roles'; // Importar o service de criação
-import Link from 'next/link';
-
-const InputError = ({ message }: { message?: string | string[] }) => {
-  if (!message) return null;
-  const msg = Array.isArray(message) ? message[0] : message;
-  return (
-    <div className="flex items-center gap-1 mt-1 animate-in fade-in slide-in-from-top-1">
-      <AlertCircle className="w-3 h-3 text-red-500" />
-      <span className="text-[10px] font-black text-red-500 uppercase tracking-tight">{msg}</span>
-    </div>
-  );
-};
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 const PostJobPage = () => {
+  const { user, isAuthenticated } = useAuth();
   const [step, setStep] = useState(1);
   const { postJob, loading: posting } = usePostJob();
   const { roles, loading: loadingRoles } = useRoles();
-
-  // Estados do Autocomplete
+  const [tipoVaga, setTipoVaga] = useState('EFETIVO');
   const [roleSearch, setRoleSearch] = useState('');
   const [selectedRoleUid, setSelectedRoleUid] = useState('');
   const [isCreatingRole, setIsCreatingRole] = useState(false);
-
-  // Estados dos Campos
   const [tituloPersonalizado, setTituloPersonalizado] = useState('');
   const [salario, setSalario] = useState('');
-  const [companyUid, setCompanyUid] = useState(''); 
   const [local, setLocal] = useState('');
-  const [turno, setTurno] = useState('Presencial');
+  const [turno, setTurno] = useState('6/1 Noturno');
   const [descricao, setDescricao] = useState('');
   const [contatoOpt, setContatoOpt] = useState('plataforma');
 
@@ -47,11 +35,16 @@ const PostJobPage = () => {
   const [novoBeneficio, setNovoBeneficio] = useState('');
   const [requisitos, setRequisitos] = useState<string[]>(['Ensino Médio Completo']);
   const [novoRequisito, setNovoRequisito] = useState('');
+  const router = useRouter();
+  if (!isAuthenticated) {
+    router.push('/login');
+    return null;
+  }
 
   // Lógica de Filtragem do Autocomplete
   const filteredRoles = useMemo(() => {
     if (!roleSearch || selectedRoleUid) return [];
-    return roles.filter(r => 
+    return roles.filter(r =>
       r.name.toLowerCase().includes(roleSearch.toLowerCase())
     ).slice(0, 5);
   }, [roles, roleSearch, selectedRoleUid]);
@@ -67,8 +60,20 @@ const PostJobPage = () => {
       const newRole = await createRole(roleSearch);
       setSelectedRoleUid(newRole.uid);
       setRoleSearch(newRole.name);
-    } catch (err) {
-      alert("Erro ao criar cargo. Tente selecionar um existente.");
+      alert("Cargo criado com sucesso!");
+    } catch (err: any) {
+      console.error("Erro completo:", err);
+
+      // 1. Tenta pegar a mensagem detalhada do Django (ex: err.detail)
+      // 2. Se não houver, tenta ver se é um erro de validação de campo (ex: err.name)
+      // 3. Por fim, usa uma mensagem genérica ou o status
+      const errorMessage =
+        err.detail ||
+        (err.name ? `Nome: ${err.name}` : null) ||
+        err.message ||
+        "Erro desconhecido";
+
+      alert(`Erro ao criar cargo: ${errorMessage}`);
     } finally {
       setIsCreatingRole(false);
     }
@@ -82,10 +87,13 @@ const PostJobPage = () => {
   };
 
   const handleFinalizar = async () => {
+    // Pegamos o ID da primeira empresa ou string vazia se não existir
+    const companyId = user?.profile?.empresas?.[0]?.id || "";
+
     const payload = {
       role: selectedRoleUid,
       titulo_personalizado: tituloPersonalizado,
-      company: companyUid,
+      company: companyId, // Agora dinâmico e automático
       salario: salario ? parseFloat(salario) : null,
       turno,
       endereco: local.trim() ? { cidade: local } : null,
@@ -95,20 +103,26 @@ const PostJobPage = () => {
       metodo_contato: contatoOpt,
       perguntas: []
     };
-    await postJob(payload);
+
+    try {
+      await postJob(payload);
+      // Adicione aqui seu feedback de sucesso (ex: router.push ou toast)
+    } catch (err) {
+      console.error("Erro ao postar vaga:", err);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#F8F9FB] pt-24 pb-20 px-4 md:px-8">
       <div className="max-w-4xl mx-auto">
-        
+
         {/* HEADER */}
         <div className="text-center mb-10 space-y-3">
           <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
             <Rocket className="w-4 h-4" /> Recrutamento Inteligente
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tighter">Postar Vaga</h1>
-          
+
           <div className="flex items-center justify-center gap-3 pt-4">
             {[1, 2, 3].map((s) => (
               <div key={s} className={`h-1.5 rounded-full transition-all duration-500 ${step === s ? 'w-12 bg-indigo-600' : 'w-4 bg-gray-200'}`} />
@@ -117,7 +131,7 @@ const PostJobPage = () => {
         </div>
 
         <div className="bg-white p-8 md:p-14 rounded-[48px] border border-gray-100 shadow-2xl shadow-gray-200/40 relative">
-          
+
           {/* ETAPA 1: CLASSIFICAÇÃO */}
           {step === 1 && (
             <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -132,7 +146,7 @@ const PostJobPage = () => {
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Cargo Padronizado (Busque ou Crie)</label>
                   <div className="relative">
                     <Search className={`absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${selectedRoleUid ? 'text-green-500' : 'text-gray-300'}`} />
-                    <input 
+                    <input
                       value={roleSearch}
                       onChange={(e) => {
                         setRoleSearch(e.target.value);
@@ -148,7 +162,7 @@ const PostJobPage = () => {
                   {roleSearch && !selectedRoleUid && (
                     <div className="absolute z-30 w-full mt-2 bg-white border border-gray-100 rounded-[24px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                       {filteredRoles.map(r => (
-                        <button 
+                        <button
                           key={r.uid}
                           onClick={() => handleSelectRole(r)}
                           className="w-full p-5 text-left hover:bg-indigo-50 flex justify-between items-center group transition-colors border-b border-gray-50 last:border-none"
@@ -160,9 +174,9 @@ const PostJobPage = () => {
                           <ChevronRight className="w-4 h-4 text-gray-200 group-hover:text-indigo-600" />
                         </button>
                       ))}
-                      
+
                       {/* Opção de Criar se não houver match exato */}
-                      <button 
+                      <button
                         onClick={handleCreateNewRole}
                         disabled={isCreatingRole}
                         className="w-full p-5 text-left bg-indigo-600 text-white flex items-center justify-between hover:bg-gray-900 transition-colors"
@@ -182,16 +196,26 @@ const PostJobPage = () => {
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Título de Exibição (O que o candidato verá)</label>
                     <input value={tituloPersonalizado} onChange={(e) => setTituloPersonalizado(e.target.value)} placeholder="Ex: Vendedor de Loja (Shopping)" className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 font-bold outline-none focus:ring-4 focus:ring-indigo-50 transition-all" />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">UID da Empresa</label>
-                    <input value={companyUid} onChange={(e) => setCompanyUid(e.target.value)} placeholder="Cole o ID da empresa" className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 font-mono text-[10px] font-bold outline-none focus:ring-4 focus:ring-indigo-50 transition-all" />
-                  </div>
+
                 </div>
               </div>
-
-              <button 
-                onClick={() => setStep(2)} 
-                disabled={!selectedRoleUid || !companyUid} 
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Tipo de Contratação</label>
+                <select
+                  value={tipoVaga}
+                  onChange={(e) => setTipoVaga(e.target.value)}
+                  className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 font-bold text-gray-900 outline-none focus:ring-4 focus:ring-indigo-50 transition-all cursor-pointer"
+                >
+                  <option value="EFETIVO">Efetivo (CLT)</option>
+                  <option value="PJ">Prestador de Serviços (PJ)</option>
+                  <option value="FREELANCER">Freelancer</option>
+                  <option value="TEMPORARIO">Temporário</option>
+                  <option value="ESTAGIO">Estágio</option>
+                </select>
+              </div>
+              <button
+                onClick={() => setStep(2)}
+                disabled={!selectedRoleUid}
                 className="w-full bg-gray-900 text-white py-5 rounded-3xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-600 transition-all disabled:opacity-20 shadow-xl"
               >
                 Próxima Etapa <ChevronRight className="w-4 h-4" />
@@ -220,6 +244,13 @@ const PostJobPage = () => {
                   <div className="relative">
                     <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500" />
                     <input value={local} onChange={(e) => setLocal(e.target.value)} placeholder="Ex: Rio de Janeiro - RJ" className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-12 pr-6 font-bold outline-none focus:ring-4 focus:ring-indigo-50 transition-all" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Turno/Jornada</label>
+                  <div className="relative">
+                    <Clock10 className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500" />
+                    <input value={turno} onChange={(e) => setTurno(e.target.value)} placeholder="Noturno 6/1" className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-12 pr-6 font-bold outline-none focus:ring-4 focus:ring-indigo-50 transition-all" />
                   </div>
                 </div>
               </div>
@@ -285,11 +316,10 @@ const PostJobPage = () => {
                   <button
                     key={opt.id}
                     onClick={() => setContatoOpt(opt.id)}
-                    className={`p-6 rounded-[32px] border-2 text-left transition-all duration-300 ${
-                      contatoOpt === opt.id 
-                      ? `border-${opt.color}-600 bg-${opt.color}-50 shadow-inner` 
+                    className={`p-6 rounded-[32px] border-2 text-left transition-all duration-300 ${contatoOpt === opt.id
+                      ? `border-${opt.color}-600 bg-${opt.color}-50 shadow-inner`
                       : 'border-gray-100 bg-white hover:border-gray-200 shadow-sm'
-                    }`}
+                      }`}
                   >
                     <opt.icon className={`w-8 h-8 mb-4 ${contatoOpt === opt.id ? `text-${opt.color}-600` : 'text-gray-300'}`} />
                     <h3 className="font-black text-gray-900 text-sm">{opt.label}</h3>
@@ -299,7 +329,7 @@ const PostJobPage = () => {
               </div>
 
               <div className="pt-6 space-y-4">
-                <button 
+                <button
                   onClick={handleFinalizar}
                   disabled={posting}
                   className="w-full bg-gray-900 text-white py-6 rounded-[32px] font-black text-sm uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-indigo-600 transition-all shadow-2xl shadow-indigo-100"

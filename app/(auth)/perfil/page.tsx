@@ -1,24 +1,131 @@
 "use client";
 
-import ApplicationDashboard from '@/components/ApplicationDashboard';
-import PerfilLoading from '@/components/PerfilLoading';
-import { useAuth } from '@/contexts/AuthContext';
-import { useMyApplications } from '@/hooks/useMyApplications';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  User, FileText, Bell, Clock, ChevronRight,
+  User, FileText, Bell, ChevronRight,
   Sparkles, Target, Zap, GraduationCap, TrendingUp,
-  Briefcase, LogOut, MapPin
+  LogOut, MapPin, X, Save, Loader2, Camera, Mail, AlertCircle
 } from 'lucide-react';
 
-const PerfilPage = () => {
-  const { user, loading: authLoading, isAuthenticated, logoutUser } = useAuth();
-  const { applications, loading: appsLoading, totalCount, approvedCount } = useMyApplications();
+import ApplicationDashboard from '@/components/ApplicationDashboard';
+import PerfilLoading from '@/components/PerfilLoading';
+import Notification from '@/components/Notification';
+import { useAuth } from '@/contexts/AuthContext';
+import { useMyApplications } from '@/hooks/useMyApplications';
+import { useProfile } from '@/hooks/useProfile';
+import { uploadProfilePhoto } from '@/services/auth';
 
-  // Bloqueio de acesso e Loading de inicialização
-  if (authLoading || appsLoading) return <PerfilLoading />;
+const PerfilPage = () => {
+  const { user, loading: authLoading, isAuthenticated, logoutUser, refreshSession } = useAuth();
+  const { profile, saveProfile, loading: profileLoading, isSaving } = useProfile();
+  const { applications, loading: appsLoading, totalCount } = useMyApplications();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showProfileAlert, setShowProfileAlert] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null); // Erro para a notificação
+  const [fieldErrors, setFieldErrors] = useState<any>({}); // Erros específicos por input
+  const [isUploading, setIsUploading] = useState(false);
+  const formatCEP = (value: string) => {
+    return value
+      .replace(/\D/g, "") // Remove tudo que não é número
+      .replace(/(\d{2})(\d)/, "$1.$2") // Coloca o ponto após os 2 primeiros dígitos
+      .replace(/(\d{3})(\d)/, "$1-$2") // Coloca o hífen após os 3 próximos dígitos
+      .replace(/(-\d{3})\d+?$/, "$1"); // Limita a 8 dígitos + formatação
+  };
+  const [formData, setFormData] = useState({
+    name: '',
+    last_name: '',
+    ocupation: '',
+    email: '',
+    bio: '',
+    endereco: {
+      logradouro: '',
+      cidade: '',
+      estado: '',
+      cep: ''
+    }
+  });
+
+  // Sincroniza dados do profile para o form
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        name: profile.name || '',
+        last_name: profile.last_name || '',
+        ocupation: profile.ocupation || '',
+        email: profile.email || '',
+        bio: profile.bio || '',
+        endereco: {
+          logradouro: profile.endereco?.logradouro || '',
+          cidade: profile.endereco?.cidade || '',
+          estado: profile.endereco?.estado || '',
+          cep: profile.endereco?.cep || ''
+        }
+      });
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && !user?.profile?.name) {
+      const timer = setTimeout(() => setShowProfileAlert(true), 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [authLoading, isAuthenticated, user]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFieldErrors({}); // Limpa erros anteriores
+    setErrorMsg(null);
+
+    try {
+      await saveProfile(formData);
+      setSuccessMsg("Perfil atualizado com sucesso!");
+      setIsEditModalOpen(false);
+    } catch (err: any) {
+      // Log seguro para não travar o Next.js
+      console.log("Erro capturado:", err.message);
+
+      // O Django envia os erros dentro de um objeto. 
+      // Verifique se sua função api.ts anexa os erros em 'errors' ou 'data'
+      const errorsFromServer = err.errors || err.response?.data;
+
+      if (errorsFromServer) {
+        setFieldErrors(errorsFromServer);
+        setErrorMsg("Existem campos obrigatórios não preenchidos.");
+      } else {
+        setErrorMsg(err.message || "Ocorreu um erro inesperado.");
+      }
+    }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      await uploadProfilePhoto(file);
+      await refreshSession();
+      setSuccessMsg("Foto de perfil atualizada!");
+    } catch (err) {
+      console.error("Erro no upload", err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Função auxiliar para checar se campo tem erro
+  const hasError = (fieldName: string, nested?: string) => {
+    if (nested) return !!fieldErrors[nested]?.[fieldName];
+    return !!fieldErrors[fieldName];
+  };
+
+  if (authLoading || appsLoading || profileLoading) return <PerfilLoading />;
   if (!isAuthenticated) return null;
 
-  // Mock de interesses (Podemos tornar dinâmico no futuro conforme o UserProfile)
   const sugestoesIA = [
     { titulo: "UI/UX Design", motivo: "Match com seu perfil Frontend", icon: <Zap className="w-4 h-4" /> },
     { titulo: "Gestão de Processos", motivo: "Alta demanda na sua região", icon: <Target className="w-4 h-4" /> }
@@ -26,46 +133,80 @@ const PerfilPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FC] pt-32 pb-20 px-4">
-      <div className="max-w-6xl mx-auto grid lg:grid-cols-12 gap-8">
 
+      {/* --- NOTIFICAÇÕES --- */}
+      <AnimatePresence mode="wait">
+        {(showProfileAlert || successMsg || errorMsg) && (
+          <Notification
+            title={successMsg ? "Sucesso!" : errorMsg ? "Atenção" : "Ação Necessária"}
+            message={successMsg || errorMsg || "Complete seu perfil para liberar todas as funcionalidades."}
+            onClose={() => { setShowProfileAlert(false); setSuccessMsg(null); setErrorMsg(null); }}
+          />
+        )}
+      </AnimatePresence>
+
+      <div className="max-w-6xl mx-auto grid lg:grid-cols-12 gap-8">
         {/* --- COLUNA LATERAL --- */}
         <aside className="lg:col-span-4 space-y-6">
-          {/* Card Usuário Premium */}
-          <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4">
-              <button onClick={logoutUser} className="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Sair">
+          <div className={`bg-white p-8 rounded-[40px] border transition-all duration-500 relative overflow-hidden group ${!profile?.name ? 'border-amber-200 ring-8 ring-amber-50 shadow-amber-100' : 'border-gray-100 shadow-sm'
+            }`}>
+            <div className="absolute top-0 right-0 p-4 z-20">
+              <button onClick={logoutUser} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
                 <LogOut className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="w-24 h-24 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-full mx-auto mb-4 flex items-center justify-center border-4 border-white shadow-xl">
-              {user?.profile?.foto ? (
-                <img src={user.profile.foto} alt="Avatar" className="w-full h-full rounded-full object-cover" />
-              ) : (
-                <User className="w-10 h-10 text-white" />
-              )}
+            <div className="relative w-32 h-32 mx-auto mb-6 group/avatar">
+              <div className="w-full h-full bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-full flex items-center justify-center border-4 border-white shadow-2xl overflow-hidden relative">
+                {isUploading ? (
+                  <Loader2 className="w-8 h-8 text-white animate-spin" />
+                ) : profile?.foto ? (
+                  <img src={profile.foto} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-12 h-12 text-white" />
+                )}
+              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-1 right-1 bg-white p-2.5 rounded-full shadow-lg text-indigo-600 hover:scale-110 transition-transform border border-gray-100"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
+              <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*" />
             </div>
 
-            <h2 className="text-2xl font-black text-gray-900">{user?.profile?.name || 'Usuário'}</h2>
-            <p className="text-sm text-indigo-600 font-bold uppercase tracking-widest mb-2">
-              {user?.profile?.ocupation || 'Cargo não definido'}
-            </p>
+            <div className="text-center relative z-10">
+              <h2 className="text-3xl font-black text-gray-900 leading-tight tracking-tighter italic uppercase">
+                {profile?.name ? `${profile.name} ${profile.last_name}` : 'Perfil Pendente'}
+              </h2>
+              <p className="text-sm text-indigo-600 font-black uppercase tracking-[0.2em] mt-1 mb-4">
+                {profile?.ocupation || 'Cargo não definido'}
+              </p>
 
-            <div className="flex items-center justify-center gap-2 text-gray-400 text-xs mb-6 font-medium">
-              <MapPin className="w-3 h-3" />
-              {user?.profile?.endereco?.cidade || 'Localização não informada'}
+              <div className="space-y-2 mb-8">
+                <div className="flex items-center justify-center gap-2 text-gray-400 text-xs font-bold uppercase">
+                  <MapPin className="w-3.5 h-3.5" />
+                  {profile?.endereco?.cidade ? `${profile.endereco.cidade}, ${profile.endereco.estado}` : 'Sem endereço'}
+                </div>
+                <div className="flex items-center justify-center gap-2 text-gray-400 text-xs font-bold lowercase">
+                  <Mail className="w-3.5 h-3.5" />
+                  {profile?.email || 'email@não-cadastrado.com'}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className={`w-full py-5 rounded-[24px] font-black text-xs uppercase tracking-widest transition-all ${!profile?.name ? 'bg-amber-500 text-white shadow-xl shadow-amber-200' : 'bg-gray-900 text-white hover:bg-indigo-600 shadow-xl shadow-gray-200'
+                  }`}>
+                {profile?.name ? 'Editar Informações' : 'Completar Cadastro'}
+              </button>
             </div>
-
-            <button className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-sm hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-200 transition-all duration-300">
-              Editar Perfil
-            </button>
           </div>
 
-          {/* Widget IA de Carreira */}
-          <div className="bg-indigo-600 p-8 rounded-[40px] text-white shadow-2xl shadow-indigo-200 relative overflow-hidden group">
-            <Sparkles className="absolute -right-4 -top-4 w-32 h-32 opacity-10 group-hover:rotate-12 transition-transform duration-700" />
-            <h3 className="font-black text-lg mb-6 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-indigo-300" /> Insights de Carreira
+          <div className="bg-indigo-600 p-8 rounded-[40px] text-white shadow-2xl shadow-indigo-200 relative overflow-hidden">
+            <Sparkles className="absolute -right-4 -top-4 w-32 h-32 opacity-10" />
+            <h3 className="font-black text-lg mb-6 flex items-center gap-2 italic uppercase">
+              <TrendingUp className="w-5 h-5 text-indigo-300" /> Career AI
             </h3>
             <div className="space-y-4">
               {sugestoesIA.map((item, i) => (
@@ -81,40 +222,33 @@ const PerfilPage = () => {
               ))}
             </div>
           </div>
-
-          {/* Card Currículo Estruturado */}
-          <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm">
-            <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-indigo-600" /> Documentos
-            </h3>
-            <div className="border-2 border-dashed border-indigo-50 bg-indigo-50/30 rounded-2xl p-6 text-center group cursor-pointer hover:bg-indigo-50 transition-colors">
-              <div className="bg-white w-10 h-10 rounded-xl shadow-sm flex items-center justify-center mx-auto mb-3">
-                <FileText className="w-5 h-5 text-indigo-600" />
-              </div>
-              <p className="text-[10px] text-gray-500 mb-3 font-black uppercase tracking-tighter">Currículo Atualizado 2026</p>
-              <button className="text-[10px] font-black text-indigo-600 hover:tracking-widest transition-all uppercase">Substituir PDF</button>
-            </div>
-          </div>
         </aside>
 
         {/* --- COLUNA PRINCIPAL --- */}
         <main className="lg:col-span-8 space-y-8">
-
-          {/* Dashboard de Status */}
           <ApplicationDashboard applications={applications} totalCount={totalCount} />
 
-          {/* Cards de Expansão (IA & Notificações) */}
+          <div className="bg-white p-10 rounded-[40px] border border-gray-100 shadow-sm relative group">
+            <div className="absolute top-10 right-10 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => setIsEditModalOpen(true)} className="text-indigo-600 text-[10px] font-black uppercase tracking-widest">Editar Bio</button>
+            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-6 flex items-center gap-2">
+              <FileText className="w-4 h-4" /> Sobre a sua Trajetória
+            </h3>
+            <p className="text-gray-600 font-bold leading-relaxed text-lg italic">
+              "{profile?.bio || "Sua biografia profissional ainda não foi escrita. Clique em editar para contar sua história e atrair os melhores recrutadores."}"
+            </p>
+          </div>
+
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm group hover:border-indigo-600 transition-all">
               <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500">
                 <GraduationCap className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-black text-gray-900 mb-2">Cursos recomendados</h3>
-              <p className="text-sm text-gray-500 font-medium leading-relaxed mb-6">
-                Baseado no seu histórico, você teria 90% mais chances com certificação em <b>Metodologias Ágeis</b>.
-              </p>
+              <h3 className="text-xl font-black text-gray-900 mb-2 italic">Skill Academy</h3>
+              <p className="text-sm text-gray-500 font-bold mb-6">Cursos recomendados para seu perfil.</p>
               <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest cursor-pointer group-hover:gap-4 transition-all">
-                Ver recomendações <ChevronRight className="w-4 h-4" />
+                Explorar Trilhas <ChevronRight className="w-4 h-4" />
               </div>
             </div>
 
@@ -122,17 +256,151 @@ const PerfilPage = () => {
               <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 mb-6 group-hover:bg-green-600 group-hover:text-white transition-all duration-500">
                 <Bell className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-black text-gray-900 mb-2">Alertas ativos</h3>
-              <p className="text-sm text-gray-500 font-medium leading-relaxed mb-6">
-                Monitorando novas vagas para <b>{user?.profile?.ocupation || 'sua área'}</b> em tempo real.
-              </p>
+              <h3 className="text-xl font-black text-gray-900 mb-2 italic">Alertas de Vaga</h3>
+              <p className="text-sm text-gray-500 font-bold mb-6">Monitorando 24h para você.</p>
               <div className="flex items-center gap-2 text-green-600 font-black text-xs uppercase tracking-widest cursor-pointer group-hover:gap-4 transition-all">
-                Configurar Alertas <ChevronRight className="w-4 h-4" />
+                Ver Oportunidades <ChevronRight className="w-4 h-4" />
               </div>
             </div>
           </div>
         </main>
       </div>
+
+      {/* --- MODAL DE EDIÇÃO MULTI-STEP --- */}
+      <AnimatePresence>
+        {isEditModalOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsEditModalOpen(false)} className="absolute inset-0 bg-gray-900/80 backdrop-blur-md" />
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 40 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 40 }} className="bg-white w-full max-w-2xl rounded-[48px] shadow-2xl relative z-10 overflow-hidden">
+              <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                <div className="flex items-center gap-3">
+                  <div className="bg-indigo-600 p-2 rounded-xl text-white"><User className="w-4 h-4" /></div>
+                  <h2 className="text-xl font-black uppercase italic tracking-tighter">Dados do Trabalhador</h2>
+                </div>
+                <button onClick={() => setIsEditModalOpen(false)} className="p-3 hover:bg-white rounded-full transition-colors bg-white/50 border border-gray-100"><X className="w-5 h-5" /></button>
+              </div>
+
+              <form onSubmit={handleSave} className="p-10 max-h-[75vh] overflow-y-auto space-y-8 custom-scrollbar">
+
+                {/* Alerta de erro no topo do form se houver erros de campo */}
+                {Object.keys(fieldErrors).length > 0 && (
+                  <div className="bg-red-50 border border-red-100 p-4 rounded-2xl flex items-center gap-3 text-red-600 text-xs font-black uppercase tracking-widest animate-pulse">
+                    <AlertCircle className="w-5 h-5" />
+                    Existem campos obrigatórios pendentes abaixo
+                  </div>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Primeiro Nome</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={e => setFormData({ ...formData, name: e.target.value })}
+                      className={`w-full bg-gray-50 border-2 rounded-[20px] py-4 px-6 font-bold outline-none transition-all ${hasError('name') ? 'border-red-500 bg-red-50' : 'border-transparent focus:border-indigo-600 focus:bg-white'}`}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Sobrenome</label>
+                    <input
+                      type="text"
+                      value={formData.last_name}
+                      onChange={e => setFormData({ ...formData, last_name: e.target.value })}
+                      className={`w-full bg-gray-50 border-2 rounded-[20px] py-4 px-6 font-bold outline-none transition-all ${hasError('last_name') ? 'border-red-500 bg-red-50' : 'border-transparent focus:border-indigo-600 focus:bg-white'}`}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">E-mail Profissional</label>
+                    <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-[20px] py-4 px-6 font-bold outline-none transition-all" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Profissão Atual</label>
+                    <input type="text" value={formData.ocupation} onChange={e => setFormData({ ...formData, ocupation: e.target.value })} required className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-[20px] py-4 px-6 font-bold outline-none transition-all" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Sua Bio (Resumo Profissional)</label>
+                  <textarea rows={4} value={formData.bio} onChange={e => setFormData({ ...formData, bio: e.target.value })} className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-[20px] py-4 px-6 font-bold outline-none transition-all resize-none" />
+                </div>
+
+                <div className="pt-6 border-t border-gray-100 space-y-6">
+                  <h4 className="text-[11px] font-black uppercase text-indigo-600 tracking-[0.3em]">Onde você mora?</h4>
+
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-gray-400 ml-1">Cidade</label>
+                      <input
+                        type="text"
+                        value={formData.endereco.cidade}
+                        onChange={e => setFormData({ ...formData, endereco: { ...formData.endereco, cidade: e.target.value } })}
+                        className={`w-full bg-gray-50 border-2 rounded-[20px] py-4 px-6 font-bold outline-none transition-all ${hasError('cidade', 'endereco') ? 'border-red-500 bg-red-50' : 'border-transparent focus:border-indigo-600 focus:bg-white'}`}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-gray-400 ml-1">UF (Estado)</label>
+                      <input
+                        type="text"
+                        maxLength={2}
+                        value={formData.endereco.estado}
+                        onChange={e => setFormData({ ...formData, endereco: { ...formData.endereco, estado: e.target.value.toUpperCase() } })}
+                        className={`w-full bg-gray-50 border-2 rounded-[20px] py-4 px-6 font-bold outline-none transition-all ${hasError('estado', 'endereco') ? 'border-red-500 bg-red-50' : 'border-transparent focus:border-indigo-600 focus:bg-white'}`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-gray-400 ml-1">Rua / Logradouro</label>
+                      <input
+                        type="text"
+                        value={formData.endereco.logradouro}
+                        onChange={e => setFormData({ ...formData, endereco: { ...formData.endereco, logradouro: e.target.value } })}
+                        className={`w-full bg-gray-50 border-2 rounded-[20px] py-4 px-6 font-bold outline-none transition-all ${hasError('logradouro', 'endereco') ? 'border-red-500 bg-red-50' : 'border-transparent focus:border-indigo-600 focus:bg-white'}`}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-gray-400 ml-1">CEP</label>
+                      <input
+                        type="text"
+                        placeholder="00.000-000"
+                        value={formData.endereco.cep}
+                        onChange={e => setFormData({
+                          ...formData,
+                          endereco: { ...formData.endereco, cep: formatCEP(e.target.value) }
+                        })}
+                        className={`w-full bg-gray-50 border-2 rounded-[20px] py-4 px-6 font-bold outline-none transition-all ${hasError('cep', 'endereco')
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-transparent focus:border-indigo-600 focus:bg-white'
+                          }`}
+                      />
+                      {hasError('cep', 'endereco') && (
+                        <span className="text-[10px] text-red-500 font-bold ml-2 italic">
+                          CEP obrigatório ou inválido
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="w-full bg-gray-900 text-white py-6 rounded-[28px] font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 hover:bg-indigo-600 transition-all shadow-2xl shadow-indigo-100 disabled:opacity-50"
+                >
+                  {isSaving ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
+                  {isSaving ? "Processando..." : "Salvar Dados do Perfil"}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

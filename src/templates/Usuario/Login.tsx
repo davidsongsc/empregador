@@ -36,57 +36,65 @@ const LoginUser = () => {
   const [error, setError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
 
+  useEffect(() => {
+    const savedWhatsapp = localStorage.getItem("saved_whatsapp");
+    const savedCountry = localStorage.getItem("saved_country");
 
+    if (savedWhatsapp) {
+      setWhatsapp(savedWhatsapp);
+    }
+    if (savedCountry) {
+      setCountryCode(savedCountry);
+    }
+  }, []);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // 1. Validação básica
     if (!whatsapp || !password) {
       setError("Informe WhatsApp e senha");
       return;
     }
 
     setLoading(true);
-
-    // 2. Formatação do número (DDI + Número limpo)
     const fullNumber = `${countryCode}${whatsapp.replace(/\D/g, "")}`;
 
     try {
-      // 3. Chamada de login
-      // Esta função deve retornar o objeto com os tokens (access/refresh)
       const res = await login(fullNumber, password, rememberMe);
 
-      // Verificamos se a resposta foi positiva
       if (res?.ok === true) {
-        // ADICIONE ESTA PAUSA DE 100ms
-        // Isso dá tempo ao navegador para processar o Set-Cookie recebido no login
+        // Se o usuário marcou "Lembrar", salvamos o WhatsApp no disco
+        if (rememberMe) {
+          localStorage.setItem("saved_whatsapp", whatsapp);
+          localStorage.setItem("saved_country", countryCode);
+        }
+
+        // Pausa estratégica para o navegador processar os Cookies HttpOnly
         await new Promise(resolve => setTimeout(resolve, 150));
 
+        // Atualiza o estado global do usuário no Context
         await refreshSession();
+
+        // Redireciona para a área logada
         router.push("/vagas");
-        return;
+      } else {
+        // Erro de negócio (ex: senha errada retornada com status 200)
+        setError(res?.message || "Credenciais incorretas ou conta inativa.");
       }
 
-      // Se o backend retornou 200 mas com erro de negócio ou ok: false
-      setError(res?.message || "Credenciais incorretas ou conta inativa.");
-
     } catch (err: any) {
-      // 6. Tratamento de erros de rede ou backend (401, 403, 500)
-      console.error("Erro no submit:", err);
-
-      // Captura a mensagem de erro vinda do Django (ex: { "detail": "..." })
+      console.error("Erro no login:", err);
       const apiErrorMessage = err.response?.data?.detail
         || err.response?.data?.message
-        || "Ocorreu um erro ao tentar entrar. Tente novamente.";
-
+        || "Erro ao conectar com o servidor.";
       setError(apiErrorMessage);
     } finally {
+      // O finally agora apenas desativa o spinner do botão
       setLoading(false);
-      router.push("/");
+      // NÃO coloque router.push aqui!
     }
   };
-
 
   useEffect(() => {
     if (isAuthenticated && !loading) {

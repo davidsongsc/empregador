@@ -1,9 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { checkSession, logout } from "@/services/auth";
-import SkeletonJob from "@/components/Loading";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import Header from "@/components/Header";
 import { UserData } from "@/interfaces/userData";
@@ -22,37 +21,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
-  async function refreshSession() {
+  // refreshSession é a função que "consulta" o Remember Me indiretamente
+  const refreshSession = useCallback(async () => {
     try {
+      // O browser envia os cookies automaticamente aqui
       const data = await checkSession();
-      console.log("Sessão recuperada:", data); // Verifique isso no console da Vercel
-      setUser(data.user);
+      const userData = data.user;
+      
+      setUser(userData);
+
+      // --- REGRA DE REDIRECIONAMENTO ---
+      // Se logado sem nome no perfil, obriga a ir para /perfil
+      if (userData && !userData.profile?.name && pathname !== "/perfil") {
+        router.push("/perfil");
+      }
     } catch (err) {
-      console.error("Falha na sessão em produção:", err);
+      // Se não houver cookie (sessão expirada), user vira null
       setUser(null);
-      // Em produção, se der erro aqui, o middleware da Vercel pode estar limpando os cookies
+      
+      // Opcional: Proteger rotas privadas aqui ou via Middleware
+      const privateRoutes = ["/perfil", "/dashboard", "/vagas/postar"];
+      if (privateRoutes.some(route => pathname.startsWith(route))) {
+        router.push("/login");
+      }
     } finally {
+      // O loading só vira false APÓS a tentativa de recuperar sessão
       setLoading(false);
     }
-  }
+  }, [pathname, router]);
 
-  async function logoutUser() {
+  const logoutUser = async () => {
     try {
       setLoading(true);
-      await logout();
+      await logout(); // Backend limpa os Cookies HttpOnly
     } catch (err) {
-      console.error("Erro ao deslogar no servidor", err);
+      console.error("Erro ao deslogar", err);
     } finally {
       setUser(null);
       setLoading(false);
-      router.push("/login"); // Garante que o usuário saia da página protegida
+      router.push("/login");
     }
-  }
+  };
 
+  // Inicialização única ao montar o app
   useEffect(() => {
     refreshSession();
-  }, []);
+  }, []); // Removido refreshSession da dependência para evitar disparos em loop
 
   return (
     <AuthContext.Provider
@@ -64,21 +80,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logoutUser,
       }}
     >
-      {/* Se estiver carregando a sessão pela primeira vez, 
-        mostramos a animação de loading para evitar que o 
-        usuário veja flash de conteúdo não autorizado.
+      {/* ESTADO DE CARREGAMENTO GLOBAL:
+          Se o usuário tiver o "Remember Me" ativo, este spinner aparecerá 
+          por alguns milissegundos enquanto o cookie é validado.
       */}
-      {loading ? <>
-        <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
-          <Header />
-          <LoadingSpinner />
-        </div></> : children}
+      {loading ? (
+        <div className="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center space-y-4">
+          <div className="opacity-10 scale-75">
+             <Header />
+          </div>
+          <div className="flex flex-col items-center gap-4">
+            <LoadingSpinner />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 animate-pulse">
+              Autenticando...
+            </span>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  if (!ctx) throw new Error("useAuth deve ser usado dentro de um AuthProvider");
   return ctx;
 }
