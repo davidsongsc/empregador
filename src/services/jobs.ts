@@ -3,7 +3,9 @@ import { api } from "@/lib/api";
 export type Job = {
   uid: string;
   role_details: { name: string, category: string } | null;
+  tipo_vaga_display: string | null;
   cargo_exibicao: string;
+  tipo_vaga: string;
   titulo_personalizado: string | null;
   salario: number | null;
   turno: string;

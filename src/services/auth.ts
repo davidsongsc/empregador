@@ -46,3 +46,11 @@ export async function checkSession() {
         credentials: "include", // OBRIGATÓRIO: Para enviar o cookie 'access'
     });
 }
+
+export async function forgotPassword(identifier: string) {
+    // Ajuste o endpoint conforme sua URL no Django
+    return await api("/auth/password-reset/", {
+        method: "POST",
+        body: JSON.stringify({ whatsapp_number: identifier }),
+    }, true); // Rota pública
+}
