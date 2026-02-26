@@ -2,11 +2,14 @@ import { api } from "@/lib/api";
 
 export type Job = {
   uid: string;
-  cargo: string;
+  role_details: { name: string, category: string } | null;
+  cargo_exibicao: string;
+  titulo_personalizado: string | null;
   salario: number | null;
   turno: string;
-  empresa: string | null;
-  local: string;
+  company: string | null;
+  empresa_nome: string;
+  endereco: { cidade: string, estado: string } | null;
   descricao: string;
   requisitos: string[];
   beneficios: string[];

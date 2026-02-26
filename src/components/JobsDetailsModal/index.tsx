@@ -1,5 +1,5 @@
 "use client"
-import { CheckCircle2 } from "lucide-react"
+import { CheckCircle2, X, MapPin, Building2, Clock, Wallet, ArrowLeft } from "lucide-react"
 
 type Props = {
   open: boolean
@@ -12,94 +12,119 @@ const JobDetailsModal = ({ open, onClose, job, onApply }: Props) => {
   if (!open || !job) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 lg:hidden">
-      <div className="bg-white w-full h-full overflow-y-auto p-6">
-        <button
-          onClick={onClose}
-          className="text-sm text-gray-500 mb-4"
-        >
-          Voltar
-        </button>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm lg:hidden animate-in fade-in duration-300">
+      <div className="bg-[#F8F9FC] w-full h-full overflow-y-auto animate-in slide-in-from-bottom duration-500">
+        
+        {/* HEADER FIXO MOBILE */}
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-4 flex items-center justify-between">
+          <button
+            onClick={onClose}
+            className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-indigo-600 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" /> Voltar
+          </button>
+          <div className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter">
+            {job.role_details?.category || "Oportunidade"}
+          </div>
+        </div>
 
-        <h2 className="text-2xl font-bold text-gray-900">
-          {job.cargo}
-        </h2>
+        <div className="p-6 space-y-8 pb-32">
+          {/* TÍTULO E EMPRESA */}
+          <header>
+            <h2 className="text-3xl font-black text-gray-900 leading-tight">
+              {job.cargo_exibicao}
+            </h2>
+            <div className="mt-3 space-y-2">
+              <p className="flex items-center gap-2 text-indigo-600 font-bold">
+                <Building2 className="w-4 h-4 opacity-50" />
+                {job.empresa_nome}
+              </p>
+              <p className="flex items-center gap-2 text-gray-500 text-sm font-medium">
+                <MapPin className="w-4 h-4 opacity-50" />
+                {job.endereco ? `${job.endereco.cidade}, ${job.endereco.estado}` : (job.local || "Remoto")}
+              </p>
+            </div>
+          </header>
 
-        <p className="text-gray-600 mt-1">
-          <span className="font-semibold">{job.empresa}</span> • {job.local}
-        </p>
+          {/* CARDS DE INFORMAÇÕES RÁPIDAS */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <Wallet className="w-3.5 h-3.5 text-green-500" />
+                <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest">Salário</p>
+              </div>
+              <p className="font-black text-gray-800">
+                {job.salario ? `R$ ${job.salario}` : "A combinar"}
+              </p>
+            </div>
 
-        <div className="flex gap-4 mt-4">
-          <div className="flex-1 bg-gray-50 rounded-lg p-4">
-            <p className="text-[11px] uppercase font-semibold text-gray-400 mb-1">
-              Salário
-            </p>
-            <p className="font-semibold text-gray-800">
-              {job.salario ? `R$ ${job.salario}` : "A combinar"}
-            </p>
+            <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest">Jornada</p>
+              </div>
+              <p className="font-black text-gray-800">
+                {job.turno || "Indefinido"}
+              </p>
+            </div>
           </div>
 
-          <div className="flex-1 bg-gray-50 rounded-lg p-4">
-            <p className="text-[11px] uppercase font-semibold text-gray-400 mb-1">
-              Jornada
-            </p>
-            <p className="font-semibold text-gray-800">
-              {job.turno || "Indefinido"}
-            </p>
+          {/* DESCRIÇÃO */}
+          <div>
+            <h4 className="text-[11px] font-black text-gray-400 uppercase mb-4 tracking-[0.2em]">
+              Descrição da Vaga
+            </h4>
+            <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+              <p className="text-gray-600 leading-relaxed whitespace-pre-line text-sm font-medium">
+                {job.descricao}
+              </p>
+            </div>
           </div>
+
+          {/* REQUISITOS */}
+          <div>
+            <h4 className="text-[11px] font-black text-gray-400 uppercase mb-4 tracking-[0.2em]">
+              Requisitos
+            </h4>
+            <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-4">
+              {job.requisitos?.map((req: any, i: number) => (
+                <div key={i} className="flex items-start gap-3 text-sm text-gray-600 font-medium">
+                  <CheckCircle2 className="w-5 h-5 text-indigo-500 shrink-0" />
+                  <span>{typeof req === 'object' ? req.description : req}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* BENEFÍCIOS */}
+          {job.beneficios?.length > 0 && (
+            <div>
+              <h4 className="text-[11px] font-black text-gray-400 uppercase mb-4 tracking-[0.2em]">
+                Benefícios
+              </h4>
+              <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-4">
+                {job.beneficios.map((b: any, i: number) => (
+                  <div key={i} className="flex items-start gap-3 text-sm text-gray-600 font-medium">
+                    <div className="w-5 h-5 bg-green-50 rounded-full flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                    </div>
+                    <span>{typeof b === 'object' ? b.description : b}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* CTA FIXO NO RODAPÉ MOBILE */}
+        <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-100">
           <button
             onClick={onApply}
-            className="cursor-pointer w-1/4 bg-indigo-600 text-white py-3 rounded-lg font-semibold"
+            className="w-full bg-gray-900 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-gray-200 active:scale-95 transition-all"
           >
-            Candidatar-se
+            Candidatar-se Agora
           </button>
         </div>
-
-        <div className="mt-6">
-          <h4 className="text-sm font-black text-gray-900 uppercase mb-2 tracking-widest">
-            Sobre a vaga
-          </h4>
-          {/* A classe whitespace-pre-line resolve 90% dos casos */}
-          <p className="text-gray-600 leading-relaxed whitespace-pre-line text-sm">
-            {job.descricao}
-          </p>
-        </div>
-
-
-        {/* --- CORREÇÃO AQUI: BENEFÍCIOS --- */}
-        {job.beneficios?.length > 0 && (
-          <div className="mt-6">
-            <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">
-              Benefícios
-            </h4>
-            <ul className="space-y-2">
-              {job.beneficios.map((b: any, i: number) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                  <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
-                  {/* Mesma lógica para benefícios */}
-                  {typeof b === 'object' ? b.description : b}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {/* --- CORREÇÃO AQUI: REQUISITOS --- */}
-        <div className="mt-6">
-          <h4 className="text-sm font-semibold text-gray-900 uppercase mb-3">
-            Requisitos
-          </h4>
-          <ul className="space-y-2">
-            {job.requisitos?.map((req: any, i: number) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5" />
-                {/* Verifica se é objeto e pega a descrição, senão renderiza o valor puro */}
-                {typeof req === 'object' ? req.description : req}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-
       </div>
     </div>
   )

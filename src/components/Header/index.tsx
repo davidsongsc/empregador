@@ -43,7 +43,7 @@ const Header = () => {
                             className="left-3 top-1/2 -translate-y-1/8 w-8 h-8 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
 
                         <span className="text-2xl semibold font-black tracking-tight text-gray-900">
-                            Jobs<span className="text-gray-700">da</span><span className="text-indigo-600">hora</span>
+                            Freela<span className="text-indigo-600">Certo</span>
                         </span>
                     </Link>
 
@@ -51,8 +51,8 @@ const Header = () => {
                     {/* Menu Central + Busca */}
                     <div className="flex items-center gap-8">
                         <nav className="flex items-center gap-6 text-sm font-semibold text-gray-600">
-                            <Link href="/freelancer" className="hover:text-indigo-600 transition">Freelancer</Link>
                             <Link href="/vagas" className="hover:text-indigo-600 transition">Vagas</Link>
+                            <Link href="/freelancer" className="hover:text-indigo-600 transition">Freelancer</Link>
                             <Link href="/empresas" className="hover:text-indigo-600 transition">Empresas</Link>
                         </nav>
 

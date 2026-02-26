@@ -6,35 +6,7 @@ import SkeletonJob from "@/components/Loading";
 import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import Header from "@/components/Header";
-
-
-type UserProfile = {
-  name?: string;
-  last_name?: string;
-  full_name?: string;
-  ocupation?: string;
-  role?: string;
-  bio?: string;
-  foto?: string | null;
-  endereco?: {
-    id?: string;
-    cep?: string;
-    logradouro?: string;
-    numero?: string;
-    bairro?: string;
-    cidade?: string;
-    estado?: string;
-  };
-};
-
-type UserData = {
-  id: string;
-  whatsapp_number: string;
-  is_active?: boolean;
-  is_staff?: boolean;
-  profile?: UserProfile;
-  skills?: unknown[];
-};
+import { UserData } from "@/interfaces/userData";
 
 type AuthContextType = {
   user: UserData | null;
@@ -96,8 +68,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         usuário veja flash de conteúdo não autorizado.
       */}
       {loading ? <>
-        <Header />
-        <LoadingSpinner /> </> : children}
+        <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
+          <Header />
+          <LoadingSpinner />
+        </div></> : children}
     </AuthContext.Provider>
   );
 }
