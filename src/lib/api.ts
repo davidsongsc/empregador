@@ -10,12 +10,10 @@ interface ApiError {
 let isRefreshing = false;
 let refreshSubscribers: (() => void)[] = [];
 
-// Adiciona requisições à fila enquanto o refresh acontece
 function subscribeTokenRefresh(cb: () => void) {
     refreshSubscribers.push(cb);
 }
 
-// Avisa as requisições na fila que podem tentar novamente
 function onRefreshed() {
     refreshSubscribers.forEach((cb) => cb());
     refreshSubscribers = [];
@@ -28,10 +26,11 @@ export async function api(
     url: string,
     options: RequestInit = {},
     isPublic = false,
-    isRetry = false // Trava de segurança para evitar loops infinitos
+    isRetry = false 
 ) {
     const config: RequestInit = {
-        credentials: "include", // Essencial para lidar com Cookies HttpOnly
+        // "include" é vital para enviar os Cookies HttpOnly ao PythonAnywhere
+        credentials: "include", 
         ...options,
         headers: {
             "Content-Type": "application/json",
@@ -42,35 +41,36 @@ export async function api(
     try {
         const response = await fetch(`${API_URL}${url}`, config);
 
-        // 1. Caso de sucesso ou erros que não sejam 401
+        // 1. Caso de sucesso (200-299)
         if (response.ok) {
             if (response.status === 204) return null;
             return await response.json();
         }
 
         // 2. Tratamento de erro 401 (Unauthorized/Expired)
+        // Se isPublic for true, não tentamos refresh (ex: carregar vagas da home)
         if (response.status === 401 && !isPublic) {
             
-            // Se o erro vier da própria rota de LOGIN, não tenta refresh
+            // Se o erro vier da própria rota de LOGIN, lançamos o erro (usuário/senha errados)
             if (url.includes("/auth/login/")) {
                 const errorData = await response.json().catch(() => ({}));
                 throw errorData;
             }
 
-            // SEGUNDA TENTATIVA FALHOU? (Proteção contra loop infinito)
+            // Proteção contra Loop Infinito: se falhar no retry, desloga.
             if (isRetry) {
-                console.error("Loop detectado: O token continua inválido após refresh.");
+                console.error("Loop detectado: O token continua inválido após tentativa de renovação.");
                 handleLogoutRedirect();
                 throw new Error("Infinite loop blocked");
             }
 
-            // Se o erro vier da rota de REFRESH, significa que o refresh token morreu
+            // Se o erro vier da própria rota de REFRESH, a sessão expirou de vez.
             if (url.includes("/auth/refresh/")) {
                 handleLogoutRedirect();
                 throw new Error("Refresh token expired");
             }
 
-            // Se já existir um processo de renovação em curso, entra na fila
+            // Se já houver um refresh acontecendo, colocamos esta requisição na fila (Promise)
             if (isRefreshing) {
                 return new Promise((resolve) => {
                     subscribeTokenRefresh(() => {
@@ -79,7 +79,7 @@ export async function api(
                 });
             }
 
-            // --- INÍCIO DO PROCESSO DE REFRESH ---
+            // --- INÍCIO DO PROCESSO DE RENOVAÇÃO (REFRESH) ---
             isRefreshing = true;
 
             const refreshed = await refreshToken();
@@ -87,35 +87,38 @@ export async function api(
             isRefreshing = false;
 
             if (refreshed) {
-                onRefreshed(); // Libera quem estava na fila
-                return api(url, options, isPublic, true); // Tenta de novo com a trava isRetry=true
+                // Notifica todos que estavam esperando na fila
+                onRefreshed(); 
+                // Tenta novamente a requisição original com a trava isRetry=true
+                return api(url, options, isPublic, true); 
             } else {
                 handleLogoutRedirect();
                 throw new Error("Refresh failed");
             }
         }
 
-        // 3. Outros erros (400, 403, 404, 500...)
+        // 3. Tratamento de outros erros (400, 403, 404, 500...)
+        // Lança o objeto de erro para ser capturado pelo catch do seu componente/hook
         const errorData = await response.json().catch(() => ({}));
         throw errorData;
 
     } catch (error) {
-        // Se for um erro de rede ou o erro lançado acima
         throw error;
     }
 }
 
 /**
- * Chama o endpoint do Django para renovar o cookie de acesso
+ * Chama o endpoint do Django para renovar o cookie de acesso (Set-Cookie)
  */
 async function refreshToken(): Promise<boolean> {
     try {
         const res = await fetch(`${API_URL}/auth/refresh/`, {
             method: "POST",
             credentials: "include",
+            headers: { "Content-Type": "application/json" }
         });
 
-        // O Django deve responder 200 OK e enviar o Set-Cookie: access
+        // O Django deve responder 200 OK e enviar o cabeçalho Set-Cookie: access
         return res.ok;
     } catch (error) {
         console.error("Erro crítico no fetch de refresh:", error);
@@ -124,13 +127,15 @@ async function refreshToken(): Promise<boolean> {
 }
 
 /**
- * Redireciona para o login e limpa estados se necessário
+ * Redireciona para o login e limpa a sessão
  */
 function handleLogoutRedirect() {
     if (typeof window !== "undefined") {
-        // Evita redirecionar se já estiver na página de login
         if (!window.location.pathname.includes('/login')) {
-            window.location.href = "/login?session=expired";
+            // Pequeno delay para garantir que o redirecionamento não seja interrompido
+            setTimeout(() => {
+                window.location.href = "/login?session=expired";
+            }, 100);
         }
     }
 }

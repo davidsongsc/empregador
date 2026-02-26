@@ -54,29 +54,38 @@ const LoginUser = () => {
 
     setLoading(true);
 
-    // 2. Formatação do número: Concatenamos DDI + Número limpo
-    // Ex: "+55" + "1199999999" = "+551199999999"
-    const fullNumber = `${countryCode}${whatsapp}`;
+    // 2. Formatação do número (DDI + Número limpo)
+    const fullNumber = `${countryCode}${whatsapp.replace(/\D/g, "")}`;
 
     try {
-      // 3. Chamada de login enviando o 'rememberMe'
-      // Certifique-se de que sua função 'login' no services/auth.ts aceita esse 3º parâmetro
+      // 3. Chamada de login
+      // Esta função deve retornar o objeto com os tokens (access/refresh)
       const res = await login(fullNumber, password, rememberMe);
 
+      // Verificamos se a resposta foi positiva
       if (res?.ok === true) {
-        // 4. Atualiza o estado global do AuthContext
-        await refreshSession();
+        // ADICIONE ESTA PAUSA DE 100ms
+        // Isso dá tempo ao navegador para processar o Set-Cookie recebido no login
+        await new Promise(resolve => setTimeout(resolve, 150));
 
-        // 5. Redirecionamento
+        await refreshSession();
         router.push("/vagas");
         return;
       }
 
-      setError("Credenciais incorretas ou conta inativa.");
+      // Se o backend retornou 200 mas com erro de negócio ou ok: false
+      setError(res?.message || "Credenciais incorretas ou conta inativa.");
+
     } catch (err: any) {
-      // Tratamento de erro vindo do Axios ou Fetch
-      const message = err.response?.data?.detail || err.message || "Erro ao autenticar";
-      setError(message);
+      // 6. Tratamento de erros de rede ou backend (401, 403, 500)
+      console.error("Erro no submit:", err);
+
+      // Captura a mensagem de erro vinda do Django (ex: { "detail": "..." })
+      const apiErrorMessage = err.response?.data?.detail
+        || err.response?.data?.message
+        || "Ocorreu um erro ao tentar entrar. Tente novamente.";
+
+      setError(apiErrorMessage);
     } finally {
       setLoading(false);
     }
