@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react';
 import {
   Search, MapPin, Loader2, Briefcase,
   ChevronRight, Building2, Sparkles, Clock,
-  ArrowLeft, SearchX
+  ArrowLeft, SearchX,
+  Lock
 } from 'lucide-react';
 import { useJobs } from '@/hooks/useJobs';
 
@@ -175,12 +176,21 @@ const VagasPage = () => {
                       </div>
                       <div className="space-y-3 mb-8">
 
-                        {job.empresa_nome && (
-                          <div className="flex items-center gap-2 text-sm text-indigo-600 font-bold">
-                            <Building2 className="w-4 h-4 opacity-40" />
-                            {job.empresa_nome}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 text-sm font-bold">
+                          {job.empresa_nome ? (
+                            // Caso exista o nome da empresa
+                            <div className="flex items-center gap-2 text-indigo-600">
+                              <Building2 className="w-4 h-4 opacity-40" />
+                              {job.empresa_nome}
+                            </div>
+                          ) : (
+                            // Caso não exista (Confidencial)
+                            <div className="flex items-center gap-2 text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">
+                              <Lock className="w-3.5 h-3.5 opacity-70" />
+                              <span className="uppercase tracking-wider text-[10px]">Confidencial</span>
+                            </div>
+                          )}
+                        </div>
 
                         <div className="flex items-center gap-2 text-xs text-gray-400 font-medium">
                           <MapPin className="w-4 h-4 opacity-40" /> {job.endereco ? job.endereco.cidade : (job.local || "Remoto")}

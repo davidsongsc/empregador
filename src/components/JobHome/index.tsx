@@ -138,7 +138,7 @@ const JobHome = () => {
                   <span className="flex items-center gap-1.5 font-medium">
                     <MapPin className="w-3.5 h-3.5 text-gray-400" />
                     {/* Fallback para quando o endereço estruturado for null */}
-                    {job.endereco ? `${job.endereco.cidade}, ${job.endereco.estado}` : (job.endereco || "Remoto")}
+                    {job.endereco ? `${job.endereco.cidade}, ${job.endereco.estado}` : (job.endereco || "Presencial")}
                   </span>
 
                   <span className="flex items-center gap-1.5 font-medium">

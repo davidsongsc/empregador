@@ -3,6 +3,7 @@ export type UserProfile = {
   last_name?: string;
   full_name?: string;
   ocupation?: string;
+  email?: string;
   role?: string;
   bio?: string;
   foto?: string | null;
@@ -15,4 +16,11 @@ export type UserProfile = {
     cidade?: string;
     estado?: string;
   };
+  // AJUSTE AQUI: Definido como Array de objetos
+  empresas?: {
+    id: string;
+    name: string;
+    role: string;
+    is_active: boolean;
+  }[];
 };

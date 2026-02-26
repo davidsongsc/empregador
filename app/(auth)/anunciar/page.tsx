@@ -1,20 +1,21 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Briefcase, MapPin, DollarSign, Rocket, Plus, X,
   Loader2, Building2, AlertCircle, CheckCircle,
   ChevronRight, ChevronLeft, ShieldCheck, MessageSquare,
-  Mail, Search, Sparkles
+  Mail, Search, Sparkles,
+  Clock10
 } from 'lucide-react';
 import { usePostJob } from '@/hooks/usePostJob';
 import { useRoles } from '@/hooks/useRoles';
 import { createRole } from '@/services/roles'; // Importar o service de criação
-import Link from 'next/link';
-
-
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 const PostJobPage = () => {
+  const { user, isAuthenticated } = useAuth();
   const [step, setStep] = useState(1);
   const { postJob, loading: posting } = usePostJob();
   const { roles, loading: loadingRoles } = useRoles();
@@ -22,13 +23,10 @@ const PostJobPage = () => {
   const [roleSearch, setRoleSearch] = useState('');
   const [selectedRoleUid, setSelectedRoleUid] = useState('');
   const [isCreatingRole, setIsCreatingRole] = useState(false);
-
-  // Estados dos Campos
   const [tituloPersonalizado, setTituloPersonalizado] = useState('');
   const [salario, setSalario] = useState('');
-  const [companyUid, setCompanyUid] = useState('');
   const [local, setLocal] = useState('');
-  const [turno, setTurno] = useState('Presencial');
+  const [turno, setTurno] = useState('6/1 Noturno');
   const [descricao, setDescricao] = useState('');
   const [contatoOpt, setContatoOpt] = useState('plataforma');
 
@@ -37,6 +35,11 @@ const PostJobPage = () => {
   const [novoBeneficio, setNovoBeneficio] = useState('');
   const [requisitos, setRequisitos] = useState<string[]>(['Ensino Médio Completo']);
   const [novoRequisito, setNovoRequisito] = useState('');
+  const router = useRouter();
+  if (!isAuthenticated) {
+    router.push('/login');
+    return null;
+  }
 
   // Lógica de Filtragem do Autocomplete
   const filteredRoles = useMemo(() => {
@@ -57,8 +60,20 @@ const PostJobPage = () => {
       const newRole = await createRole(roleSearch);
       setSelectedRoleUid(newRole.uid);
       setRoleSearch(newRole.name);
-    } catch (err) {
-      alert("Erro ao criar cargo. Tente selecionar um existente.");
+      alert("Cargo criado com sucesso!");
+    } catch (err: any) {
+      console.error("Erro completo:", err);
+
+      // 1. Tenta pegar a mensagem detalhada do Django (ex: err.detail)
+      // 2. Se não houver, tenta ver se é um erro de validação de campo (ex: err.name)
+      // 3. Por fim, usa uma mensagem genérica ou o status
+      const errorMessage =
+        err.detail ||
+        (err.name ? `Nome: ${err.name}` : null) ||
+        err.message ||
+        "Erro desconhecido";
+
+      alert(`Erro ao criar cargo: ${errorMessage}`);
     } finally {
       setIsCreatingRole(false);
     }
@@ -72,10 +87,13 @@ const PostJobPage = () => {
   };
 
   const handleFinalizar = async () => {
+    // Pegamos o ID da primeira empresa ou string vazia se não existir
+    const companyId = user?.profile?.empresas?.[0]?.id || "";
+
     const payload = {
       role: selectedRoleUid,
       titulo_personalizado: tituloPersonalizado,
-      company: companyUid,
+      company: companyId, // Agora dinâmico e automático
       salario: salario ? parseFloat(salario) : null,
       turno,
       endereco: local.trim() ? { cidade: local } : null,
@@ -85,7 +103,13 @@ const PostJobPage = () => {
       metodo_contato: contatoOpt,
       perguntas: []
     };
-    await postJob(payload);
+
+    try {
+      await postJob(payload);
+      // Adicione aqui seu feedback de sucesso (ex: router.push ou toast)
+    } catch (err) {
+      console.error("Erro ao postar vaga:", err);
+    }
   };
 
   return (
@@ -172,10 +196,7 @@ const PostJobPage = () => {
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Título de Exibição (O que o candidato verá)</label>
                     <input value={tituloPersonalizado} onChange={(e) => setTituloPersonalizado(e.target.value)} placeholder="Ex: Vendedor de Loja (Shopping)" className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 font-bold outline-none focus:ring-4 focus:ring-indigo-50 transition-all" />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">UID da Empresa</label>
-                    <input value={companyUid} onChange={(e) => setCompanyUid(e.target.value)} placeholder="Cole o ID da empresa" className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 font-mono text-[10px] font-bold outline-none focus:ring-4 focus:ring-indigo-50 transition-all" />
-                  </div>
+
                 </div>
               </div>
               <div className="space-y-2">
@@ -194,7 +215,7 @@ const PostJobPage = () => {
               </div>
               <button
                 onClick={() => setStep(2)}
-                disabled={!selectedRoleUid }
+                disabled={!selectedRoleUid}
                 className="w-full bg-gray-900 text-white py-5 rounded-3xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-600 transition-all disabled:opacity-20 shadow-xl"
               >
                 Próxima Etapa <ChevronRight className="w-4 h-4" />
@@ -223,6 +244,13 @@ const PostJobPage = () => {
                   <div className="relative">
                     <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500" />
                     <input value={local} onChange={(e) => setLocal(e.target.value)} placeholder="Ex: Rio de Janeiro - RJ" className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-12 pr-6 font-bold outline-none focus:ring-4 focus:ring-indigo-50 transition-all" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Turno/Jornada</label>
+                  <div className="relative">
+                    <Clock10 className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500" />
+                    <input value={turno} onChange={(e) => setTurno(e.target.value)} placeholder="Noturno 6/1" className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-12 pr-6 font-bold outline-none focus:ring-4 focus:ring-indigo-50 transition-all" />
                   </div>
                 </div>
               </div>
