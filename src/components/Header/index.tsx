@@ -26,7 +26,7 @@ const Header = () => {
     return (
         <>
             {/* --- DESKTOP HEADER --- */}
-            <header className={`fixed top-0 w-full transition-all duration-300 z-40 px-6 py-8 hidden md:block ${isScrolled ? 'top-2' : 'top-0'}`}>
+            <header className={`fixed top-0 w-full transition-all duration-300 z-40 px-6 py-4 hidden md:block ${isScrolled ? 'top-2' : 'top-0'}`}>
                 <div className={`max-w-7xl mx-auto flex items-center justify-between px-6 py-3 rounded-2xl transition-all ${isScrolled
                     ? 'bg-white/60 backdrop-blur-md shadow-lg border border-white/20'
                     : 'bg-transparent'
@@ -35,15 +35,15 @@ const Header = () => {
                     {/* Logo */}
                     <Link href="/" className="flex-shrink-0 flex items-center gap-2 group">
                         <Image
-                            src="/img/logo.png"
+                            src="/img/logop.png"
                             alt="Logo"
                             width={0}
                             height={0}
                             sizes="40px"
-                            className="left-3 top-1/2 -translate-y-1/8 w-12 h-12 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                            className="left-3 top-1/2 -translate-y-1/8 w-8 h-8 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
 
-                        <span className="text-xl font-black tracking-tight text-gray-900">
-                            Em<span className="text-gray-700">pre</span><span className="text-indigo-600">gado</span>
+                        <span className="text-2xl semibold font-black tracking-tight text-gray-900">
+                            Freela<span className="text-indigo-600">Certo</span>
                         </span>
                     </Link>
 
@@ -51,7 +51,8 @@ const Header = () => {
                     {/* Menu Central + Busca */}
                     <div className="flex items-center gap-8">
                         <nav className="flex items-center gap-6 text-sm font-semibold text-gray-600">
-                            <Link href="/vagas" className="hover:text-indigo-600 transition">Explorar</Link>
+                            <Link href="/vagas" className="hover:text-indigo-600 transition">Vagas</Link>
+                            <Link href="/freelancer" className="hover:text-indigo-600 transition">Freelancer</Link>
                             <Link href="/empresas" className="hover:text-indigo-600 transition">Empresas</Link>
                         </nav>
 
@@ -76,10 +77,16 @@ const Header = () => {
                     {/* Ações */}
                     <div className="flex items-center gap-4 text-black">
                         {isAuthenticated ? (
-                            <div className="flex gap-4 items-center">
-                                <span>{user?.whatsapp_number}</span>
-                                <button className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-600 transition-colors shadow-md" onClick={logoutUser}>Sair</button>
-                            </div>
+                            <>
+                                <div className="flex gap-4 items-center">
+
+                                    <span>{user?.profile?.name}</span>
+                                    <Link href="/perfil" className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-600 transition-colors shadow-md">
+                                        Perfil
+                                    </Link>
+                                    <button className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-600 transition-colors shadow-md" onClick={logoutUser}>Sair</button>
+                                </div>
+                            </>
                         ) : (
                             <Link href="/login" className='text-black'>Entrar</Link>
                         )}

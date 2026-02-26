@@ -2,14 +2,14 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { checkSession, logout } from "@/services/auth";
-
-type User = {
-  id: string;
-  whatsapp_number: string;
-};
+import SkeletonJob from "@/components/Loading";
+import { useRouter } from "next/navigation";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import Header from "@/components/Header";
+import { UserData } from "@/interfaces/userData";
 
 type AuthContextType = {
-  user: User | null;
+  user: UserData | null;
   loading: boolean;
   isAuthenticated: boolean;
   refreshSession: () => Promise<void>;
@@ -19,14 +19,17 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   async function refreshSession() {
+    // Não precisamos de setLoading(true) aqui se for apenas uma checagem em segundo plano,
+    // mas na inicialização (useEffect) é essencial.
     try {
       const data = await checkSession();
       setUser(data.user);
-    } catch {
+    } catch (err) {
       setUser(null);
     } finally {
       setLoading(false);
@@ -34,8 +37,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function logoutUser() {
-    await logout();
-    setUser(null);
+    try {
+      setLoading(true);
+      await logout();
+    } catch (err) {
+      console.error("Erro ao deslogar no servidor", err);
+    } finally {
+      setUser(null);
+      setLoading(false);
+      router.push("/login"); // Garante que o usuário saia da página protegida
+    }
   }
 
   useEffect(() => {
@@ -52,15 +63,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logoutUser,
       }}
     >
-      {children}
+      {/* Se estiver carregando a sessão pela primeira vez, 
+        mostramos a animação de loading para evitar que o 
+        usuário veja flash de conteúdo não autorizado.
+      */}
+      {loading ? <>
+        <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
+          <Header />
+          <LoadingSpinner />
+        </div></> : children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }

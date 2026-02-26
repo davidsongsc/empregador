@@ -21,28 +21,28 @@ export async function registerUser(
     }
 }
 
-export async function login(
-    whatsappNumber: string,
-    password: string
-) {
+// Adicionamos o parâmetro 'remember' (opcional, com padrão false)
+export async function login(whatsappNumber: string, password: string, remember: boolean = false) {
     return api("/auth/login/", {
         method: "POST",
         credentials: "include",
         body: JSON.stringify({
             whatsapp_number: whatsappNumber,
             password,
+            remember, // Enviamos a flag para o Django
         }),
     });
 }
-
 export async function logout() {
+    // O logout precisa limpar os cookies no servidor
     return api("/auth/logout/", {
         method: "POST",
+        credentials: "include",
     });
 }
-
 export async function checkSession() {
     return api("/auth/me/", {
         method: "GET",
+        credentials: "include", // OBRIGATÓRIO: Para enviar o cookie 'access'
     });
 }

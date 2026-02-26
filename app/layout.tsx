@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   title: "Empregado - Portal de vagas",
   description: "Encontre as melhores oportunidades de emprego e impulsione sua carreira com nosso portal de vagas. Cadastre-se, explore ofertas e conquiste seu próximo desafio profissional.",
 }
-
+// incluso para evitar erros de CORS em rotas públicas, já que o frontend e backend estão em portas diferentes durante o desenvolvimento.
 export default function RootLayout({
   children,
 }: {
@@ -31,7 +31,7 @@ export default function RootLayout({
         <Script
           id="adsbygoogle-init"
           strategy="afterInteractive" 
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXX" // Substitua pelo seu ID
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
           crossOrigin="anonymous"
         />
       </head>

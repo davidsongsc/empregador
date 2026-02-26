@@ -9,12 +9,14 @@ import {
   Briefcase,
   ArrowRight,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Clock
 } from "lucide-react";
 import { useJobs } from "@/hooks/useJobs";
 import JobApplyModal from "../JobApplyModal";
 import JobDetailsModal from "../JobsDetailsModal";
 import AdBanner from "../AdBanner";
+import SkeletonJob from "../Loading";
 
 type StepId = "curriculo" | "dados" | "perguntas" | "upsell";
 
@@ -51,22 +53,23 @@ const JobHome = () => {
     "final",
   ].filter(Boolean);
 
-  // Efeito para atualizar o job selecionado ao mudar de página ou carregar
   useEffect(() => {
     if (paginatedJobs.length > 0) {
-      // Se não houver job selecionado ou o selecionado não estiver na página atual
-      if (!selectedJob || !paginatedJobs.find(j => j.uid === selectedJob?.uid)) {
-        setSelectedJob(paginatedJobs[0])
+      // Verificamos se o job atual ainda é válido para a nova lista
+      const isJobInCurrentPage = paginatedJobs.some(j => j.uid === selectedJob?.uid);
+
+      if (!selectedJob || !isJobInCurrentPage) {
+        setSelectedJob(paginatedJobs[0]);
       }
     }
-  }, [currentPage, paginatedJobs, selectedJob])
+    // Removemos 'selectedJob' daqui. 
+    // Queremos reagir apenas quando a página ou os dados da lista mudarem.
+  }, [currentPage, paginatedJobs]);
 
   // --- 2. RETORNOS CONDICIONAIS DE UI (DEPOIS DOS HOOKS) ---
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <h1 className="text-2xl font-bold animate-pulse">Carregando vagas...</h1>
-      </div>
+      <SkeletonJob />
     )
   }
 
@@ -104,7 +107,7 @@ const JobHome = () => {
         <AdBanner dataAdSlot="1234567890" />
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[680px]">
           {/* LISTA DE VAGAS */}
-          <div className="lg:col-span-5 flex flex-col gap-3 overflow-y-auto pr-2">
+          <div className="lg:col-span-5 flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar">
             {paginatedJobs.map(job => (
               <div
                 key={job.uid}
@@ -114,24 +117,35 @@ const JobHome = () => {
                     setOpenJobModal(true)
                   }
                 }}
-                className={`cursor-pointer border rounded-xl p-4 transition ${selectedJob?.uid === job.uid
-                  ? "border-indigo-600 bg-indigo-50"
-                  : "border-gray-200 hover:bg-gray-50"
+                className={`cursor-pointer border rounded-2xl p-5 transition-all duration-300 ${selectedJob?.uid === job.uid
+                  ? "border-indigo-600 bg-indigo-50 shadow-sm"
+                  : "border-gray-200 hover:border-indigo-200 hover:bg-gray-50/50"
                   }`}
               >
-                <h3 className="font-semibold text-gray-900 leading-snug">
-                  {job.cargo}
-                </h3>
-                <p className="text-sm text-gray-600 font-medium mt-1">
-                  {job.empresa}
+                <div className="flex justify-between items-start mb-1">
+                  <h3 className="font-bold text-gray-900 leading-tight">
+                    {/* Ajustado para cargo_exibicao */}
+                    {job.cargo_exibicao}
+                  </h3>
+                </div>
+
+                <p className="text-sm text-indigo-600 font-bold">
+                  {/* Ajustado para empresa_nome */}
+                  {job.empresa_nome}
                 </p>
-                <div className="flex flex-wrap gap-3 text-xs text-gray-500 mt-2">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" />
-                    {job.local}
+
+                <div className="flex flex-wrap gap-y-2 gap-x-4 text-[12px] text-gray-500 mt-3">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                    {/* Fallback para quando o endereço estruturado for null */}
+                    {job.endereco ? `${job.endereco.cidade}, ${job.endereco.estado}` : (job.endereco || "Remoto")}
                   </span>
-                  <span>{job.turno || "Indefinido"}</span>
-                  <span className="font-semibold text-green-700">
+                 
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Clock className="w-3.5 h-3.5 text-gray-400" />
+                    {job.turno || "A definir"}
+                  </span>
+                  <span className="font-black text-green-600 bg-green-50 px-2 py-0.5 rounded">
                     {job.salario ? `R$ ${job.salario}` : "A combinar"}
                   </span>
                 </div>
@@ -139,24 +153,24 @@ const JobHome = () => {
             ))}
 
             {/* PAGINAÇÃO */}
-            <div className="flex items-center justify-between pt-4 mt-auto">
+            <div className="flex items-center justify-between pt-6 mt-auto border-t border-gray-100">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="flex items-center gap-1 text-sm px-3 py-2 rounded-lg border disabled:opacity-50 cursor-pointer"
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
                 Anterior
               </button>
 
-              <span className="text-sm text-gray-500">
-                Página {currentPage} de {totalPages}
+              <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                {currentPage} / {totalPages}
               </span>
 
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="flex items-center gap-1 text-sm px-3 py-2 rounded-lg border disabled:opacity-50 cursor-pointer"
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition cursor-pointer"
               >
                 Próxima
                 <ChevronRight className="w-4 h-4" />
@@ -165,77 +179,83 @@ const JobHome = () => {
           </div>
 
           {/* DETALHES DA VAGA (DESKTOP) */}
-          <div className="hidden lg:flex lg:col-span-7 border border-gray-200 rounded-xl sticky top-24 bg-white overflow-hidden">
-            <div className="flex flex-col h-full w-full p-8">
-              <header className="space-y-1">
-                <h4 className="text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">
-                  Sobre a vaga
-                </h4>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {selectedJob?.cargo}
-                </h2>
-              </header>
+          <div className="hidden lg:flex lg:col-span-7 border border-gray-100 rounded-[32px] sticky top-24 bg-white shadow-sm overflow-hidden">
+            {!selectedJob ? (
+              <div className="flex flex-col items-center justify-center w-full text-gray-400 p-10 text-center">
+                <Briefcase className="w-12 h-12 mb-4 opacity-20" />
+                <p className="font-medium">Selecione uma vaga para visualizar os detalhes</p>
+              </div>
+            ) : (
+              <div className="flex flex-col h-full w-full p-10">
+                <header className="relative">
+                  <div className="inline-block bg-indigo-100 text-indigo-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest mb-4">
+                    {selectedJob.role_details?.category || "Oportunidade"}
+                  </div>
+                  <h2 className="text-3xl font-black text-gray-900 leading-tight">
+                    {selectedJob.cargo_exibicao}
+                  </h2>
+                  <p className="text-lg text-gray-500 font-medium mt-1">{selectedJob.empresa_nome}</p>
+                </header>
 
-              <section className="flex-1 overflow-y-auto mt-8 space-y-8 pr-2">
-                <div>
-                  <p className="text-gray-600 leading-relaxed">
-                    {selectedJob?.descricao}
-                  </p>
-                </div>
+                <section className="grid grid-cols-2 gap-4 mt-8">
+                  <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                    <p className="text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest">Jornada</p>
+                    <p className="font-bold text-gray-800">{selectedJob.turno || "Indefinido"}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                    <p className="text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest">Remuneração</p>
+                    <p className="font-bold text-green-600">
+                      {selectedJob.salario ? `R$ ${selectedJob.salario}` : "A combinar"}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setOpen(true)}
+                    className="col-span-2 bg-gray-900 text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-100 transition-all duration-300 cursor-pointer mt-2"
+                  >
+                    Candidatar-se agora
+                  </button>
+                </section>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <section className="flex-1 overflow-y-auto mt-10 space-y-10 pr-4 custom-scrollbar">
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">
-                      Experiência & Requisitos
-                    </h4>
-                    <ul className="space-y-2">
-                      {selectedJob?.requisitos?.map((req: string, i: number) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                          <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5" />
-                          {req}
-                        </li>
-                      ))}
-                    </ul>
+                    <h4 className="text-[11px] font-black text-gray-400 mb-4 uppercase tracking-[0.2em]">Descrição da Oportunidade</h4>
+                    <div className="text-gray-600 leading-relaxed whitespace-pre-line text-sm">
+                      {selectedJob.descricao}
+                    </div>
                   </div>
 
-                  {selectedJob?.beneficios?.length > 0 && (
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
                     <div>
-                      <h4 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">
-                        Benefícios
-                      </h4>
-                      <ul className="space-y-2">
-                        {selectedJob.beneficios.map((benefit: string, i: number) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                            <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5" />
-                            {benefit}
+                      <h4 className="text-[11px] font-black text-gray-400 mb-5 uppercase tracking-[0.2em]">Requisitos</h4>
+                      <ul className="space-y-3">
+                        {selectedJob.requisitos?.map((req: any, i: number) => (
+                          <li key={i} className="flex items-start gap-3 text-sm text-gray-600 font-medium">
+                            <CheckCircle2 className="w-5 h-5 text-indigo-500 shrink-0" />
+                            {req.description}
                           </li>
                         ))}
                       </ul>
                     </div>
-                  )}
-                </div>
-              </section>
 
-              <section className="grid grid-cols-2 gap-4 mt-6">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-[11px] uppercase font-semibold text-gray-400 mb-1">Jornada</p>
-                  <p className="font-semibold text-gray-800">{selectedJob?.turno || "Indefinido"}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-[11px] uppercase font-semibold text-gray-400 mb-1">Salário</p>
-                  <p className="font-semibold text-gray-800">
-                    {selectedJob?.salario ? `R$ ${selectedJob.salario}` : "A combinar"}
-                  </p>
-                </div>
-              </section>
-
-              <button
-                onClick={() => setOpen(true)}
-                className="mt-6 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition cursor-pointer"
-              >
-                Candidatar-se
-              </button>
-            </div>
+                    {selectedJob.beneficios?.length > 0 && (
+                      <div>
+                        <h4 className="text-[11px] font-black text-gray-400 mb-5 uppercase tracking-[0.2em]">Benefícios</h4>
+                        <ul className="space-y-3">
+                          {selectedJob.beneficios.map((benefit: any, i: number) => (
+                            <li key={i} className="flex items-start gap-3 text-sm text-gray-600 font-medium">
+                              <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                              </div>
+                              {benefit.description}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </div>
+            )}
           </div>
         </section>
         <AdBanner dataAdSlot="0987654321" dataAdFormat="rectangle" />
