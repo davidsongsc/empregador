@@ -24,13 +24,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   async function refreshSession() {
-    // Não precisamos de setLoading(true) aqui se for apenas uma checagem em segundo plano,
-    // mas na inicialização (useEffect) é essencial.
     try {
       const data = await checkSession();
+      console.log("Sessão recuperada:", data); // Verifique isso no console da Vercel
       setUser(data.user);
     } catch (err) {
+      console.error("Falha na sessão em produção:", err);
       setUser(null);
+      // Em produção, se der erro aqui, o middleware da Vercel pode estar limpando os cookies
     } finally {
       setLoading(false);
     }
