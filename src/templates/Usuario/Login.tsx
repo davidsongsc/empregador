@@ -36,11 +36,6 @@ const LoginUser = () => {
   const [error, setError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated && !loading) {
-      router.push("/vagas");
-    }
-  }, [isAuthenticated, loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,8 +83,16 @@ const LoginUser = () => {
       setError(apiErrorMessage);
     } finally {
       setLoading(false);
+      router.push("/");
     }
   };
+
+
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      router.push("/vagas");
+    }
+  }, [isAuthenticated, loading]);
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-white mt-25">
