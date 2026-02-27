@@ -2,16 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Briefcase, User, Search, PlusCircle, X, Menu, LogOut, ChevronRight } from 'lucide-react';
+import { Briefcase, User, Search, PlusCircle, X, Menu, LogOut, ChevronRight, LayoutDashboard } from 'lucide-react';
 import Image from 'next/image';
 import { useAuthStore } from '@/store/useAuthStore';
-
 
 const Header = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isDockOpen, setIsDockOpen] = useState(false);
     const { user, isAuthenticated, logout } = useAuthStore();
+
+    const isRecruiter = user?.is_staff || (user?.profile?.empresas && user.profile.empresas.length > 0);
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -23,14 +24,12 @@ const Header = () => {
 
     return (
         <>
-            {/* --- DESKTOP HEADER --- */}
             <header className={`fixed top-0 w-full transition-all duration-500 z-50 hidden md:block px-4 ${isScrolled ? 'pt-2' : 'pt-4'}`}>
                 <div className={`max-w-7xl mx-auto flex items-center justify-between px-6 py-3 rounded-2xl transition-all duration-500 ${isScrolled
                         ? 'bg-white/90 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.05)] border border-white/40'
                         : 'bg-white/40 backdrop-blur-md border border-white/20'
                     }`}>
 
-                    {/* 1. Logo Section - Mantém sempre à esquerda */}
                     <div className="flex-1 flex justify-start">
                         <Link href="/" className="flex items-center gap-3 group transition-transform hover:scale-[1.02]">
                             <div className="relative w-10 h-10 flex items-center justify-center bg-indigo-600 rounded-xl shadow-indigo-100 shadow-lg group-hover:rotate-6 transition-all">
@@ -42,7 +41,6 @@ const Header = () => {
                         </Link>
                     </div>
 
-                    {/* 2. Navigation Central - Escondemos em telas muito pequenas, priorizamos aqui */}
                     <nav className="hidden lg:flex items-center gap-1 bg-gray-200/30 p-1 rounded-xl border border-gray-100/50">
                         {[
                             { name: 'Vagas', href: '/vagas' },
@@ -59,11 +57,7 @@ const Header = () => {
                         ))}
                     </nav>
 
-                    {/* 3. User Actions - Adaptável */}
                     <div className="flex-1 flex justify-end items-center gap-3">
-
-                        {/* INPUT DE BUSCA - Só aparece se a tela for "Extra Large" (>= 1280px) */}
-                        {/* Isso evita que ele bata no menu central em telas de 1024px */}
                         <div className="relative hidden xl:block group">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
                             <input
@@ -75,7 +69,16 @@ const Header = () => {
 
                         {isAuthenticated ? (
                             <div className="flex items-center gap-2 bg-white/50 p-1 rounded-xl border border-white shadow-sm">
-                                <Link href="/perfil" className="flex items-center gap-2 pl-3 pr-1 group">
+                                {isRecruiter && (
+                                    <Link 
+                                        href="/painel/minhas-vagas" 
+                                        className="p-2.5 hover:bg-indigo-50 text-indigo-600 rounded-lg transition-all group/dash ml-1"
+                                        title="Dashboard"
+                                    >
+                                        <LayoutDashboard className="w-4 h-4 group-hover/dash:scale-110 transition-transform" />
+                                    </Link>
+                                )}
+                                <Link href="/perfil" className={`flex items-center gap-2 pl-3 pr-1 group ${isRecruiter ? 'border-l border-gray-100 ml-1' : ''}`}>
                                     <div className="flex flex-col items-end">
                                         <span className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Olá,</span>
                                         <span className="text-xs font-black text-gray-800 leading-none capitalize">
@@ -109,7 +112,6 @@ const Header = () => {
                 </div>
             </header>
 
-            {/* --- MOBILE TOP BAR --- */}
             <div className="md:hidden fixed top-0 w-full flex justify-between items-center px-6 py-4 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-50">
                 <Link href="/" className="flex items-center gap-2">
                     <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100">
@@ -139,7 +141,6 @@ const Header = () => {
                 </div>
             </div>
 
-            {/* --- MOBILE SEARCH OVERLAY --- */}
             {isSearchOpen && (
                 <div className="fixed inset-0 bg-white z-[60] p-6 flex flex-col animate-in slide-in-from-bottom duration-500">
                     <div className="flex justify-between items-center mb-10">
@@ -167,12 +168,12 @@ const Header = () => {
                 </div>
             )}
 
-            {/* --- MOBILE FLOATING DOCK --- */}
             <div className="md:hidden fixed bottom-8 right-6 flex flex-col items-end z-50">
                 <div className={`flex flex-col gap-4 mb-6 transition-all duration-500 ${isDockOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-16 scale-50 pointer-events-none'
                     }`}>
                     {[
-                        { icon: PlusCircle, label: 'Postar Vaga', href: '/anunciar', color: 'bg-indigo-600 text-white' },
+                        ...(isRecruiter ? [{ icon: LayoutDashboard, label: 'Dashboard', href: '/painel/minhas-vagas', color: 'bg-indigo-600 text-white' }] : []),
+                        { icon: PlusCircle, label: 'Postar Vaga', href: '/anunciar', color: isRecruiter ? 'bg-white text-gray-900' : 'bg-indigo-600 text-white' },
                         { icon: Briefcase, label: 'Minhas Vagas', href: '/vagas', color: 'bg-white text-gray-900' },
                         { icon: User, label: 'Meu Perfil', href: '/perfil', color: 'bg-white text-gray-900' },
                     ].map((item, idx) => (
@@ -197,7 +198,6 @@ const Header = () => {
                 </button>
             </div>
 
-            {/* Backdrop */}
             {isDockOpen && (
                 <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-40 md:hidden animate-in fade-in duration-500" onClick={closeDock} />
             )}
