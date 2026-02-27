@@ -23,13 +23,15 @@ export async function registerUser(
 
 // Adicionamos o parâmetro 'remember' (opcional, com padrão false)
 export async function login(whatsappNumber: string, password: string, remember: boolean = false) {
+    // O retorno dessa função será o JSON { "ok": true } que o Django envia
+    // O 'await' no componente de Login espera o fim desta execução
     return api("/auth/login/", {
         method: "POST",
-        credentials: "include",
+        credentials: "include", // ESSENCIAL: Permite que o navegador receba o cookie Set-Cookie
         body: JSON.stringify({
             whatsapp_number: whatsappNumber,
             password,
-            remember, // Enviamos a flag para o Django
+            remember,
         }),
     });
 }
@@ -41,9 +43,11 @@ export async function logout() {
     });
 }
 export async function checkSession() {
+    // Esta função é chamada pelo useAuthStore.refresh()
+    // O 'await' aqui é o que garante que o user será preenchido antes do redirecionamento
     return api("/auth/me/", {
         method: "GET",
-        credentials: "include", // OBRIGATÓRIO: Para enviar o cookie 'access'
+        credentials: "include", // ESSENCIAL: Envia o cookie 'access' para o Django validar
     });
 }
 

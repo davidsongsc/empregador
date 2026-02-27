@@ -57,34 +57,30 @@ const LoginUser = () => {
     setError(null);
 
     try {
-      // 1. O login seta os cookies no navegador
       const fullNumber = `${countryCode}${whatsapp.replace(/\D/g, "")}`;
+
+      // 1. O 'await' aqui espera o Django enviar o cabeçalho Set-Cookie
       const res = await apiLogin(fullNumber, password, rememberMe);
 
-      if (res?.ok === true) {
-        // 1. Busca os dados do usuário
+      if (res?.ok) {
+        // 2. O 'await' aqui espera o navegador confirmar que o cookie existe
+        // e busca os dados do usuário para o Zustand
         const { refresh } = useAuthStore.getState();
         await refresh();
 
-        if (rememberMe) {
-          localStorage.setItem("saved_whatsapp", whatsapp);
-          localStorage.setItem("saved_country", countryCode);
-        }
+        toast.success("Login realizado!");
 
-        // 2. O PULO DO GATO PARA PRODUÇÃO:
-        // Primeiro damos o refresh para invalidar o cache do servidor (Header/Middleware)
+        // 3. AGORA SIM: O cookie já está assentado. 
+        // O router.refresh() avisa o Middleware que as coisas mudaram.
         router.refresh();
 
-        // 3. Usamos um pequeno delay para o Next.js processar a invalidação
         setTimeout(() => {
-          // replace é melhor que push no login para evitar que o "voltar" do navegador 
-          // retorne para o formulário de login
-          router.replace(destination);
+          // Em produção, window.location garante que o Middleware 
+          // re-execute a verificação do zero.
+          window.location.href = destination;
         }, 100);
-
-      } else {
-        setError(res?.message || "Credenciais incorretas.");
       }
+
     } catch (err: any) {
       const apiErrorMessage = err.message || "Erro de conexão.";
       setError(apiErrorMessage);
