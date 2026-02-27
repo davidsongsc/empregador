@@ -12,6 +12,13 @@ export interface JobResult {
   candidatos_count?: number;
   created_at?: string;
   empresa_nome?: string; // Útil para o feed
+  endereco?: {
+    cidade: string;
+    estado: string;
+    lagradouro: string;
+    cep: string;
+  };
+  salario?: number;
   descricao?: string;
   perguntas?: any[];
 }
