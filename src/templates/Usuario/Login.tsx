@@ -62,8 +62,7 @@ const LoginUser = () => {
       const res = await apiLogin(fullNumber, password, rememberMe);
 
       if (res?.ok === true) {
-        // 2. BUSCA O USUÁRIO (Já que o login não trouxe)
-        // O useAuthStore.refresh() usa a api.ts que já valida e salva no Store
+        // 1. Busca os dados do usuário
         const { refresh } = useAuthStore.getState();
         await refresh();
 
@@ -72,14 +71,16 @@ const LoginUser = () => {
           localStorage.setItem("saved_country", countryCode);
         }
 
-        //toast.success("Login realizado com sucesso!");
+        // 2. O PULO DO GATO PARA PRODUÇÃO:
+        // Primeiro damos o refresh para invalidar o cache do servidor (Header/Middleware)
+        router.refresh();
 
-        // 3. NAVEGAÇÃO SEGURA
-        // O timeout garante que o refresh() terminou de atualizar o Store
+        // 3. Usamos um pequeno delay para o Next.js processar a invalidação
         setTimeout(() => {
-          router.push(destination);
-          router.refresh(); // Garante que o Header Server-Side leia os novos cookies
-        }, 150);
+          // replace é melhor que push no login para evitar que o "voltar" do navegador 
+          // retorne para o formulário de login
+          router.replace(destination);
+        }, 100);
 
       } else {
         setError(res?.message || "Credenciais incorretas.");
