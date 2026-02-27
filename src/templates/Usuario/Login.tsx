@@ -1,5 +1,6 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { login as apiLogin } from "@/services/auth";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -14,7 +15,8 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { login } from "@/services/auth";
-import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/components/Notification";
+import { useAuthStore } from "@/store/useAuthStore";
 
 // Lista de países sugerida
 const COUNTRIES = [
@@ -25,9 +27,10 @@ const COUNTRIES = [
 ];
 
 const LoginUser = () => {
-  const { refreshSession, isAuthenticated } = useAuth();
+  const { setUser } = useAuthStore();
   const router = useRouter();
-
+  const searchParams = useSearchParams();
+  const destination = searchParams.get("from") || "/vagas";
   const [showPassword, setShowPassword] = useState(false);
   const [countryCode, setCountryCode] = useState("55"); // Estado para o país
   const [whatsapp, setWhatsapp] = useState("");
@@ -47,60 +50,48 @@ const LoginUser = () => {
       setCountryCode(savedCountry);
     }
   }, []);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     setError(null);
 
-    if (!whatsapp || !password) {
-      setError("Informe WhatsApp e senha");
-      return;
-    }
-
-    setLoading(true);
-    const fullNumber = `${countryCode}${whatsapp.replace(/\D/g, "")}`;
-
     try {
-      const res = await login(fullNumber, password, rememberMe);
+      // 1. O login seta os cookies no navegador
+      const fullNumber = `${countryCode}${whatsapp.replace(/\D/g, "")}`;
+      const res = await apiLogin(fullNumber, password, rememberMe);
 
       if (res?.ok === true) {
-        // Se o usuário marcou "Lembrar", salvamos o WhatsApp no disco
+        // 2. BUSCA O USUÁRIO (Já que o login não trouxe)
+        // O useAuthStore.refresh() usa a api.ts que já valida e salva no Store
+        const { refresh } = useAuthStore.getState();
+        await refresh();
+
         if (rememberMe) {
           localStorage.setItem("saved_whatsapp", whatsapp);
           localStorage.setItem("saved_country", countryCode);
         }
 
-        // Pausa estratégica para o navegador processar os Cookies HttpOnly
-        await new Promise(resolve => setTimeout(resolve, 150));
+        //toast.success("Login realizado com sucesso!");
 
-        // Atualiza o estado global do usuário no Context
-        await refreshSession();
+        // 3. NAVEGAÇÃO SEGURA
+        // O timeout garante que o refresh() terminou de atualizar o Store
+        setTimeout(() => {
+          router.push(destination);
+          router.refresh(); // Garante que o Header Server-Side leia os novos cookies
+        }, 150);
 
-        // Redireciona para a área logada
-        router.push("/vagas");
       } else {
-        // Erro de negócio (ex: senha errada retornada com status 200)
-        setError(res?.message || "Credenciais incorretas ou conta inativa.");
+        setError(res?.message || "Credenciais incorretas.");
       }
-
     } catch (err: any) {
-      console.error("Erro no login:", err);
-      const apiErrorMessage = err.response?.data?.detail
-        || err.response?.data?.message
-        || "Erro ao conectar com o servidor.";
+      const apiErrorMessage = err.message || "Erro de conexão.";
       setError(apiErrorMessage);
+      toast.error(apiErrorMessage);
     } finally {
-      // O finally agora apenas desativa o spinner do botão
       setLoading(false);
-      // NÃO coloque router.push aqui!
     }
   };
-
-  useEffect(() => {
-    if (isAuthenticated && !loading) {
-      router.push("/vagas");
-    }
-  }, [isAuthenticated, loading]);
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-white mt-25">
