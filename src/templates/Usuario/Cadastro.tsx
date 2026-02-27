@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation"; // Importar para redirecionar
-import { useAuth } from "@/contexts/AuthContext"; // Importar seu contexto
+import { toast } from "@/components/Notification";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   Briefcase,
   Phone,
@@ -14,9 +15,7 @@ import { registerUser } from "@/services/auth";
 
 const RegisterPage = () => {
   const router = useRouter();
-  const { refreshSession } = useAuth();
-
-  const [showPassword, setShowPassword] = useState(false);
+  const { setUser } = useAuthStore(); // Acesso direto à função de login do Zustand
   const [whatsapp, setWhatsapp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -27,18 +26,16 @@ const RegisterPage = () => {
     e.preventDefault();
     setError(null);
 
-    // Validações básicas de UI
+    // 1. Validações de UI (Mantidas para evitar requisições inúteis)
     if (password !== confirmPassword) {
       setError("As senhas não coincidem");
       return;
     }
-
     if (password.length < 8) {
       setError("A senha deve ter pelo menos 8 caracteres");
       return;
     }
-
-    if (!whatsapp || whatsapp.length < 11) {
+    if (!whatsapp || whatsapp.length < 10) {
       setError("Informe um número de WhatsApp válido");
       return;
     }
@@ -46,25 +43,35 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
-      // 1. Chama o backend (que cria o user e já seta o Cookie access)
-      const data = await registerUser(whatsapp, password);
-      console.log("User criado e logado:", data.id);
+      // 2. Chamada de Registro
+      // O backend deve retornar: { ok: true, user: { id, whatsapp, profile... } }
+      const res = await registerUser(whatsapp, password);
 
-      // 2. Avisa o AuthContext para buscar os dados do usuário usando o novo cookie
-      await refreshSession();
+      if (res?.user) {
+        // 3. PERSISTÊNCIA IMEDIATA NO ZUSTAND
+        // O Zustand salva no localStorage e o Header já atualiza instantaneamente
+        setUser(res.user);
 
-      // 3. Redireciona para a página interna
-      router.push("/vagas");
+        toast.success("Conta criada com sucesso!", "Bem-vindo!");
+
+        // 4. REDIRECIONAMENTO
+        // Como ele acabou de criar a conta, o nome no perfil estará vazio,
+        // então mandamos para /perfil para ele completar o cadastro.
+        router.push("/perfil");
+      }
 
     } catch (err: any) {
-      // Captura erros detalhados do Django (ex: WhatsApp já cadastrado)
+      console.error("Erro no cadastro:", err);
+
+      // A sua nova api.ts já formata os erros do Django no campo 'message' ou 'errors'
       const backendError =
         err.errors?.whatsapp_number?.[0] ||
-        err.errors?.password?.[0] ||
+        err.errors?.non_field_errors?.[0] ||
         err.message ||
-        "Erro ao criar conta. Tente novamente.";
+        "Erro ao criar conta.";
 
       setError(backendError);
+      toast.error(backendError);
     } finally {
       setLoading(false);
     }

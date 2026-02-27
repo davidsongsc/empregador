@@ -2,43 +2,61 @@
 
 import { useState, useEffect } from "react";
 import { getMyProfile, updateMyProfile } from "@/services/auth";
-import { useAuth } from "@/contexts/AuthContext";
 import { UserProfile } from "@/interfaces/userProfile";
+import { useAuthStore } from "@/store/useAuthStore";
+import { toast } from "@/components/Notification";
 
 export function useProfile() {
-  const { refreshSession } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Pegamos o refresh e o setUser do Store
+  const { refresh, setUser, user } = useAuthStore();
+  
+  // Inicializamos o perfil com o que já temos no cache do Store (Instantâneo!)
+  const [profile, setProfile] = useState<UserProfile | null>(user?.profile || null);
+  const [loading, setLoading] = useState(!user?.profile); // Se já tem cache, não mostra loading inicial
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Busca os dados do perfil ao carregar
+  // Busca os dados atualizados do servidor
   const fetchProfile = async () => {
     try {
-      setLoading(true);
+      // Se não houver perfil no cache, ativamos o loading
+      if (!profile) setLoading(true);
+      
       const data = await getMyProfile();
       setProfile(data);
+      
+      // Sincroniza o Store caso os dados do servidor sejam diferentes do cache
+      if (user) {
+        setUser({ ...user, profile: data });
+      }
     } catch (err: any) {
-      setError("Não foi possível carregar os dados do perfil.");
+      setError("Não foi possível carregar os dados atualizados.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Função para salvar alterações (incluindo o endereço aninhado)
   const saveProfile = async (data: any) => {
     try {
       setIsSaving(true);
       setError(null);
-      const updatedData = await updateMyProfile(data);
+      
+      // 1. Envia para o servidor
+      const updatedProfile = await updateMyProfile(data);
 
-      setProfile(updatedData);
+      // 2. Atualiza o estado local do Hook
+      setProfile(updatedProfile);
 
-      // Atualiza o contexto global (nome do user no header, etc)
-      await refreshSession();
+      // 3. ATUALIZAÇÃO ESTRATÉGICA: 
+      // Em vez de dar um refreshSession() (outra chamada API),
+      // atualizamos o Store manualmente com os dados que o servidor acabou de devolver.
+      if (user) {
+        setUser({ ...user, profile: updatedProfile });
+      }
 
-      return updatedData;
+      return updatedProfile;
     } catch (err: any) {
+      // A nova api.ts já traz o erro estruturado
       const msg = err.message || "Erro ao salvar alterações.";
       setError(msg);
       throw err;

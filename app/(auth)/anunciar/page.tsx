@@ -11,11 +11,11 @@ import {
 import { usePostJob } from '@/hooks/usePostJob';
 import { useRoles } from '@/hooks/useRoles';
 import { createRole } from '@/services/roles'; // Importar o service de criação
-import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const PostJobPage = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuthStore();
   const [step, setStep] = useState(1);
   const { postJob, loading: posting } = usePostJob();
   const { roles, loading: loadingRoles } = useRoles();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, FileText, Bell, ChevronRight,
@@ -10,22 +10,19 @@ import {
 
 import ApplicationDashboard from '@/components/ApplicationDashboard';
 import PerfilLoading from '@/components/PerfilLoading';
-import Notification from '@/components/Notification';
-import { useAuth } from '@/contexts/AuthContext';
+import { toast } from "@/components/Notification";
 import { useMyApplications } from '@/hooks/useMyApplications';
 import { useProfile } from '@/hooks/useProfile';
 import { uploadProfilePhoto } from '@/services/auth';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const PerfilPage = () => {
-  const { user, loading: authLoading, isAuthenticated, logoutUser, refreshSession } = useAuth();
+  const { logout, user, loading, isAuthenticated } = useAuthStore();
   const { profile, saveProfile, loading: profileLoading, isSaving } = useProfile();
   const { applications, loading: appsLoading, totalCount } = useMyApplications();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showProfileAlert, setShowProfileAlert] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null); // Erro para a notificação
   const [fieldErrors, setFieldErrors] = useState<any>({}); // Erros específicos por input
   const [isUploading, setIsUploading] = useState(false);
   const formatCEP = (value: string) => {
@@ -68,35 +65,31 @@ const PerfilPage = () => {
     }
   }, [profile]);
 
-  useEffect(() => {
-    if (!authLoading && isAuthenticated && !user?.profile?.name) {
-      const timer = setTimeout(() => setShowProfileAlert(true), 1200);
-      return () => clearTimeout(timer);
-    }
-  }, [authLoading, isAuthenticated, user]);
+
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFieldErrors({}); // Limpa erros anteriores
-    setErrorMsg(null);
+    setFieldErrors({});
 
     try {
+      // O saveProfile usa a nossa nova api() que já chama useAuthStore.getState().setUser()
       await saveProfile(formData);
-      setSuccessMsg("Perfil atualizado com sucesso!");
+
+      toast.success("Perfil atualizado com sucesso!");
       setIsEditModalOpen(false);
     } catch (err: any) {
-      // Log seguro para não travar o Next.js
-      console.log("Erro capturado:", err.message);
-
-      // O Django envia os erros dentro de um objeto. 
-      // Verifique se sua função api.ts anexa os erros em 'errors' ou 'data'
-      const errorsFromServer = err.errors || err.response?.data;
+      // A nova api.ts já formata o erro estruturado
+      const errorsFromServer = err.errors;
 
       if (errorsFromServer) {
         setFieldErrors(errorsFromServer);
-        setErrorMsg("Existem campos obrigatórios não preenchidos.");
+        const msg = "Existem campos obrigatórios não preenchidos.";
+
+        toast.error(msg);
       } else {
-        setErrorMsg(err.message || "Ocorreu um erro inesperado.");
+        const msg = err.message || "Ocorreu um erro inesperado.";
+
+        toast.error(msg);
       }
     }
   };
@@ -107,23 +100,27 @@ const PerfilPage = () => {
 
     try {
       setIsUploading(true);
-      await uploadProfilePhoto(file);
-      await refreshSession();
-      setSuccessMsg("Foto de perfil atualizada!");
-    } catch (err) {
-      console.error("Erro no upload", err);
+
+      // 1. O uploadProfilePhoto deve retornar o objeto user atualizado
+      const res = await uploadProfilePhoto(file);
+
+      // 2. REMOVIDO: await refreshSession(); 
+      // Não é mais necessário! O Store já foi atualizado pela api.ts ou pelo retorno do res.
+
+      toast.success("Foto de perfil atualizada!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao enviar foto.");
     } finally {
       setIsUploading(false);
     }
   };
-
   // Função auxiliar para checar se campo tem erro
   const hasError = (fieldName: string, nested?: string) => {
     if (nested) return !!fieldErrors[nested]?.[fieldName];
     return !!fieldErrors[fieldName];
   };
 
-  if (authLoading || appsLoading || profileLoading) return <PerfilLoading />;
+  if (loading || appsLoading || profileLoading) return <PerfilLoading />;
   if (!isAuthenticated) return null;
 
   const sugestoesIA = [
@@ -135,15 +132,6 @@ const PerfilPage = () => {
     <div className="min-h-screen bg-[#F8F9FC] pt-32 pb-20 px-4">
 
       {/* --- NOTIFICAÇÕES --- */}
-      <AnimatePresence mode="wait">
-        {(showProfileAlert || successMsg || errorMsg) && (
-          <Notification
-            title={successMsg ? "Sucesso!" : errorMsg ? "Atenção" : "Ação Necessária"}
-            message={successMsg || errorMsg || "Complete seu perfil para liberar todas as funcionalidades."}
-            onClose={() => { setShowProfileAlert(false); setSuccessMsg(null); setErrorMsg(null); }}
-          />
-        )}
-      </AnimatePresence>
 
       <div className="max-w-6xl mx-auto grid lg:grid-cols-12 gap-8">
         {/* --- COLUNA LATERAL --- */}
@@ -151,7 +139,7 @@ const PerfilPage = () => {
           <div className={`bg-white p-8 rounded-[40px] border transition-all duration-500 relative overflow-hidden group ${!profile?.name ? 'border-amber-200 ring-8 ring-amber-50 shadow-amber-100' : 'border-gray-100 shadow-sm'
             }`}>
             <div className="absolute top-0 right-0 p-4 z-20">
-              <button onClick={logoutUser} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+              <button onClick={logout} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
                 <LogOut className="w-5 h-5" />
               </button>
             </div>
@@ -283,12 +271,13 @@ const PerfilPage = () => {
               <form onSubmit={handleSave} className="p-10 max-h-[75vh] overflow-y-auto space-y-8 custom-scrollbar">
 
                 {/* Alerta de erro no topo do form se houver erros de campo */}
-                {Object.keys(fieldErrors).length > 0 && (
+                {Object.keys(fieldErrors).length > 0 &&
+
                   <div className="bg-red-50 border border-red-100 p-4 rounded-2xl flex items-center gap-3 text-red-600 text-xs font-black uppercase tracking-widest animate-pulse">
                     <AlertCircle className="w-5 h-5" />
                     Existem campos obrigatórios pendentes abaixo
                   </div>
-                )}
+                }
 
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-2">
@@ -405,4 +394,4 @@ const PerfilPage = () => {
   );
 };
 
-export default PerfilPage;
+export default React.memo(PerfilPage);

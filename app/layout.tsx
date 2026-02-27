@@ -5,6 +5,7 @@ import Script from 'next/script';
 import "./globals.css"
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { Notification } from "@/components/Notification";
 
 
 const geistSans = Geist({
@@ -41,6 +42,7 @@ export default function RootLayout({
         <AuthProvider>
           <Header />
           {children}
+          <Notification />
           <Footer />
         </AuthProvider>
 
