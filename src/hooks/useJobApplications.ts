@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { getJobApplications, updateApplicationStatus } from "@/services/applicationService";
+import { applicationService } from "@/services/applicationService";
 import { toast } from "@/components/Notification";
 
 export const useJobApplications = (jobId: string) => {
@@ -9,17 +9,21 @@ export const useJobApplications = (jobId: string) => {
 
     const fetchApplications = useCallback(async (isSilent = false) => {
         if (!jobId) return;
+
         try {
-            // isSilent evita que o loading de tela cheia apareça 
-            // toda vez que você apenas muda o status de um card
-            if (!isSilent) setLoading(true); 
-            
+            if (!isSilent) setLoading(true);
             setError(null);
-            const data = await getJobApplications(jobId);
-            setCandidates(data.results || []);
+
+            // Chamada usando o novo padrão do applicationService
+            const data = await applicationService.getJobApplications(jobId) as any;
+            // O axios com nosso interceptor já retorna o data direto, 
+            // mas como o Django envia paginação, pegamos o .results
+            setCandidates(data.results || data || []);
+
         } catch (err: any) {
             const msg = err.message || "Erro ao carregar candidatos";
             setError(msg);
+            console.log("Erro ao buscar candidaturas:", err);
             toast.error(msg);
         } finally {
             setLoading(false);
@@ -28,18 +32,19 @@ export const useJobApplications = (jobId: string) => {
 
     const changeStatus = async (applicationId: string, newStatus: string) => {
         try {
-            // 1. Executa a atualização no banco de dados
-            await updateApplicationStatus(applicationId, newStatus);
+            // 1. Atualização via service (Axios PATCH)
+            await applicationService.updateApplicationStatus(applicationId, newStatus);
 
             // 2. Notifica o sucesso
-            toast.success("Status atualizado!");
+            toast.success("Status atualizado com sucesso!");
 
-            // 3. Faz uma nova consulta à API para buscar os dados atualizados
-            // e desbloquear informações sensíveis (WhatsApp, Email, etc)
-            await fetchApplications(true); 
+            // 3. Silent Refresh: busca os dados novamente para liberar 
+            // os campos 'whatsapp', 'email' etc., que o Serializer desbloqueia no backend
+            await fetchApplications(true);
 
         } catch (err: any) {
-            toast.error("Falha ao atualizar status");
+            const msg = err.message || "Falha ao atualizar status";
+            toast.error(msg);
         }
     };
 
@@ -51,7 +56,7 @@ export const useJobApplications = (jobId: string) => {
         candidates,
         loading,
         error,
-        refresh: fetchApplications,
+        refresh: () => fetchApplications(false),
         changeStatus
     };
 };
