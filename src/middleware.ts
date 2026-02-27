@@ -6,7 +6,10 @@ export function middleware(request: NextRequest) {
 
   // 1. Tenta recuperar o token de acesso
   const hasAccess = request.cookies.get("access");
-  console.log("Cookie access presente?", !!hasAccess); // Isso aparecerá nos logs da Vercel
+  
+  // LOG: Verifique os logs no dashboard da Vercel para confirmar se o cookie chega aqui
+  console.log(`[Middleware] Rota: ${pathname} | Cookie presente: ${!!hasAccess}`);
+
   const isPrivateRoute =
     pathname.startsWith("/vagas") ||
     pathname.startsWith("/perfil") ||
@@ -20,27 +23,30 @@ export function middleware(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("from", pathname);
 
-    // Adicionamos um cabeçalho para evitar cache da página de redirecionamento
     const response = NextResponse.redirect(loginUrl);
-    response.headers.set('x-middleware-cache', 'no-cache');
+    
+    // Força o navegador a não cachear o redirecionamento (Evita o loop de login)
+    response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
     return response;
   }
 
   // --- REGRA 2: EVITAR LOGIN/CADASTRO SE JÁ LOGADO ---
   if (isAuthRoute && hasAccess) {
-    // Se o cara já está logado, forçamos a saída da página de login
     const response = NextResponse.redirect(new URL("/vagas", request.url));
-    // Limpamos o cache para garantir que o Next não tente mostrar o formulário de novo
-    response.headers.set('Cache-Control', 'no-store, max-age=0');
+    
+    // Garante que ao logar, o usuário não consiga voltar para a tela de login pelo "Back"
+    response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
     return response;
   }
 
-  // Se nada se aplicar, segue o fluxo normal
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
+    /*
+     * Match em todas as rotas exceto arquivos estáticos e pastas de sistema
+     */
     "/((?!api|_next/static|_next/image|favicon.ico|img|logop.png).*)",
   ],
 };
