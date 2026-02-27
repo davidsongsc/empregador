@@ -3,6 +3,7 @@ import { login as apiLogin } from "@/services/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Cookies from 'js-cookie';
 import {
   Briefcase,
   Lock,
@@ -69,7 +70,12 @@ const LoginUser = () => {
         await refresh();
 
         toast.success("Login realizado!");
-
+        Cookies.set('access', 'authenticated', {
+          expires: 7,
+          secure: true,
+          sameSite: 'lax',
+          path: '/'
+        });
         // 3. AGORA SIM: O cookie já está assentado. 
         // O router.refresh() avisa o Middleware que as coisas mudaram.
         router.refresh();

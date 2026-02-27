@@ -5,8 +5,12 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 1. Tenta recuperar o token de acesso
-  const hasAccess = request.cookies.get("access");
-  
+  const cookieStore = request.cookies;
+  const hasAccess = cookieStore.has("access"); // Tenta verificar a existência primeiro
+  const token = cookieStore.get("access")?.value;
+
+  console.log(`[Middleware] Rota: ${pathname} | Existe: ${hasAccess} | Token: ${token ? 'SIM' : 'NÃO'}`);
+
   // LOG: Verifique os logs no dashboard da Vercel para confirmar se o cookie chega aqui
   console.log(`[Middleware] Rota: ${pathname} | Cookie presente: ${!!hasAccess}`);
 
@@ -24,7 +28,7 @@ export function middleware(request: NextRequest) {
     loginUrl.searchParams.set("from", pathname);
 
     const response = NextResponse.redirect(loginUrl);
-    
+
     // Força o navegador a não cachear o redirecionamento (Evita o loop de login)
     response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
     return response;
@@ -33,7 +37,7 @@ export function middleware(request: NextRequest) {
   // --- REGRA 2: EVITAR LOGIN/CADASTRO SE JÁ LOGADO ---
   if (isAuthRoute && hasAccess) {
     const response = NextResponse.redirect(new URL("/vagas", request.url));
-    
+
     // Garante que ao logar, o usuário não consiga voltar para a tela de login pelo "Back"
     response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
     return response;
