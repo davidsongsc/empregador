@@ -60,37 +60,40 @@ const LoginUser = () => {
     try {
       const fullNumber = `${countryCode}${whatsapp.replace(/\D/g, "")}`;
 
-      // 1. O 'await' aqui espera o Django enviar o cabeçalho Set-Cookie
+      // 1. O res deve trazer os dados do usuário e, se não for HttpOnly, o token access
       const res = await apiLogin(fullNumber, password, rememberMe);
 
       if (res?.ok) {
-        // 2. O 'await' aqui espera o navegador confirmar que o cookie existe
-        // e busca os dados do usuário para o Zustand
-        const { refresh } = useAuthStore.getState();
-        await refresh();
+        // 2. Sincroniza o Zustand IMEDIATAMENTE com os dados da resposta
+        if (res.user) {
+          useAuthStore.getState().setUser(res.user);
+        }
+
+        // 3. Se o seu cookie NÃO for HttpOnly, salve o TOKEN REAL (JWT), não uma string fixa
+        if (res.access_token) {
+          Cookies.set('access', res.access_token, {
+            expires: 7,
+            path: '/',
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production'
+          });
+        }
 
         toast.success("Login realizado!");
-        Cookies.set('access', 'authenticated', {
-          expires: 7,
-          secure: true,
-          sameSite: 'lax',
-          path: '/'
-        });
-        // 3. AGORA SIM: O cookie já está assentado. 
-        // O router.refresh() avisa o Middleware que as coisas mudaram.
+
+        // 4. O segredo: router.refresh() força o Next.js a limpar o cache do servidor 
+        // e ler os novos cookies antes de mudar de página.
         router.refresh();
 
+        // 5. Use router.push em vez de window.location para uma transição suave,
+        // mas com um pequeno delay para garantir que o cookie foi "assentado" no browser.
         setTimeout(() => {
-          // Em produção, window.location garante que o Middleware 
-          // re-execute a verificação do zero.
-          window.location.href = destination;
-        }, 100);
+          router.push(destination || "/dashboard");
+        }, 150);
       }
-
     } catch (err: any) {
-      const apiErrorMessage = err.message || "Erro de conexão.";
-      setError(apiErrorMessage);
-      toast.error(apiErrorMessage);
+      setError(err.message || "Erro de conexão.");
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }

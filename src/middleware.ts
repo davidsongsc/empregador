@@ -4,15 +4,11 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Tenta recuperar o token de acesso
-  const cookieStore = request.cookies;
-  const hasAccess = cookieStore.has("access"); // Tenta verificar a existência primeiro
-  const token = cookieStore.get("access")?.value;
-
-  console.log(`[Middleware] Rota: ${pathname} | Existe: ${hasAccess} | Token: ${token ? 'SIM' : 'NÃO'}`);
-
-  // LOG: Verifique os logs no dashboard da Vercel para confirmar se o cookie chega aqui
-  console.log(`[Middleware] Rota: ${pathname} | Cookie presente: ${!!hasAccess}`);
+  // No Middleware do Next.js, o cookie deve ser lido via request.cookies
+  const hasAccess = request.cookies.has("access");
+  
+  // Log para depuração local (veja no terminal do VS Code, não no navegador)
+  console.log(`[Middleware] Path: ${pathname} | Autenticado: ${hasAccess}`);
 
   const isPrivateRoute =
     pathname.startsWith("/vagas") ||
@@ -22,25 +18,22 @@ export function middleware(request: NextRequest) {
 
   const isAuthRoute = pathname === "/login" || pathname === "/cadastro";
 
-  // --- REGRA 1: ACESSO ÀS ROTAS PRIVADAS ---
+  // --- REGRA 1: PROTEÇÃO DE ROTAS PRIVADAS ---
   if (isPrivateRoute && !hasAccess) {
     const loginUrl = new URL("/login", request.url);
+    // Preserva a rota original para redirecionar após o login
     loginUrl.searchParams.set("from", pathname);
 
     const response = NextResponse.redirect(loginUrl);
-
-    // Força o navegador a não cachear o redirecionamento (Evita o loop de login)
+    // Limpa qualquer cache de redirecionamento para evitar loops infinitos
     response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
     return response;
   }
 
-  // --- REGRA 2: EVITAR LOGIN/CADASTRO SE JÁ LOGADO ---
+  // --- REGRA 2: REDIRECIONAR SE JÁ LOGADO (EVITA TELA DE LOGIN) ---
   if (isAuthRoute && hasAccess) {
-    const response = NextResponse.redirect(new URL("/vagas", request.url));
-
-    // Garante que ao logar, o usuário não consiga voltar para a tela de login pelo "Back"
-    response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
-    return response;
+    // Se o usuário já tem o cookie, mandamos para o dashboard ou vagas
+    return NextResponse.redirect(new URL("/vagas", request.url));
   }
 
   return NextResponse.next();
@@ -49,8 +42,8 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match em todas as rotas exceto arquivos estáticos e pastas de sistema
+     * Matcher otimizado: ignora arquivos de sistema e pastas de mídia
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|img|logop.png).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|img|.*\\.png|.*\\.jpg).*)",
   ],
 };
