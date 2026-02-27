@@ -13,6 +13,7 @@ import { useRoles } from '@/hooks/useRoles';
 import { createRole } from '@/services/roles'; // Importar o service de criação
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import { toast } from '@/components/Notification';
 
 const PostJobPage = () => {
   const { user, isAuthenticated } = useAuthStore();
@@ -60,9 +61,10 @@ const PostJobPage = () => {
       const newRole = await createRole(roleSearch);
       setSelectedRoleUid(newRole.uid);
       setRoleSearch(newRole.name);
-      alert("Cargo criado com sucesso!");
+      toast.success("Cargo criado com sucesso!");
     } catch (err: any) {
       console.error("Erro completo:", err);
+      toast.error("Falha ao criar cargo. Tente novamente.");
 
       // 1. Tenta pegar a mensagem detalhada do Django (ex: err.detail)
       // 2. Se não houver, tenta ver se é um erro de validação de campo (ex: err.name)
