@@ -3,7 +3,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 /**
- * Função principal de API sincronizada com Zustand
+ * Função principal de API sincronizada com Zustand e Cookies HttpOnly
  */
 export async function api(
     url: string,
@@ -18,10 +18,13 @@ export async function api(
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     const config: RequestInit = {
-        credentials: "include", // Importante para Cookies HttpOnly
+        // ESSENCIAL: Permite receber e enviar cookies HttpOnly entre domínios
+        credentials: "include", 
         signal: controller.signal,
         ...options,
         headers: {
+            // Se for FormData, o navegador define o Boundary automaticamente. 
+            // Se for JSON, definimos manualmente.
             ...(isFormData ? {} : { "Content-Type": "application/json" }),
             ...options.headers,
         },
@@ -33,31 +36,33 @@ export async function api(
 
         // --- 1. SUCESSO ---
         if (response.ok) {
-            if (response.status === 204) return null;
+            if (response.status === 204) return { ok: true };
+            
             const data = await response.json();
 
             /**
              * SINCRONIZAÇÃO AUTOMÁTICA COM O STORE
-             * Se qualquer requisição retornar o objeto 'user', atualizamos o Store.
-             * Isso mantém o nome/foto sempre frescos sem esforço extra.
+             * Quando o Django retorna o objeto 'user' (ex: no checkSession),
+             * atualizamos o estado global instantaneamente.
              */
             if (data?.user) {
                 useAuthStore.getState().setUser(data.user);
             }
 
-            return data;
+            // Retornamos 'ok: true' para facilitar a lógica do componente de Login
+            return { ok: true, ...data };
         }
 
         // --- 2. TRATAMENTO DE ERRO 401 (SESSÃO) ---
         if (response.status === 401 && !isPublic) {
 
-            // Caso seja erro no login, não tentamos refresh
+            // Caso seja erro no login, não tentamos refresh (credenciais erradas)
             if (url.includes("/auth/login/")) {
                 const errorData = await response.json().catch(() => ({}));
-                throw { status: 401, errors: errorData, message: "Credenciais inválidas" };
+                throw { status: 401, errors: errorData, message: errorData.message || "Credenciais inválidas" };
             }
 
-            // Se for re-tentativa ou erro no próprio refresh, desloga geral
+            // Se for re-tentativa ou erro no próprio refresh, desloga
             if (isRetry || url.includes("/auth/refresh/")) {
                 handleGlobalLogout();
                 throw { status: 401, message: "Sessão expirada" };
@@ -79,6 +84,7 @@ export async function api(
             stopRefresh();
 
             if (refreshed) {
+                // Tenta novamente a requisição original agora que o cookie foi renovado
                 return api(url, options, isPublic, true);
             } else {
                 handleGlobalLogout();
@@ -90,7 +96,7 @@ export async function api(
         const errorData = await response.json().catch(() => ({}));
         throw {
             status: response.status,
-            message: errorData.detail || "Erro na requisição",
+            message: errorData.detail || errorData.message || "Erro na requisição",
             errors: errorData,
         };
 
@@ -98,8 +104,10 @@ export async function api(
         if (error.name === 'AbortError') {
             throw { status: 408, message: "Conexão lenta demais. Verifique seu sinal de internet." };
         }
+        // Se já for um erro formatado por nós, repassa
         if (error.status) throw error;
 
+        // Erro genérico de rede
         throw {
             status: 503,
             message: "Não foi possível conectar ao servidor.",
@@ -109,7 +117,7 @@ export async function api(
 }
 
 /**
- * Gerenciador de fila de refresh para evitar múltiplas chamadas simultâneas
+ * Gerenciador de fila de refresh
  */
 let refreshing = false;
 let subscribers: (() => void)[] = [];
@@ -124,11 +132,16 @@ const useRefreshManager = () => ({
     subscribe: (cb: () => void) => subscribers.push(cb)
 });
 
+/**
+ * Chama o endpoint de refresh do Django.
+ * O Django deve responder com um novo 'Set-Cookie' de acesso.
+ */
 async function refreshToken(): Promise<boolean> {
     try {
         const res = await fetch(`${API_URL}/auth/refresh/`, {
             method: "POST",
-            credentials: "include",
+            // IMPORTANTE: Necessário para enviar o cookie 'refresh' e receber o novo 'access'
+            credentials: "include", 
         });
         return res.ok;
     } catch {
@@ -137,11 +150,11 @@ async function refreshToken(): Promise<boolean> {
 }
 
 /**
- * Limpa o estado em todos os lugares e redireciona
+ * Limpa o estado e redireciona.
+ * O logout do Zustand deve limpar o localStorage.
  */
 function handleGlobalLogout() {
     if (typeof window !== "undefined") {
-        // Limpa Zustand (que por consequência limpa localStorage)
         useAuthStore.getState().logout(); 
         
         if (!window.location.pathname.includes('/login')) {
