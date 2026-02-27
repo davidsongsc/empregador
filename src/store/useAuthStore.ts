@@ -8,7 +8,7 @@ interface AuthState {
   user: UserData | null;
   isAuthenticated: boolean;
   loading: boolean;
-  isHydrated: boolean; // Novo: para saber quando o localStorage foi lido
+  isHydrated: boolean;
 
   setUser: (user: UserData | null) => void;
   setLoading: (loading: boolean) => void;
@@ -19,13 +19,12 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
-      loading: true,
+      loading: true, 
       isHydrated: false,
 
-      // Centralizamos a lógica de login/update aqui
       setUser: (user) => 
         set({ 
           user, 
@@ -41,10 +40,9 @@ export const useAuthStore = create<AuthState>()(
         try {
           await apiLogout();
         } finally {
-          // Limpa tudo de uma vez para evitar estados fantasmas
-          set({ user: null, isAuthenticated: false, loading: false });
           Cookies.remove('access', { path: '/' });
           localStorage.removeItem('freelacerto_auth_storage');
+          set({ user: null, isAuthenticated: false, loading: false });
           window.location.href = '/login';
         }
       },
@@ -52,9 +50,12 @@ export const useAuthStore = create<AuthState>()(
       refresh: async () => {
         try {
           const data = await checkSession();
-          // Se o servidor retornar user, o setUser acima será disparado pela api.ts
-          // mas garantimos a atualização aqui também por segurança
-          set({ user: data.user, isAuthenticated: !!data.user, loading: false });
+          if (data?.user) {
+            set({ user: data.user, isAuthenticated: true, loading: false });
+          } else {
+            // Se a API diz que não tem user, limpa tudo
+            set({ user: null, isAuthenticated: false, loading: false });
+          }
         } catch (err) {
           set({ user: null, isAuthenticated: false, loading: false });
         }
@@ -63,15 +64,23 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'freelacerto_auth_storage',
       storage: createJSONStorage(() => localStorage),
-      // Crucial: define o que o React deve carregar do disco
       partialize: (state) => ({ 
         user: state.user, 
         isAuthenticated: state.isAuthenticated 
       }),
-      // Avisa o app quando terminar de ler o localStorage
       onRehydrateStorage: () => (state) => {
-        state?.setHydrated(true);
-        state?.setLoading(false);
+        if (!state) return;
+
+        // Marca como hidratado
+        state.setHydrated(true);
+
+        /**
+         * REMOVIDO: state.setUser(null) baseado no cookie JS.
+         * MOTIVO: Se o cookie for HttpOnly, o JS não o vê e desloga o usuário por erro.
+         * Deixe que o AuthInitializer decida se deve limpar baseado no serverUser.
+         */
+        
+        state.setLoading(false);
       },
     }
   )
