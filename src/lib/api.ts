@@ -1,38 +1,25 @@
+import { useAuthStore } from "@/store/useAuthStore";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-interface ApiError {
-    status: number;
-    message: string;
-    errors?: any;
-}
-
-// --- CONTROLE DE REFRESH DE TOKEN ---
-let isRefreshing = false;
-let refreshSubscribers: (() => void)[] = [];
-
-function subscribeTokenRefresh(cb: () => void) {
-    refreshSubscribers.push(cb);
-}
-
-function onRefreshed() {
-    refreshSubscribers.forEach((cb) => cb());
-    refreshSubscribers = [];
-}
-
 /**
- * Função principal de API
+ * Função principal de API sincronizada com Zustand
  */
 export async function api(
     url: string,
     options: RequestInit = {},
     isPublic = false,
-    isRetry = false 
+    isRetry = false
 ) {
-    // AJUSTE: Detecta se o corpo é FormData para não forçar Content-Type JSON
     const isFormData = options.body instanceof FormData;
 
+    // Timeout de 15s para redes instáveis (3G/4G)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     const config: RequestInit = {
-        credentials: "include", // Vital para Cookies HttpOnly
+        credentials: "include", // Importante para Cookies HttpOnly
+        signal: controller.signal,
         ...options,
         headers: {
             ...(isFormData ? {} : { "Content-Type": "application/json" }),
@@ -42,105 +29,123 @@ export async function api(
 
     try {
         const response = await fetch(`${API_URL}${url}`, config);
+        clearTimeout(timeoutId);
 
-        // 1. SUCESSO
+        // --- 1. SUCESSO ---
         if (response.ok) {
             if (response.status === 204) return null;
-            return await response.json();
+            const data = await response.json();
+
+            /**
+             * SINCRONIZAÇÃO AUTOMÁTICA COM O STORE
+             * Se qualquer requisição retornar o objeto 'user', atualizamos o Store.
+             * Isso mantém o nome/foto sempre frescos sem esforço extra.
+             */
+            if (data?.user) {
+                useAuthStore.getState().setUser(data.user);
+            }
+
+            return data;
         }
 
-        // 2. TRATAMENTO DE ERRO 401 (TOKEN EXPIRADO)
+        // --- 2. TRATAMENTO DE ERRO 401 (SESSÃO) ---
         if (response.status === 401 && !isPublic) {
-            
-            // Se falhar no login direto, não tenta refresh
+
+            // Caso seja erro no login, não tentamos refresh
             if (url.includes("/auth/login/")) {
                 const errorData = await response.json().catch(() => ({}));
                 throw { status: 401, errors: errorData, message: "Credenciais inválidas" };
             }
 
-            // Proteção contra loop
-            if (isRetry) {
-                handleLogoutRedirect();
-                throw { status: 401, message: "Sessão expirada permanentemente" };
+            // Se for re-tentativa ou erro no próprio refresh, desloga geral
+            if (isRetry || url.includes("/auth/refresh/")) {
+                handleGlobalLogout();
+                throw { status: 401, message: "Sessão expirada" };
             }
 
-            // Se falhar no próprio refresh, desloga
-            if (url.includes("/auth/refresh/")) {
-                handleLogoutRedirect();
-                throw { status: 401, message: "Refresh token expirado" };
-            }
+            /**
+             * LÓGICA DE REFRESH TOKEN (CONTROLE DE FLUXO)
+             */
+            const { isRefreshing, startRefresh, stopRefresh, subscribe } = useRefreshManager();
 
-            // Fila de espera durante o refresh
-            if (isRefreshing) {
+            if (isRefreshing()) {
                 return new Promise((resolve) => {
-                    subscribeTokenRefresh(() => {
-                        resolve(api(url, options, isPublic, true));
-                    });
+                    subscribe(() => resolve(api(url, options, isPublic, true)));
                 });
             }
 
-            isRefreshing = true;
+            startRefresh();
             const refreshed = await refreshToken();
-            isRefreshing = false;
+            stopRefresh();
 
             if (refreshed) {
-                onRefreshed(); 
-                return api(url, options, isPublic, true); 
+                return api(url, options, isPublic, true);
             } else {
-                handleLogoutRedirect();
-                throw { status: 401, message: "Falha na renovação da sessão" };
+                handleGlobalLogout();
+                throw { status: 401, message: "Sessão encerrada" };
             }
         }
 
-        // 3. TRATAMENTO DE ERROS DE VALIDAÇÃO E SERVIDOR (400, 403, 500...)
+        // --- 3. OUTROS ERROS (400, 403, 500) ---
         const errorData = await response.json().catch(() => ({}));
-        
-        // Repassa o erro estruturado para o catch do componente/hook
         throw {
             status: response.status,
             message: errorData.detail || "Erro na requisição",
-            errors: errorData, // Aqui contém { endereco: { cep: [...] } }
+            errors: errorData,
         };
 
     } catch (error: any) {
-        // Se o erro já foi estruturado por nós acima, apenas repassa
+        if (error.name === 'AbortError') {
+            throw { status: 408, message: "Conexão lenta demais. Verifique seu sinal de internet." };
+        }
         if (error.status) throw error;
-        
-        // Erro físico de conexão (Servidor fora do ar / Sem internet)
+
         throw {
             status: 503,
-            message: "Não foi possível conectar ao servidor local ou remoto.",
+            message: "Não foi possível conectar ao servidor.",
             errors: {}
         };
     }
 }
 
 /**
- * Chama o endpoint do Django para renovar o cookie de acesso
+ * Gerenciador de fila de refresh para evitar múltiplas chamadas simultâneas
  */
+let refreshing = false;
+let subscribers: (() => void)[] = [];
+const useRefreshManager = () => ({
+    isRefreshing: () => refreshing,
+    startRefresh: () => { refreshing = true; },
+    stopRefresh: () => { 
+        refreshing = false; 
+        subscribers.forEach(cb => cb());
+        subscribers = [];
+    },
+    subscribe: (cb: () => void) => subscribers.push(cb)
+});
+
 async function refreshToken(): Promise<boolean> {
     try {
-        const res = await fetch(`${API_URL}/auth/refresh//`, {
+        const res = await fetch(`${API_URL}/auth/refresh/`, {
             method: "POST",
             credentials: "include",
-            headers: { "Content-Type": "application/json" }
         });
         return res.ok;
-    } catch (error) {
-        console.error("Erro crítico no refresh:", error);
+    } catch {
         return false;
     }
 }
 
 /**
- * Limpa a sessão e redireciona
+ * Limpa o estado em todos os lugares e redireciona
  */
-function handleLogoutRedirect() {
+function handleGlobalLogout() {
     if (typeof window !== "undefined") {
+        // Limpa Zustand (que por consequência limpa localStorage)
+        useAuthStore.getState().logout(); 
+        
         if (!window.location.pathname.includes('/login')) {
-            setTimeout(() => {
-                window.location.href = "/login?session=expired";
-            }, 100);
+            window.location.href = "/login?session=expired";
         }
     }
 }

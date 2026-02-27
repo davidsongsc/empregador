@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getMyApplications, Application } from '@/services/applications';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export function useMyApplications() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuthStore();
 
   const fetchApplications = useCallback(async () => {
     if (!isAuthenticated) {
