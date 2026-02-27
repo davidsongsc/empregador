@@ -79,7 +79,6 @@ const LoginUser = () => {
           });
         }
 
-        toast.success("Login realizado!");
 
         // 4. O segredo: router.refresh() força o Next.js a limpar o cache do servidor 
         // e ler os novos cookies antes de mudar de página.
@@ -93,7 +92,7 @@ const LoginUser = () => {
       }
     } catch (err: any) {
       setError(err.message || "Erro de conexão.");
-      toast.error(err.message);
+
     } finally {
       setLoading(false);
     }

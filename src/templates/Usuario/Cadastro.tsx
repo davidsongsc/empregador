@@ -26,7 +26,7 @@ const RegisterPage = () => {
     e.preventDefault();
     setError(null);
 
-    // 1. Validações de UI (Mantidas para evitar requisições inúteis)
+    // 1. Validações de UI (Frontend)
     if (password !== confirmPassword) {
       setError("As senhas não coincidem");
       return;
@@ -43,35 +43,35 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
-      // 2. Chamada de Registro
-      // O backend deve retornar: { ok: true, user: { id, whatsapp, profile... } }
+      // 2. Chamada de Registro (Usando apiAxios internamente)
       const res = await registerUser(whatsapp, password);
 
-      if (res?.user) {
-        // 3. PERSISTÊNCIA IMEDIATA NO ZUSTAND
-        // O Zustand salva no localStorage e o Header já atualiza instantaneamente
-        setUser(res.user);
+      // Com o Axios + Interceptor, o 'res' já é o corpo da resposta (data)
+      if (res?.id) {
+        // 3. PERSISTÊNCIA NO ZUSTAND
+        setUser(res);
 
         toast.success("Conta criada com sucesso!", "Bem-vindo!");
 
-        // 4. REDIRECIONAMENTO
-        // Como ele acabou de criar a conta, o nome no perfil estará vazio,
-        // então mandamos para /perfil para ele completar o cadastro.
+        // 4. REDIRECIONAMENTO E REFRESH
         router.push("/perfil");
+        router.refresh();
       }
 
     } catch (err: any) {
-      console.error("Erro no cadastro:", err);
+      // Agora 'err' é o objeto formatado pelo seu interceptor em api-axios.ts
+      
 
-      // A sua nova api.ts já formata os erros do Django no campo 'message' ou 'errors'
+      // O interceptor já colocou os dados do servidor em 'err.errors'
       const backendError =
-        err.errors?.whatsapp_number?.[0] ||
-        err.errors?.non_field_errors?.[0] ||
+        err.errors?.whatsapp_number?.[0] || // Caso o Django envie { whatsapp_number: [...] }
+        err.errors?.errors?.whatsapp_number?.[0] || // Caso envie { errors: { whatsapp_number: [...] } }
         err.message ||
         "Erro ao criar conta.";
-
+      console.log(err, "Erro formatado para exibição");
       setError(backendError);
       toast.error(backendError);
+
     } finally {
       setLoading(false);
     }

@@ -13,11 +13,13 @@ export async function registerUser(
             }),
         });
     } catch (err: any) {
+        console.log(
+            "Erro bruto recebido em registerUser:", err);
         if (err?.errors?.whatsapp_number) {
-            throw new Error(err.errors.whatsapp_number[0]);
+            throw new Error(err.errors.errors.whatsapp_number[0]);
         }
 
-        throw new Error("Erro ao criar conta");
+        throw new Error(err.errors.errors.whatsapp_number[0] || err.message || "Erro ao criar conta.");
     }
 }
 

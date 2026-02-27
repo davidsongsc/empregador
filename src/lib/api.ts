@@ -55,7 +55,8 @@ export async function api(
         if (response.status === 401 && !isPublic) {
             if (url.includes("/auth/login/")) {
                 const errorData = await response.json().catch(() => ({}));
-                throw { status: 401, errors: errorData, message: errorData.message || "Credenciais inválidas" };
+                console.log("Erro de login recebido:", errorData);
+                throw { status: 401, errors: errorData.detail, message: errorData.detail || "Credenciais inválidas" };
             }
 
             if (isServer || isRetry || url.includes("/auth/refresh/")) {

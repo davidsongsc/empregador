@@ -56,7 +56,14 @@ export default function CandidatosPage() {
   const filteredCandidates = useMemo(() => {
     return candidates.filter(app => {
       const nameMatch = app.candidate_details?.name?.toLowerCase().includes(searchTerm.toLowerCase());
-      const statusMatch = filterStatus === "all" || app.status === filterStatus;
+
+      // Lógica de Status:
+      // 1. Se filterStatus for "all", removemos os rejeitados da visualização padrão.
+      // 2. Se filterStatus for um status específico (incluindo "rejected"), mostramos apenas ele.
+      const statusMatch = filterStatus === "all"
+        ? app.status !== "rejected"
+        : app.status === filterStatus;
+
       return nameMatch && statusMatch;
     });
   }, [candidates, searchTerm, filterStatus]);
