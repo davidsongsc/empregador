@@ -10,7 +10,8 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
-  Clock
+  Clock,
+  CircleDollarSign
 } from "lucide-react";
 import { useJobs } from "@/hooks/useJobs";
 import JobApplyModal from "../JobApplyModal";
@@ -18,299 +19,256 @@ import JobDetailsModal from "../JobsDetailsModal";
 import AdBanner from "../AdBanner";
 import SkeletonJob from "../Loading";
 
-type StepId = "curriculo" | "dados" | "perguntas" | "upsell";
-
-const PAGE_SIZE = 10
+const PAGE_SIZE = 10;
 
 const JobHome = () => {
-  // --- 1. TODOS OS HOOKS DEVEM FICAR AQUI NO TOPO ---
-  const [open, setOpen] = useState(false)
-  const [openJobModal, setOpenJobModal] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [stepIndex, setStepIndex] = useState(0)
+  const [openApply, setOpenApply] = useState(false);
+  const [openDetailsModal, setOpenDetailsModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedJob, setSelectedJob] = useState<any>(null);
 
-  // Hook customizado
-  const { jobs, loading, error } = useJobs(currentPage || 1);
+  const { jobs, loading, error } = useJobs(currentPage);
 
-  // Memoização da paginação (sempre executada)
   const paginatedJobs = useMemo(() => {
-    if (!jobs) return []
-    const start = (currentPage - 1) * PAGE_SIZE
-    const end = start + PAGE_SIZE
-    return jobs.slice(start, end)
-  }, [currentPage, jobs])
+    if (!jobs) return [];
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return jobs.slice(start, start + PAGE_SIZE);
+  }, [currentPage, jobs]);
 
-  // Estado do job selecionado
-  const [selectedJob, setSelectedJob] = useState<any>(null)
+  const totalPages = useMemo(() => jobs ? Math.ceil(jobs.length / PAGE_SIZE) : 0, [jobs]);
 
-  // Lógica de steps
-  const hasQuestions = Array.isArray(selectedJob?.perguntas) && selectedJob.perguntas.length > 0;
-  const steps = [
-    "curriculo",
-    "dados",
-    hasQuestions ? "perguntas" : null,
-    "upsell",
-    "final",
-  ].filter(Boolean);
-
+  // Sincronização de seleção de vaga
   useEffect(() => {
-    if (paginatedJobs.length > 0) {
-      // Verificamos se o job atual ainda é válido para a nova lista
-      const isJobInCurrentPage = paginatedJobs.some(j => j.uid === selectedJob?.uid);
-
-      if (!selectedJob || !isJobInCurrentPage) {
-        setSelectedJob(paginatedJobs[0]);
-      }
+    if (paginatedJobs.length > 0 && !selectedJob) {
+      setSelectedJob(paginatedJobs[0]);
     }
-    // Removemos 'selectedJob' daqui. 
-    // Queremos reagir apenas quando a página ou os dados da lista mudarem.
-  }, [currentPage, paginatedJobs]);
+  }, [paginatedJobs, selectedJob]);
 
-  // --- 2. RETORNOS CONDICIONAIS DE UI (DEPOIS DOS HOOKS) ---
-  if (loading) {
+  // Handler de navegação para resetar scroll e seleção se necessário
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    setSelectedJob(null); // Opcional: limpa seleção ao mudar de página
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  if (loading) return <SkeletonJob />;
+
+  if (error || !jobs?.length) {
     return (
-      <SkeletonJob />
-    )
+      <main className="min-h-[80vh] flex flex-col items-center justify-center px-6 text-center">
+        <div className="bg-red-50 p-4 rounded-full mb-4">
+          <Briefcase className="w-8 h-8 text-red-500" />
+        </div>
+        <h1 className="text-xl font-bold text-gray-900">
+          {error ? "Ops! Ocorreu um erro" : "Nenhuma vaga disponível"}
+        </h1>
+        <p className="text-gray-500 max-w-xs mt-2">
+          {error ? "Não conseguimos carregar as vagas. Tente novamente em instantes." : "No momento não temos vagas que coincidam com sua busca."}
+        </p>
+      </main>
+    );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <h1 className="text-2xl font-bold text-red-500">Erro ao carregar vagas</h1>
-      </div>
-    )
-  }
-
-  if (!jobs || jobs.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <h1 className="text-2xl font-bold">Nenhuma vaga encontrada</h1>
-      </div>
-    )
-  }
-
-  const totalPages = Math.ceil(jobs.length / PAGE_SIZE)
-
-  // --- 3. RENDERIZAÇÃO PRINCIPAL ---
   return (
-    <div className="min-h-screen bg-white pt-32 pb-16 px-4">
-      <div className="max-w-7xl mx-auto space-y-25">
-        <section className="space-y-2">
-          <h1 className="text-4xl font-bold text-gray-900">
-            Encontre seu próximo emprego
+    <div className="min-h-screen bg-[#F8FAFC]"> {/* Fundo levemente acinzentado para destacar os cards brancos */}
+      <main className="max-w-7xl mx-auto pt-24 pb-12 px-3 sm:px-6 lg:px-8">
+        
+        {/* Header Section */}
+        <header className="mb-8 space-y-3">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            Oportunidades <span className="text-indigo-600 font-black">2026</span>
           </h1>
-          <p className="text-gray-500">
-            Vagas atualizadas diariamente, simples e direto ao ponto.
+          <p className="text-sm sm:text-base text-slate-500 max-w-2xl leading-relaxed">
+            Conectamos você às melhores empresas. Processos simplificados e feedback em tempo real.
           </p>
-        </section>
-        {/* Banner de Topo */}
-        <AdBanner dataAdSlot="1234567890" />
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[680px]">
-          {/* LISTA DE VAGAS */}
-          <div className="lg:col-span-5 flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar">
-            {paginatedJobs.map(job => (
-              <div
-                key={job.uid}
-                onClick={() => {
-                  setSelectedJob(job)
-                  if (window.innerWidth < 1024) {
-                    setOpenJobModal(true)
-                  }
-                }}
-                className={`cursor-pointer border rounded-2xl p-5 transition-all duration-300 ${selectedJob?.uid === job.uid
-                  ? "border-indigo-600 bg-indigo-50 shadow-sm"
-                  : "border-gray-200 hover:border-indigo-200 hover:bg-gray-50/50"
+        </header>
+
+        <AdBanner dataAdSlot="1234567890" className="mb-2" />
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* LADO ESQUERDO: LISTA */}
+          <section className="lg:col-span-5 space-y-4 h-full">
+            <div className="flex flex-col gap-3 sm:max-h-[700px] overflow-y-auto pr-1 custom-scrollbar">
+              {paginatedJobs.map((job) => (
+                <article
+                  key={job.uid}
+                  onClick={() => {
+                    setSelectedJob(job);
+                    if (window.innerWidth < 1024) setOpenDetailsModal(true);
+                  }}
+                  className={`relative group cursor-pointer border-2 rounded-2xl p-4 transition-all duration-200 ${
+                    selectedJob?.uid === job.uid
+                      ? "border-indigo-600 bg-white shadow-md ring-4 ring-indigo-50"
+                      : "border-transparent bg-white hover:border-slate-200 shadow-sm"
                   }`}
-              >
-                <div className="flex justify-between items-start mb-1">
-                  <h3 className="font-bold text-gray-900 leading-tight">
-                    {/* Ajustado para cargo_exibicao */}
-                    {job.cargo_exibicao}
-                  </h3>
-                </div>
+                >
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">
+                      {job.tipo_vaga_display}
+                    </span>
+                    <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2">
+                      {job.cargo_exibicao}
+                    </h3>
+                  </div>
 
-                <p className="text-sm text-indigo-600 font-bold">
-                  {/* Ajustado para empresa_nome */}
-                  {job.tipo_vaga_display}
-                </p>
-
-                <div className="flex flex-wrap gap-y-2 gap-x-4 text-[12px] text-gray-500 mt-3">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                    {/* Fallback para quando o endereço estruturado for null */}
-                    {job.endereco ? `${job.endereco.cidade}, ${job.endereco.estado}` : (job.endereco || "Presencial")}
-                  </span>
-
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <Clock className="w-3.5 h-3.5 text-gray-400" />
-                    {job.turno || "A definir"}
-                  </span>
-                  <span className="font-black text-green-600 bg-green-50 px-2 py-0.5 rounded">
-                    {job.salario ? `R$ ${job.salario}` : "A combinar"}
-                  </span>
-                </div>
-              </div>
-            ))}
-
-            {/* PAGINAÇÃO */}
-            <div className="flex items-center justify-between pt-6 mt-auto border-t border-gray-100">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Anterior
-              </button>
-
-              <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                {currentPage} / {totalPages}
-              </span>
-
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition cursor-pointer"
-              >
-                Próxima
-                <ChevronRight className="w-4 h-4" />
-              </button>
+                  <div className="mt-4 flex flex-wrap gap-3 items-center">
+                    <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                      <MapPin className="w-3 h-3" />
+                      {job.endereco?.cidade || "Remoto"}
+                    </div>
+                    <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                      <CircleDollarSign className="w-3 h-3" />
+                      {job.salario ? `R$ ${job.salario}` : "A combinar"}
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
-          </div>
 
-          {/* DETALHES DA VAGA (DESKTOP) */}
-          <div className="hidden lg:flex lg:col-span-7 border border-gray-100 rounded-[32px] sticky top-24 bg-white shadow-sm overflow-hidden">
-            {!selectedJob ? (
-              <div className="flex flex-col items-center justify-center w-full text-gray-400 p-10 text-center">
-                <Briefcase className="w-12 h-12 mb-4 opacity-20" />
-                <p className="font-medium">Selecione uma vaga para visualizar os detalhes</p>
+            {/* Paginação Mobile-Friendly */}
+            <nav className="flex items-center justify-between bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+              <button
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-20 transition-all cursor-pointer"
+                aria-label="Página anterior"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                Página {currentPage} de {totalPages}
               </div>
-            ) : (
-              <div className="flex flex-col h-full w-full p-10">
-                <header className="relative">
-                  <div className="inline-block bg-red-100 text-orange-800 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest mb-4 mr-2">
-                    {selectedJob.tipo_vaga_display || ""}
-                  </div>
-                  <div className="inline-block bg-indigo-100 text-indigo-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest mb-4">
-                    {selectedJob.role_details?.category || "Oportunidade"}
-                  </div>
-                  <h2 className="text-3xl font-black text-gray-900 leading-tight">
-                    {selectedJob.cargo_exibicao}
-                  </h2>
-                  <p className="text-lg text-gray-500 font-medium mt-1">{selectedJob.empresa_nome}</p>
-                </header>
 
-                <section className="grid grid-cols-2 gap-4 mt-8">
-                  <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                    <p className="text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest">Jornada</p>
-                    <p className="font-bold text-gray-800">{selectedJob.turno || "Indefinido"}</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                    <p className="text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest">Remuneração</p>
-                    <p className="font-bold text-green-600">
-                      {selectedJob.salario ? `R$ ${selectedJob.salario}` : "A combinar"}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setOpen(true)}
-                    className="col-span-2 bg-gray-900 text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-100 transition-all duration-300 cursor-pointer mt-2"
-                  >
-                    Candidatar-se agora
-                  </button>
-                </section>
+              <button
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-20 transition-all cursor-pointer"
+                aria-label="Próxima página"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </nav>
+          </section>
 
-                <section className="flex-1 overflow-y-auto mt-10 space-y-10 pr-4 custom-scrollbar">
-                  <div>
-                    <h4 className="text-[11px] font-black text-gray-400 mb-4 uppercase tracking-[0.2em]">Descrição da Oportunidade</h4>
-                    <div className="text-gray-600 leading-relaxed whitespace-pre-line text-sm">
-                      {selectedJob.descricao}
+          {/* LADO DIREITO: DETALHES (DESKTOP) */}
+          <aside className="hidden lg:block lg:col-span-7 sticky top-28">
+            <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-xl overflow-hidden h-[750px] flex flex-col">
+              {!selectedJob ? (
+                <div className="m-auto text-center p-10">
+                  <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Briefcase className="w-10 h-10 text-slate-200" />
+                  </div>
+                  <p className="text-slate-400 font-medium">Selecione uma vaga para ver detalhes</p>
+                </div>
+              ) : (
+                <div className="flex flex-col h-full">
+                  {/* Header do Detalhe */}
+                  <div className="p-8 border-b border-slate-50 bg-gradient-to-b from-slate-50/50 to-transparent">
+                    <div className="flex gap-2 mb-4">
+                      <span className="bg-orange-100 text-orange-700 text-[10px] font-black px-3 py-1 rounded-full uppercase">
+                        {selectedJob.tipo_vaga_display}
+                      </span>
+                      <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black px-3 py-1 rounded-full uppercase">
+                        {selectedJob.role_details?.category || "Destaque"}
+                      </span>
                     </div>
+                    <h2 className="text-3xl font-black text-slate-900 mb-2">{selectedJob.cargo_exibicao}</h2>
+                    <p className="text-lg text-slate-500 font-medium italic">{selectedJob.empresa_nome}</p>
+                    
+                    <button
+                      onClick={() => setOpenApply(true)}
+                      className="w-full mt-6 bg-indigo-600 text-white py-4 rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 group cursor-pointer"
+                    >
+                      Candidatar-se Agora
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
                   </div>
 
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                    <div>
-                      <h4 className="text-[11px] font-black text-gray-400 mb-5 uppercase tracking-[0.2em]">Requisitos</h4>
-                      <ul className="space-y-3">
-                        {selectedJob.requisitos?.map((req: any, i: number) => (
-                          <li key={i} className="flex items-start gap-3 text-sm text-gray-600 font-medium">
-                            <CheckCircle2 className="w-5 h-5 text-indigo-500 shrink-0" />
-                            {req.description}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {selectedJob.beneficios?.length > 0 && (
-                      <div>
-                        <h4 className="text-[11px] font-black text-gray-400 mb-5 uppercase tracking-[0.2em]">Benefícios</h4>
-                        <ul className="space-y-3">
-                          {selectedJob.beneficios.map((benefit: any, i: number) => (
-                            <li key={i} className="flex items-start gap-3 text-sm text-gray-600 font-medium">
-                              <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center shrink-0">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                              </div>
-                              {benefit.description}
-                            </li>
-                          ))}
-                        </ul>
+                  {/* Conteúdo Scrollável */}
+                  <div className="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
+                    <div className="grid grid-cols-2 gap-4 mb-8">
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <span className="block text-[9px] font-black text-slate-400 uppercase mb-1">Jornada</span>
+                        <div className="flex items-center gap-2 text-slate-700 font-bold">
+                          <Clock className="w-4 h-4 text-indigo-500" /> {selectedJob.turno || "A definir"}
+                        </div>
                       </div>
-                    )}
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <span className="block text-[9px] font-black text-slate-400 uppercase mb-1">Salário</span>
+                        <div className="flex items-center gap-2 text-emerald-600 font-bold">
+                          {selectedJob.salario ? `R$ ${selectedJob.salario}` : "A combinar"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="prose prose-slate prose-sm max-w-none">
+                      <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Sobre a vaga</h4>
+                      <p className="text-slate-600 leading-relaxed whitespace-pre-line text-sm">
+                        {selectedJob.descricao}
+                      </p>
+                    </div>
                   </div>
-                </section>
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+
+        {/* Footer Info Cards */}
+        <section className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+           <InfoCard 
+            icon={<GraduationCap className="text-white" />} 
+            title="Cursos Gratuitos" 
+            desc="Aprenda habilidades em alta no mercado." 
+            bg="bg-indigo-600"
+            buttonText="Explorar"
+           />
+           <InfoCard 
+            icon={<Users className="text-orange-500" />} 
+            title="Feirão Presencial 2026" 
+            desc="Dia 25 de Março no Centro de Convenções." 
+            label="Evento VIP"
+           />
+           <InfoCard 
+            icon={<Briefcase className="text-emerald-500" />} 
+            title="Guia de Currículos" 
+            desc="Dicas práticas para dobrar suas chances." 
+            link="Ler artigo"
+           />
         </section>
-        <AdBanner dataAdSlot="0987654321" dataAdFormat="rectangle" />
-        {/* MODAIS */}
-        <JobDetailsModal
-          open={openJobModal}
-          onClose={() => setOpenJobModal(false)}
-          job={selectedJob}
-          onApply={() => {
-            setOpenJobModal(false)
-            setOpen(true)
-          }}
-        />
 
-        <JobApplyModal
-          open={open}
-          onClose={() => setOpen(false)}
-          job={selectedJob}
-        />
+      </main>
 
-        {/* CARDS INFORMATIVOS */}
-        <section className="grid md:grid-cols-3 gap-6 pt-12 border-t border-gray-100">
-          <div className="bg-indigo-600 p-6 rounded-xl text-white">
-            <GraduationCap className="w-7 h-7 mb-3 opacity-80" />
-            <h3 className="font-semibold mb-1">Cursos Gratuitos</h3>
-            <p className="text-sm text-indigo-100 mb-3">Aprenda novas habilidades sem custo.</p>
-            <button className="text-sm font-semibold bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30 transition cursor-pointer">
-              Acessar
-            </button>
-          </div>
+      <JobDetailsModal
+        open={openDetailsModal}
+        onClose={() => setOpenDetailsModal(false)}
+        job={selectedJob}
+        onApply={() => { setOpenDetailsModal(false); setOpenApply(true); }}
+      />
 
-          <div className="bg-white border border-gray-200 p-6 rounded-xl">
-            <Users className="w-7 h-7 mb-3 text-orange-500" />
-            <h3 className="font-semibold mb-1">Feirão 2026</h3>
-            <p className="text-sm text-gray-500 mb-3">Evento presencial dia 25 de Março.</p>
-            <span className="text-[11px] font-semibold text-orange-600 bg-orange-50 px-2 py-1 rounded">
-              SAVE THE DATE
-            </span>
-          </div>
-
-          <div className="bg-white border border-gray-200 p-6 rounded-xl">
-            <Briefcase className="w-7 h-7 mb-3 text-green-600" />
-            <h3 className="font-semibold mb-1">Dicas de Currículo</h3>
-            <p className="text-sm text-gray-500 mb-3">Como se destacar em processos seletivos.</p>
-            <button className="text-indigo-600 font-semibold text-sm flex items-center gap-1 hover:underline cursor-pointer">
-              Ler mais <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-        </section>
-      </div>
+      <JobApplyModal
+        open={openApply}
+        onClose={() => setOpenApply(false)}
+        job={selectedJob}
+      />
     </div>
-  )
-}
+  );
+};
 
-export default JobHome
+// Componente Interno para os Cards de Conteúdo (Reutilização e Limpeza)
+const InfoCard = ({ icon, title, desc, bg = "bg-white", buttonText, label, link }: any) => (
+  <div className={`${bg} ${bg === 'bg-white' ? 'border border-slate-200' : 'text-white'} p-6 rounded-2xl shadow-sm transition-transform hover:-translate-y-1`}>
+    <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${bg === 'bg-white' ? 'bg-slate-50' : 'bg-white/20'}`}>
+      {icon}
+    </div>
+    <h3 className="font-bold mb-1">{title}</h3>
+    <p className={`text-sm mb-4 ${bg === 'bg-white' ? 'text-slate-500' : 'text-indigo-100'}`}>{desc}</p>
+    {buttonText && <button className="text-xs font-bold bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30 cursor-pointer">{buttonText}</button>}
+    {label && <span className="text-[10px] font-black bg-orange-50 text-orange-600 px-2 py-1 rounded-md">{label}</span>}
+    {link && <button className="text-indigo-600 text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer">{link} <ArrowRight className="w-3 h-3"/></button>}
+  </div>
+);
+
+export default JobHome;

@@ -6,7 +6,7 @@ import "./globals.css"
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Notification } from "@/components/Notification";
-
+import CookieBanner from "@/components/CookieBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +28,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
@@ -45,6 +46,7 @@ export default function RootLayout({
           <Notification />
           <Footer />
         </AuthProvider>
+        <CookieBanner />
 
       </body>
     </html>
