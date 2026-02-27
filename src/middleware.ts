@@ -3,13 +3,13 @@ import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
   // 1. Tenta recuperar o token de acesso
   const hasAccess = request.cookies.get("access");
-
-  const isPrivateRoute = 
-    pathname.startsWith("/vagas") || 
-    pathname.startsWith("/perfil") || 
+  console.log("Cookie access presente?", !!hasAccess); // Isso aparecerá nos logs da Vercel
+  const isPrivateRoute =
+    pathname.startsWith("/vagas") ||
+    pathname.startsWith("/perfil") ||
     pathname.startsWith("/anunciar") ||
     pathname.startsWith("/dashboard");
 
@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
   if (isPrivateRoute && !hasAccess) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("from", pathname);
-    
+
     // Adicionamos um cabeçalho para evitar cache da página de redirecionamento
     const response = NextResponse.redirect(loginUrl);
     response.headers.set('x-middleware-cache', 'no-cache');

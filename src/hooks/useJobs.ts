@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getJobs, Job } from "@/services/jobs";
+import { toast } from "@/components/Notification";
 
 export function useJobs(page: number) {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -33,6 +34,7 @@ export function useJobs(page: number) {
         const errorMessage = err?.detail || "Erro ao carregar vagas";
         setError(errorMessage);
         console.error("Erro na busca de vagas:", err);
+        toast.error(errorMessage);
       } finally {
         if (!cancelled) setLoading(false);
       }
