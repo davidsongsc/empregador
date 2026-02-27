@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { UserData } from '@/interfaces/userData';
 import { logout as apiLogout, checkSession } from '@/services/auth';
+import Cookies from 'js-cookie';
 
 interface AuthState {
   user: UserData | null;
@@ -42,6 +43,7 @@ export const useAuthStore = create<AuthState>()(
         } finally {
           // Limpa tudo de uma vez para evitar estados fantasmas
           set({ user: null, isAuthenticated: false, loading: false });
+          Cookies.remove('access', { path: '/' });
           localStorage.removeItem('freelacerto_auth_storage');
           window.location.href = '/login';
         }
