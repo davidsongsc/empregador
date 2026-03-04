@@ -7,18 +7,22 @@ import Header from "@/components/Header";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export default function PrivateLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuthStore();
+  // Adicionamos o isHydrated para saber se o AuthInitializer já terminou de ler o serverUser
+  const { isAuthenticated, loading, isHydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    // Se parou de carregar e NÃO está autenticado, manda pro login
-    if (!loading && !isAuthenticated) {
+    // SÓ redirecionamos se:
+    // 1. O Store já foi hidratado (o AuthInitializer já rodou)
+    // 2. O carregamento de sessão terminou
+    // 3. O usuário realmente não está autenticado
+    if (isHydrated && !loading && !isAuthenticated) {
       router.replace("/login");
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, loading, isHydrated, router]);
 
-  // Enquanto o AuthContext verifica o cookie de 30 dias...
-  if (loading) {
+  // Enquanto o Zustand não foi populado pelo AuthInitializer ou ainda está buscando o /me/
+  if (!isHydrated || loading) {
     return (
       <>
         <Header />
@@ -29,14 +33,16 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
     );
   }
 
-  // Se não está logado, bloqueia a renderização enquanto o router.replace acontece
+  // Se após a hidratação confirmarmos que não está logado, bloqueamos o conteúdo 
+  // enquanto o useEffect acima dispara o router.replace
   if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Opcional: Coloque o Header fixo aqui se todas as páginas privadas usarem */}
       <Header />
-      <main>{children}</main>
+      <main className="container mx-auto px-4 py-8">
+        {children}
+      </main>
     </div>
   );
 }
