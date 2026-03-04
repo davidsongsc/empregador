@@ -25,17 +25,19 @@ export async function registerUser(
 
 // Adicionamos o parâmetro 'remember' (opcional, com padrão false)
 export async function login(whatsappNumber: string, password: string, remember: boolean = false) {
-    // O retorno dessa função será o JSON { "ok": true } que o Django envia
-    // O 'await' no componente de Login espera o fim desta execução
-    return api("/auth/login/", {
+    const data = await api("/auth/login/", {
         method: "POST",
-        credentials: "include", // ESSENCIAL: Permite que o navegador receba o cookie Set-Cookie
+        credentials: "include",
         body: JSON.stringify({
             whatsapp_number: whatsappNumber,
             password,
             remember,
         }),
     });
+
+    // Se o login foi ok, mas não veio o objeto 'user' como no /me/,
+    // você precisa formatar aqui ou no componente:
+    return data;
 }
 export async function logout() {
     // O logout precisa limpar os cookies no servidor
