@@ -1,15 +1,16 @@
 "use client"
-import React from "react"
+import React, { useState } from "react"
 import {
     Plus, Users, MapPin, Edit3, Trash2, Search, Filter, Loader2, AlertCircle
 } from "lucide-react"
 import { useMyJobs } from "@/hooks/useMyJobs"
 import { useAuthStore } from "@/store/useAuthStore"
 import Link from "next/link"
+import PostJobModal from "@/components/Modal/PostJobModal"
 
 const MinhasVagas = () => {
     const { user } = useAuthStore()
-
+    const [isPostJobOpen, setIsPostJobOpen] = useState(false);
     // 1. Integrando o Hook (filtramos pelo ID do usuário logado)
     const { vagas, loading, error, refresh } = useMyJobs({
         usuario: user?.id
@@ -29,13 +30,13 @@ const MinhasVagas = () => {
                                 {loading ? "Carregando..." : `Você possui ${vagas.length} vagas publicadas.`}
                             </p>
                         </div>
-                        <Link
-                            href="/anunciar"
-                            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-100 active:scale-95"
+
+                        <button
+                            onClick={() => setIsPostJobOpen(true)}
+                            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-100 active:scale-95 cursor-pointer"
                         >
-                            <Plus className="w-5 h-5" />
                             Publicar Nova Vaga
-                        </Link>
+                        </button>
                     </div>
                 </div>
             </header>
@@ -112,8 +113,8 @@ const MinhasVagas = () => {
 
                                     <div className="flex items-center gap-2 border-t md:border-t-0 pt-4 md:pt-0">
                                         <Link
-                                            href={`/painel/vagas/${vaga.uid}/candidatos`}
-                                            
+                                            href={`/dashboard/painel/vagas/${vaga.uid}/candidatos`}
+
                                         >
                                             <button className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-indigo-100 transition-all cursor-pointer">
                                                 Ver Candidatos
@@ -147,8 +148,12 @@ const MinhasVagas = () => {
                     </div>
                 )}
             </main>
+            <PostJobModal
+                isOpen={isPostJobOpen}
+                onClose={() => setIsPostJobOpen(false)}
+            />
         </div>
     )
 }
 
-export default MinhasVagas
+export default React.memo(MinhasVagas);

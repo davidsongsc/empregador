@@ -11,9 +11,9 @@ export async function getRoles() {
 }
 
 // Função para criar um novo cargo padronizado "on-the-fly"
-export async function createRole(name: string) {
+export async function createRole(data: { name: string; category: string }) {
   return await api("/vagas/roles/", {
     method: "POST",
-    body: JSON.stringify({ name, category: "Geral" }), // Categoria padrão
+    body: JSON.stringify(data),
   });
 }
