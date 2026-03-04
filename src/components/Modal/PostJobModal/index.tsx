@@ -11,10 +11,10 @@ import { useRoles } from '@/hooks/useRoles';
 import { createRole } from '@/services/roles';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from '@/components/Notification';
-
+import { useRouter } from 'next/navigation'; // Correto para App Router
 interface PostJobModalProps {
     isOpen: boolean;
-    onClose: () => void;
+    onClose: () => void; // Voltamos para a função simples: string;
 }
 
 const PostJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
@@ -22,9 +22,9 @@ const PostJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
     const [step, setStep] = useState(1);
     const { postJob, loading: posting } = usePostJob();
     const { roles, loading: loadingRoles } = useRoles();
-
-    // Estados do Formulário (Restaurados)
-    const [tipoVaga, setTipoVaga] = useState('EFETIVO');
+    const [display, setDisplay] = useState(isOpen);
+    const router = useRouter();
+    const [tipoVaga, setTipoVaga] = useState('FREELANCER');
     const [roleSearch, setRoleSearch] = useState('');
     const [selectedRoleUid, setSelectedRoleUid] = useState('');
     const [isCreatingRole, setIsCreatingRole] = useState(false);
@@ -40,7 +40,11 @@ const PostJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
     const [novoRequisito, setNovoRequisito] = useState('');
     const [newRoleCategory, setNewRoleCategory] = useState('Geral'); // Categoria padrão
     const [showCategorySelector, setShowCategorySelector] = useState(false); // Controle de UI
-    // Resetar ao fechar
+
+    useEffect(() => {
+        setDisplay(isOpen);
+    }, [isOpen]);
+
     useEffect(() => { if (!isOpen) setStep(1); }, [isOpen]);
 
     const filteredRoles = useMemo(() => {
@@ -86,6 +90,8 @@ const PostJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
         }
     };
 
+
+
     const handleFinalizar = async () => {
         const companyId = user?.profile?.empresas?.[0]?.id || "";
         const payload = {
@@ -117,7 +123,11 @@ const PostJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
                 className="bg-white w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-[48px] shadow-2xl relative animate-in zoom-in-95 duration-300"
                 onClick={(e) => e.stopPropagation()}
             >
-                <button onClick={onClose} className="absolute right-8 top-8 p-2 hover:bg-gray-100 rounded-full transition-colors z-20">
+                <button
+                    onClick={onClose} 
+                    type="button"
+                    className="absolute right-8 top-8 p-3 hover:bg-gray-100 rounded-full z-[110] cursor-pointer"
+                >
                     <X className="w-6 h-6 text-gray-400" />
                 </button>
 

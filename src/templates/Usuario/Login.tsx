@@ -60,39 +60,36 @@ const LoginUser = () => {
     try {
       const fullNumber = `${countryCode}${whatsapp.replace(/\D/g, "")}`;
 
-      // 1. O res deve trazer os dados do usuário e, se não for HttpOnly, o token access
+      // 1. Chama o service
       const res = await apiLogin(fullNumber, password, rememberMe);
 
+      // O Django retorna { ok: true, name: "...", whatsapp_number: "...", id: "..." }
       if (res?.ok) {
-        // 2. Sincroniza o Zustand IMEDIATAMENTE com os dados da resposta
-        if (res.user) {
-          useAuthStore.getState().setUser(res.user);
-        }
 
-        // 3. Se o seu cookie NÃO for HttpOnly, salve o TOKEN REAL (JWT), não uma string fixa
-        if (res.access_token) {
-          Cookies.set('access', res.access_token, {
-            expires: 7,
-            path: '/',
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production'
-          });
-        }
+        // 2. Mapeia os dados da raiz para o formato que o seu UserData espera
+        // Se o seu UserData espera um objeto user, nós o criamos aqui:
+        const userData = {
+          id: res.id,
+          name: res.name,
+          whatsapp_number: res.whatsapp_number,
+          // adicione outros campos que seu UserData exija
+        };
 
+        // 3. Atualiza o Zustand (Isso muda o estado isAuthenticated para true)
+        useAuthStore.getState().setUser(userData);
 
-        // 4. O segredo: router.refresh() força o Next.js a limpar o cache do servidor 
-        // e ler os novos cookies antes de mudar de página.
+        // 4. Sincroniza o Next.js
         router.refresh();
 
-        // 5. Use router.push em vez de window.location para uma transição suave,
-        // mas com um pequeno delay para garantir que o cookie foi "assentado" no browser.
-        setTimeout(() => {
-          router.push(destination || "/dashboard");
-        }, 150);
+        // 5. Redirecionamento
+        // Não use Cookies.set se o seu backend já envia Set-Cookie (HttpOnly)
+        router.push(destination || "/dashboard");
+
+      } else {
+        setError(res?.message || "Credenciais inválidas.");
       }
     } catch (err: any) {
-      setError(err.message || "Erro de conexão.");
-
+      setError(err.message || "Erro de conexão ao tentar logar.");
     } finally {
       setLoading(false);
     }

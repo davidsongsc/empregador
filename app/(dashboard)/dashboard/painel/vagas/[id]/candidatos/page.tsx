@@ -17,7 +17,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     applied: { label: "Nova", color: "bg-blue-50 text-blue-600" },
     reviewing: { label: "Análise", color: "bg-orange-50 text-orange-600" },
     interview: { label: "Entrevista", color: "bg-purple-50 text-purple-600" },
-    hired: { label: "Contratado", color: "bg-emerald-50 text-emerald-600" },
+    hired: { label: "Vinculado", color: "bg-emerald-50 text-emerald-600" },
     rejected: { label: "Recusado", color: "bg-red-50 text-red-600" },
   };
   const config = configs[status] || configs.applied;
@@ -112,7 +112,7 @@ export default function CandidatosPage() {
               <div className="bg-emerald-50 px-4 py-2.5 rounded-2xl border border-emerald-100 flex items-center gap-3">
                 <CheckCircle className="w-4 h-4 text-emerald-600" />
                 <div className="leading-none">
-                  <span className="block text-[10px] font-black text-emerald-400 uppercase">Contratados</span>
+                  <span className="block text-[10px] font-black text-emerald-400 uppercase">Vinculados</span>
                   <span className="text-sm font-black text-emerald-700">{stats.hired}</span>
                 </div>
               </div>
@@ -152,7 +152,7 @@ export default function CandidatosPage() {
       <main className="max-w-6xl mx-auto p-6 space-y-6">
         {filteredCandidates.map((app) => {
           const details = app.candidate_details;
-          const isUnlocked = !details.is_locked;
+          const isUnlocked = !details.is_locked || details.is_locked !== 'rejected';
           const isInterviewed = app.status === 'interview';
           const isAlreadyHired = app.status === 'hired';
 
@@ -359,7 +359,7 @@ export default function CandidatosPage() {
                                 }`}
                             >
                               {!isInterviewed && !isAlreadyHired && <Lock className="w-4 h-4 opacity-50" />}
-                              {isAlreadyHired ? '🏆 Candidato Contratado' : 'Efetivar Contratação'}
+                              {isAlreadyHired ? '● Candidato Vinculado' : 'Efetivar Vinculo'}
                             </button>
                           </div>
                         </div>
