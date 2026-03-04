@@ -59,37 +59,32 @@ const LoginUser = () => {
 
     try {
       const fullNumber = `${countryCode}${whatsapp.replace(/\D/g, "")}`;
-
-      // 1. Chama o service
       const res = await apiLogin(fullNumber, password, rememberMe);
 
-      // O Django retorna { ok: true, name: "...", whatsapp_number: "...", id: "..." }
       if (res?.ok) {
-
-        // 2. Mapeia os dados da raiz para o formato que o seu UserData espera
-        // Se o seu UserData espera um objeto user, nós o criamos aqui:
         const userData = {
           id: res.id,
           name: res.name,
           whatsapp_number: res.whatsapp_number,
-          // adicione outros campos que seu UserData exija
         };
 
-        // 3. Atualiza o Zustand (Isso muda o estado isAuthenticated para true)
+        // 1. Atualiza o estado local (Zustand)
         useAuthStore.getState().setUser(userData);
 
-        // 4. Sincroniza o Next.js
+        // 2. FORÇA o Next.js a limpar o cache de rotas e cookies
         router.refresh();
 
-        // 5. Redirecionamento
-        // Não use Cookies.set se o seu backend já envia Set-Cookie (HttpOnly)
-        router.push(destination || "/dashboard");
+        // 3. Em produção (HTTPS/Cross-domain), damos um respiro para o browser
+        // Isso garante que o Set-Cookie foi processado antes da mudança de página
+        setTimeout(() => {
+          router.push(destination || "/dashboard");
+        }, 150);
 
       } else {
         setError(res?.message || "Credenciais inválidas.");
       }
     } catch (err: any) {
-      setError(err.message || "Erro de conexão ao tentar logar.");
+      setError("Erro de conexão. Verifique se o servidor está online.");
     } finally {
       setLoading(false);
     }

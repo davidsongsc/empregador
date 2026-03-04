@@ -37,16 +37,16 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const token = cookieStore.get("access");
 
-  let user = null;
+  let serverUser = null;
 
   // 2. Se houver token, validamos a sessão antes de renderizar o HTML
   if (token) {
     try {
       // Importante: sua função checkSession deve ser capaz de lidar com SSR
       const data = await checkSession();
-      user = data?.user || null;
+      serverUser = data?.user || null;
     } catch (error) {
-      user = null;
+      serverUser = null;
     }
   }
 
@@ -62,7 +62,7 @@ export default async function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {/* 3. Injetamos o usuário do servidor no Zustand do cliente imediatamente */}
-        <AuthInitializer serverUser={user} />
+        <AuthInitializer serverUser={serverUser} />
 
         <AuthProvider>
           <Header />

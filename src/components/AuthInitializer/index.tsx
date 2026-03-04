@@ -1,27 +1,29 @@
 "use client";
-import Cookies from "js-cookie";
 import { UserData } from "@/interfaces/userData";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useEffect, useRef } from "react";
 
-// components/AuthInitializer.tsx
 export function AuthInitializer({ serverUser }: { serverUser: UserData | null }) {
-  const { setUser, isAuthenticated, isHydrated } = useAuthStore();
+  const { setUser, setHydrated, isHydrated } = useAuthStore();
   const initialized = useRef(false);
 
   useEffect(() => {
+    // Executa apenas uma vez quando o app "acorda" (F5 ou primeiro acesso)
     if (!initialized.current) {
-      // SÓ atualizamos se o servidor de fato encontrou um usuário
-      // ou se o cliente ainda não está autenticado.
+      
       if (serverUser) {
+        // Se o servidor (SSR) encontrou a sessão nos cookies, sincronizamos o Zustand
         setUser(serverUser);
-      } else if (!Cookies.get('access')) {
-        // Só limpamos se REALMENTE não houver cookie no navegador
+      } else {
+        // Se o servidor não achou nada, limpamos o estado para garantir
+        // Mas atenção: não checamos Cookies.get pois ele é HttpOnly
         setUser(null);
       }
+
+      setHydrated(true); // Marca que o estado inicial foi resolvido
       initialized.current = true;
     }
-  }, [serverUser]);
+  }, [serverUser, setUser, setHydrated]);
 
   return null;
 }
