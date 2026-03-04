@@ -24,11 +24,12 @@ export default async function DashboardPage({
   searchParams: { [key: string]: string | undefined };
 }) {
   const data = await getDashboardData();
+
   const isPostJobOpen = searchParams.newJob === "true";
 
   return (
     <div className="p-4 sm:p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
-      
+
       {/* HEADER COM BOTÃO DE AÇÃO */}
       <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -38,7 +39,7 @@ export default async function DashboardPage({
           <p className="text-slate-500 text-sm mt-2">Acompanhe suas oportunidades em tempo real.</p>
         </div>
 
-        <Link 
+        <Link
           href="?newJob=true"
           className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-lg shadow-indigo-100 active:scale-95"
         >
@@ -113,11 +114,10 @@ export default async function DashboardPage({
       {/* Nota: O Modal precisa ser 'use client' internamente. 
         Ao clicar em fechar, ele deve navegar de volta para '/dashboard'
       */}
-      <PostJobModal 
-        isOpen={isPostJobOpen} 
-        onCloseAction="/dashboard" 
+      <PostJobModal
+        isOpen={isPostJobOpen}
       />
-      
+
     </div>
   );
 }

@@ -14,7 +14,7 @@ import { toast } from '@/components/Notification';
 import { useRouter } from 'next/navigation'; // Correto para App Router
 interface PostJobModalProps {
     isOpen: boolean;
-    onClose: () => void; // Voltamos para a função simples: string;
+    onClose?: () => void; // Voltamos para a função simples: string;
 }
 
 const PostJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
@@ -111,7 +111,7 @@ const PostJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
         try {
             await postJob(payload);
             toast.success("Vaga publicada!");
-            onClose();
+            onClose!();
         } catch (err) { console.error(err); }
     };
 
