@@ -72,7 +72,7 @@ const JobHome = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC]"> {/* Fundo levemente acinzentado para destacar os cards brancos */}
       <main className="max-w-7xl mx-auto pt-24 pb-12 px-3 sm:px-6 lg:px-8">
-        
+
         {/* Header Section */}
         <header className="mb-8 space-y-3">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
@@ -86,7 +86,7 @@ const JobHome = () => {
         <AdBanner dataAdSlot="1234567890" className="mb-2" />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
+
           {/* LADO ESQUERDO: LISTA */}
           <section className="lg:col-span-5 space-y-4 h-full">
             <div className="flex flex-col gap-3 sm:max-h-[700px] overflow-y-auto pr-1 custom-scrollbar">
@@ -97,11 +97,10 @@ const JobHome = () => {
                     setSelectedJob(job);
                     if (window.innerWidth < 1024) setOpenDetailsModal(true);
                   }}
-                  className={`relative group cursor-pointer border-2 rounded-2xl p-4 transition-all duration-200 ${
-                    selectedJob?.uid === job.uid
+                  className={`relative group cursor-pointer border-2 rounded-2xl p-4 transition-all duration-200 ${selectedJob?.uid === job.uid
                       ? "border-indigo-600 bg-white shadow-md ring-4 ring-indigo-50"
                       : "border-transparent bg-white hover:border-slate-200 shadow-sm"
-                  }`}
+                    }`}
                 >
                   <div className="flex flex-col gap-1">
                     <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">
@@ -115,9 +114,9 @@ const JobHome = () => {
                   <div className="mt-4 flex flex-wrap gap-3 items-center">
                     <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
                       <MapPin className="w-3 h-3" />
-                      {job.endereco?.cidade || "Remoto"}
+                      {job.endereco?.cidade || "Presencial"}
                     </div>
-                    <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                    <div className={`flex items-center gap-1 text-[11px] font-medium  px-2 py-0.5 rounded ${job.salario ? "bg-indigo-50 text-indigo-600" : "bg-slate-50 text-slate-500" }`}>
                       <CircleDollarSign className="w-3 h-3" />
                       {job.salario ? `R$ ${job.salario}` : "A combinar"}
                     </div>
@@ -136,7 +135,7 @@ const JobHome = () => {
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              
+
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
                 Página {currentPage} de {totalPages}
               </div>
@@ -176,7 +175,7 @@ const JobHome = () => {
                     </div>
                     <h2 className="text-3xl font-black text-slate-900 mb-2">{selectedJob.cargo_exibicao}</h2>
                     <p className="text-lg text-slate-500 font-medium italic">{selectedJob.empresa_nome}</p>
-                    
+
                     <button
                       onClick={() => setOpenApply(true)}
                       className="w-full mt-6 bg-indigo-600 text-white py-4 rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 group cursor-pointer"
@@ -218,25 +217,25 @@ const JobHome = () => {
 
         {/* Footer Info Cards */}
         <section className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-           <InfoCard 
-            icon={<GraduationCap className="text-white" />} 
-            title="Cursos Gratuitos" 
-            desc="Aprenda habilidades em alta no mercado." 
+          <InfoCard
+            icon={<GraduationCap className="text-white" />}
+            title="Cursos Gratuitos"
+            desc="Aprenda habilidades em alta no mercado."
             bg="bg-indigo-600"
             buttonText="Explorar"
-           />
-           <InfoCard 
-            icon={<Users className="text-orange-500" />} 
-            title="Feirão Presencial 2026" 
-            desc="Dia 25 de Março no Centro de Convenções." 
+          />
+          <InfoCard
+            icon={<Users className="text-orange-500" />}
+            title="Feirão Presencial 2026"
+            desc="Dia 25 de Março no Centro de Convenções."
             label="Evento VIP"
-           />
-           <InfoCard 
-            icon={<Briefcase className="text-emerald-500" />} 
-            title="Guia de Currículos" 
-            desc="Dicas práticas para dobrar suas chances." 
+          />
+          <InfoCard
+            icon={<Briefcase className="text-emerald-500" />}
+            title="Guia de Currículos"
+            desc="Dicas práticas para dobrar suas chances."
             link="Ler artigo"
-           />
+          />
         </section>
 
       </main>
@@ -267,7 +266,7 @@ const InfoCard = ({ icon, title, desc, bg = "bg-white", buttonText, label, link 
     <p className={`text-sm mb-4 ${bg === 'bg-white' ? 'text-slate-500' : 'text-indigo-100'}`}>{desc}</p>
     {buttonText && <button className="text-xs font-bold bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30 cursor-pointer">{buttonText}</button>}
     {label && <span className="text-[10px] font-black bg-orange-50 text-orange-600 px-2 py-1 rounded-md">{label}</span>}
-    {link && <button className="text-indigo-600 text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer">{link} <ArrowRight className="w-3 h-3"/></button>}
+    {link && <button className="text-indigo-600 text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer">{link} <ArrowRight className="w-3 h-3" /></button>}
   </div>
 );
 

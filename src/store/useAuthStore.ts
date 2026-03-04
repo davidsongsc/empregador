@@ -22,18 +22,18 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       isAuthenticated: false,
-      loading: true, 
+      loading: true,
       isHydrated: false,
 
-      setUser: (user) => 
-        set({ 
-          user, 
-          isAuthenticated: !!user, 
-          loading: false 
+      setUser: (user) =>
+        set({
+          user,
+          isAuthenticated: !!user,
+          loading: false
         }),
 
       setLoading: (loading) => set({ loading }),
-      
+
       setHydrated: (state) => set({ isHydrated: state }),
 
       logout: async () => {
@@ -50,10 +50,11 @@ export const useAuthStore = create<AuthState>()(
       refresh: async () => {
         try {
           const data = await checkSession();
-          if (data?.user) {
-            set({ user: data.user, isAuthenticated: true, loading: false });
+          // Se o seu backend retorna o user direto na raiz, mude para 'if (data)'
+          if (data && (data.user || data.whatsapp_number)) {
+            const userData = data.user ? data.user : data;
+            set({ user: userData, isAuthenticated: true, loading: false });
           } else {
-            // Se a API diz que não tem user, limpa tudo
             set({ user: null, isAuthenticated: false, loading: false });
           }
         } catch (err) {
@@ -64,9 +65,9 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'freelacerto_auth_storage',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ 
-        user: state.user, 
-        isAuthenticated: state.isAuthenticated 
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
@@ -79,7 +80,7 @@ export const useAuthStore = create<AuthState>()(
          * MOTIVO: Se o cookie for HttpOnly, o JS não o vê e desloga o usuário por erro.
          * Deixe que o AuthInitializer decida se deve limpar baseado no serverUser.
          */
-        
+
         state.setLoading(false);
       },
     }

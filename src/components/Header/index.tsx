@@ -4,15 +4,20 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Briefcase, User, Search, PlusCircle, X, Menu, LogOut, ChevronRight, LayoutDashboard } from 'lucide-react';
 import Image from 'next/image';
+
 import { useAuthStore } from '@/store/useAuthStore';
+import { usePathname } from 'next/dist/client/components/navigation';
+import PostJobModal from '../Modal/PostJobModal';
 
 const Header = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isDockOpen, setIsDockOpen] = useState(false);
     const { user, isAuthenticated, logout } = useAuthStore();
-
-    const isRecruiter = user?.is_staff || (user?.profile?.empresas && user.profile.empresas.length > 0);
+    const pathname = usePathname();
+    const isDashboardRoute = pathname.startsWith('/dashboard');
+    const [isPostJobOpen, setIsPostJobOpen] = useState(false);
+    const isRecruiter = user?.is_staff || user?.profile?.role === 'RECRUTADOR';
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -20,14 +25,17 @@ const Header = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    if (isDashboardRoute) return null;
+
     const closeDock = () => setIsDockOpen(false);
+
 
     return (
         <>
             <header className={`fixed top-0 w-full transition-all duration-500 z-50 hidden md:block px-4 ${isScrolled ? 'pt-2' : 'pt-4'}`}>
                 <div className={`max-w-7xl mx-auto flex items-center justify-between px-6 py-3 rounded-2xl transition-all duration-500 ${isScrolled
-                        ? 'bg-white/90 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.05)] border border-white/40'
-                        : 'bg-white/40 backdrop-blur-md border border-white/20'
+                    ? 'bg-white/90 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.05)] border border-white/40'
+                    : 'bg-white/40 backdrop-blur-md border border-white/20'
                     }`}>
 
                     <div className="flex-1 flex justify-start">
@@ -70,17 +78,17 @@ const Header = () => {
                         {isAuthenticated ? (
                             <div className="flex items-center gap-2 bg-white/50 p-1 rounded-xl border border-white shadow-sm">
                                 {isRecruiter && (
-                                    <Link 
-                                        href="/painel/minhas-vagas" 
+                                    <Link
+                                        href="/dashboard"
                                         className="p-2.5 hover:bg-indigo-50 text-indigo-600 rounded-lg transition-all group/dash ml-1"
-                                        title="Dashboard"
+                                        title="Portal.Empresa (Dashboard)"
                                     >
                                         <LayoutDashboard className="w-4 h-4 group-hover/dash:scale-110 transition-transform" />
                                     </Link>
                                 )}
                                 <Link href="/perfil" className={`flex items-center gap-2 pl-3 pr-1 group ${isRecruiter ? 'border-l border-gray-100 ml-1' : ''}`}>
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Olá,</span>
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-[10px] font-black text-gray-400 capitalize leading-none mb-1">{user?.profile?.role?.split(' ')[0]}</span>
                                         <span className="text-xs font-black text-gray-800 leading-none capitalize">
                                             {user?.profile?.name?.split(' ')[0]}
                                         </span>
@@ -105,9 +113,13 @@ const Header = () => {
                             </Link>
                         )}
 
-                        <Link href="/anunciar" className="bg-gray-900 text-white px-6 py-3 rounded-xl text-sm font-black hover:bg-indigo-600 hover:-translate-y-0.5 transition-all shadow-xl shadow-gray-200 active:scale-95">
+                        <button
+                            onClick={() => setIsPostJobOpen(true)}
+                            className="bg-gray-900 text-white px-6 py-3 rounded-xl text-sm font-black hover:bg-indigo-600 hover:-translate-y-0.5 transition-all shadow-xl shadow-gray-200 active:scale-95 cursor-pointer"
+                        >
                             Postar Vaga
-                        </Link>
+                        </button>
+
                     </div>
                 </div>
             </header>
@@ -201,6 +213,10 @@ const Header = () => {
             {isDockOpen && (
                 <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-40 md:hidden animate-in fade-in duration-500" onClick={closeDock} />
             )}
+            <PostJobModal
+                isOpen={isPostJobOpen}
+                onClose={() => setIsPostJobOpen(false)}
+            />
         </>
     );
 };
