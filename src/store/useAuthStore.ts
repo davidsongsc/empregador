@@ -22,14 +22,14 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       isAuthenticated: false,
-      loading: true,
+      loading: true, // Começa em true para evitar flash de conteúdo público
       isHydrated: false,
 
       setUser: (user) =>
         set({
           user,
           isAuthenticated: !!user,
-          loading: false
+          loading: false,
         }),
 
       setLoading: (loading) => set({ loading }),
@@ -38,26 +38,42 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         try {
+          // 1. Tenta avisar o backend para invalidar a sessão
           await apiLogout();
+        } catch (err) {
+          console.warn("Erro ao deslogar no servidor, limpando localmente...");
         } finally {
-          Cookies.remove('access', { path: '/' });
+          // 2. Limpa TUDO, independente de erro na API
+          // Se o cookie de acesso não for HttpOnly, o remove funciona.
+          // Se for HttpOnly, o backend já deve ter limpado no apiLogout.
+          Cookies.remove('access', { path: '/' }); 
+          
+          // Limpa o storage do Zustand manualmente
           localStorage.removeItem('freelacerto_auth_storage');
+          
           set({ user: null, isAuthenticated: false, loading: false });
+          
+          // 3. Redireciona via window.location para limpar qualquer estado residual de memória
           window.location.href = '/login';
         }
       },
 
       refresh: async () => {
+        // Se já estiver carregando, não dispara outro refresh
+        set({ loading: true });
         try {
           const data = await checkSession();
-          // Se o seu backend retorna o user direto na raiz, mude para 'if (data)'
-          if (data && (data.user || data.whatsapp_number)) {
-            const userData = data.user ? data.user : data;
+          
+          // Ajuste para lidar com diferentes formatos de resposta do Django
+          const userData = data?.user || (data?.whatsapp_number ? data : null);
+
+          if (userData) {
             set({ user: userData, isAuthenticated: true, loading: false });
           } else {
             set({ user: null, isAuthenticated: false, loading: false });
           }
         } catch (err) {
+          // Se o /me/ falhar (401), o usuário não está logado
           set({ user: null, isAuthenticated: false, loading: false });
         }
       },
@@ -72,16 +88,16 @@ export const useAuthStore = create<AuthState>()(
       onRehydrateStorage: () => (state) => {
         if (!state) return;
 
-        // Marca como hidratado
+        // Ao terminar de ler o localStorage, marca como hidratado
         state.setHydrated(true);
 
-        /**
-         * REMOVIDO: state.setUser(null) baseado no cookie JS.
-         * MOTIVO: Se o cookie for HttpOnly, o JS não o vê e desloga o usuário por erro.
-         * Deixe que o AuthInitializer decida se deve limpar baseado no serverUser.
-         */
-
-        state.setLoading(false);
+        // Se o localStorage diz que está logado, mantemos o loading 
+        // até que o AuthInitializer/checkSession confirme a validade do cookie.
+        if (state.isAuthenticated) {
+            state.setLoading(true);
+        } else {
+            state.setLoading(false);
+        }
       },
     }
   )
