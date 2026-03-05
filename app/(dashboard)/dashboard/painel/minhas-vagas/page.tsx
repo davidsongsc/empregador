@@ -35,7 +35,8 @@ const MinhasVagas = () => {
                             onClick={() => setIsPostJobOpen(true)}
                             className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-100 active:scale-95 cursor-pointer"
                         >
-                            Publicar Nova Vaga
+                            <Plus className="w-5 h-5" />
+                            Postar Nova Vaga
                         </button>
                     </div>
                 </div>

@@ -1,34 +1,9 @@
+import { JobsResponse } from "@/interfaces/jobResponse";
 import { api } from "@/lib/api";
 
-export interface JobResult {
-  uid: string;
-  tipo_vaga_display: string;
-  role_details: {
-    name: string;
-    category: string;
-  };
-  cargo_exibicao: string;
-  turno: string;
-  candidatos_count?: number;
-  created_at?: string;
-  empresa_nome?: string; // Útil para o feed
-  endereco?: {
-    cidade: string;
-    estado: string;
-    lagradouro: string;
-    cep: string;
-  };
-  salario?: number;
-  descricao?: string;
-  perguntas?: any[];
-}
 
-export interface JobsResponse {
-  count: number;
-  next: string | null;      // ADICIONADO: URL para a próxima página
-  previous: string | null;  // ADICIONADO: URL para a página anterior
-  results: JobResult[];
-}
+
+
 /**
  * ROTA PÚBLICA: Busca todas as vagas (usada na Home/Landing Page)
  */

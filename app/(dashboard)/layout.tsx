@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import Header from "@/components/Header";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -43,6 +43,7 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
       <main className="container mx-auto px-4 py-8">
         {children}
       </main>
+    
     </div>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { getAllJobs, getJobFeed, JobResult, JobsResponse } from "@/services/jobService";
+import { getAllJobs, getJobFeed } from "@/services/jobService";
 import { toast } from "@/components/Notification";
 import { useAuthStore } from "@/store/useAuthStore";
+import { JobResult } from "@/interfaces/jobResult";
 
 export function useJobs(page: number) {
   const [jobs, setJobs] = useState<JobResult[]>([]);

@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, FileText, Settings } from "lucide-react"
+import { LayoutDashboard, FileText, Settings, CalendarDays } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -15,14 +15,19 @@ const SidebarNav = () => {
       icon: LayoutDashboard,
     },
     {
-      label: "Minhas Vagas",
+      label: "Vagas Cadastradas",
       href: "/dashboard/painel/minhas-vagas",
       icon: FileText,
     },
     {
-      label: "Perfil",
+      label: "Corporação",
       href: "/dashboard/painel/perfil",
       icon: Settings,
+    },
+    {
+      label: "Eventos",
+      href: "/dashboard/painel/eventos",
+      icon: CalendarDays,
     },
   ]
 
@@ -39,16 +44,15 @@ const SidebarNav = () => {
             href={item.href}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 border
-              ${
-                isActive
-                  ? "bg-indigo-50 text-indigo-600 font-bold border-indigo-100 shadow-sm"
-                  : "text-slate-500 font-medium border-transparent hover:bg-slate-50 hover:text-slate-700"
+              ${isActive
+                ? "bg-indigo-50 text-indigo-600 font-bold border-indigo-100 shadow-sm"
+                : "text-slate-500 font-medium border-transparent hover:bg-slate-50 hover:text-slate-700"
               }
             `}
           >
             {/* Ícone com ajuste de tamanho para telas pequenas */}
             <Icon className={`w-5 h-5 shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
-            
+
             <span className="text-sm truncate">
               {item.label}
             </span>

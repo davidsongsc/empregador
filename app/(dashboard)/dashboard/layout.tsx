@@ -91,6 +91,7 @@ export default function DashboardLayout({
         <main className="flex-1 overflow-y-auto custom-scrollbar">
           {children}
         </main>
+        
       </div>
     </div>
   )

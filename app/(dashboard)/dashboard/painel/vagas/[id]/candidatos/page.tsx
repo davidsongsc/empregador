@@ -11,6 +11,7 @@ import {
   Briefcase
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 const StatusBadge = ({ status }: { status: string }) => {
   const configs: any = {
@@ -286,31 +287,6 @@ export default function CandidatosPage() {
 
                     <div className="space-y-8 bg-gray-50/50 p-6 rounded-[2.5rem] border border-gray-100">
                       <section className="space-y-4">
-                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Informações de Contato</h4>
-                        {isUnlocked ? (
-                          <div className="grid gap-3">
-                            <a href={`https://wa.me/${details.whatsapp}`} target="_blank" className="flex items-center justify-between p-4 bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100">
-                              <div className="flex items-center gap-3 font-bold text-sm uppercase tracking-tighter">
-                                <Phone className="w-4 h-4" /> Enviar WhatsApp
-                              </div>
-                              <ExternalLink className="w-4 h-4" />
-                            </a>
-                            <a href={`mailto:${details.email}`} className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-2xl text-gray-700 hover:border-indigo-600 transition-all group font-bold text-sm">
-                              <Mail className="w-4 h-4 text-indigo-600" />
-                              <span className="truncate">{details.email}</span>
-                            </a>
-                          </div>
-                        ) : (
-                          <div className="p-6 bg-white border border-dashed border-gray-200 rounded-2xl text-center space-y-3">
-                            <Lock className="w-6 h-6 text-gray-300 mx-auto" />
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter leading-tight px-4">
-                              Dados de contato bloqueados até a análise
-                            </p>
-                          </div>
-                        )}
-                      </section>
-
-                      <section className="space-y-4">
                         <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ações do Funil</h4>
                         <div className="flex flex-col gap-3">
                           <button
@@ -364,6 +340,50 @@ export default function CandidatosPage() {
                           </div>
                         </div>
                       </section>
+                      <section className="space-y-4">
+                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Informações de Contato</h4>
+                        {isUnlocked ? (
+                          <div className="grid gap-3">
+                            {/* Botão WhatsApp */}
+                            <button
+                              disabled={details.is_locked || !details.whatsapp}
+                              onClick={() => window.open(`https://wa.me/${details.whatsapp}`, "_blank")}
+                              className="flex items-center justify-between p-4 bg-emerald-600 text-white rounded-2xl 
+               hover:bg-emerald-700 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed 
+               transition-all shadow-lg shadow-emerald-100 w-full"
+                            >
+                              <div className="flex items-center gap-3 font-bold text-sm uppercase tracking-tighter">
+                                <Phone className="w-4 h-4" />
+                                {details.is_locked ? "WhatsApp Bloqueado" : "Enviar WhatsApp"}
+                              </div>
+                              {!details.is_locked && <ExternalLink className="w-4 h-4" />}
+                            </button>
+
+                            {/* Botão E-mail */}
+                            <button
+                              disabled={details.is_locked || !details.email}
+                              onClick={() => (window.location.href = `mailto:${details.email}`)}
+                              className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-2xl 
+               text-gray-700 hover:border-indigo-600 disabled:bg-gray-50 disabled:text-gray-400 
+               disabled:border-gray-200 disabled:cursor-not-allowed transition-all group font-bold text-sm w-full"
+                            >
+                              <Mail className={`w-4 h-4 ${details.is_locked ? "text-gray-300" : "text-indigo-600"}`} />
+                              <span className="truncate">
+                                {details.is_locked ? "E-mail oculto" : details.email}
+                              </span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="p-6 bg-white border border-dashed border-gray-200 rounded-2xl text-center space-y-3">
+                            <Lock className="w-6 h-6 text-gray-300 mx-auto" />
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter leading-tight px-4">
+                              Dados de contato bloqueados até a análise
+                            </p>
+                          </div>
+                        )}
+                      </section>
+
+
                     </div>
                   </div>
                 </div>
