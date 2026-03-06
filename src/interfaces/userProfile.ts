@@ -7,15 +7,7 @@ export type UserProfile = {
   role?: string;
   bio?: string;
   foto?: string | null;
-  endereco?: {
-    id?: string;
-    cep?: string;
-    logradouro?: string;
-    numero?: string;
-    bairro?: string;
-    cidade?: string;
-    estado?: string;
-  };
+  endereco?: Endereco;
   // AJUSTE AQUI: Definido como Array de objetos
   empresas?: {
     id: string;
@@ -23,4 +15,14 @@ export type UserProfile = {
     role: string;
     is_active: boolean;
   }[];
+};
+
+export type Endereco = {
+  id?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
 };

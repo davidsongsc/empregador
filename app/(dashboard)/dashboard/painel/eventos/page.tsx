@@ -132,12 +132,35 @@ export default function EventsListPage() {
                                             </div>
                                         </td>
                                         <td className="p-6 text-right">
-                                            <Link
-                                                href={`/dashboard/painel/eventos/${event.uid}`}
-                                                className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-black text-[10px] uppercase tracking-widest transition-all"
-                                            >
-                                                Gerenciar <ArrowRight className="w-4 h-4" />
-                                            </Link>
+                                            {(!event.schedules || event.schedules.length === 0) && (
+                                                <span className="inline-flex items-center gap-2 text-slate-300 font-black text-[10px] uppercase tracking-widest cursor-not-allowed">
+                                                    Sem escala
+                                                </span>
+                                            )}
+
+                                            {event.schedules && event.schedules.length === 1 && (
+                                                <Link
+                                                    href={`/dashboard/painel/escalas/${event.schedules[0].uid}`}
+                                                    className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-black text-[10px] uppercase tracking-widest transition-all"
+                                                >
+                                                    Gerenciar <ArrowRight className="w-4 h-4" />
+                                                </Link>
+                                            )}
+
+                                            {event.schedules && event.schedules.length > 1 && (
+                                                <div className="flex flex-col items-end gap-1">
+                                                    {event.schedules.map((schedule) => (
+                                                        <Link
+                                                            key={schedule.uid}
+                                                            href={`/dashboard/painel/${schedule.uid}`}
+                                                            className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-black text-[9px] uppercase tracking-widest transition-all"
+                                                        >
+                                                            {schedule.start_time_display}
+                                                            <ArrowRight className="w-3 h-3" />
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

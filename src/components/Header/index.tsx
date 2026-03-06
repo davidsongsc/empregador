@@ -17,7 +17,7 @@ const Header = () => {
     const pathname = usePathname();
     const isDashboardRoute = pathname.startsWith('/dashboard');
     const [isPostJobOpen, setIsPostJobOpen] = useState(false);
-    const isRecruiter = user?.is_staff || user?.profile?.role === 'RECRUTADOR';
+    const isRecruiter = user?.is_staff || user?.profile?.role !== 'CANDIDATO' ;
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 20);
