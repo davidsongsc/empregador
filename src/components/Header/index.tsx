@@ -7,7 +7,7 @@ import Image from 'next/image';
 
 import { useAuthStore } from '@/store/useAuthStore';
 import { usePathname } from 'next/dist/client/components/navigation';
-import PostJobModal from '../Modal/PostJobModal';
+import PostJobModal from '@/components/Modal/PostJobModal';
 
 const Header = () => {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -17,7 +17,7 @@ const Header = () => {
     const pathname = usePathname();
     const isDashboardRoute = pathname.startsWith('/dashboard');
     const [isPostJobOpen, setIsPostJobOpen] = useState(false);
-    const isRecruiter = user?.is_staff || user?.profile?.role !== 'CANDIDATO' ;
+    const isRecruiter = user?.is_staff || user?.profile?.role !== 'CANDIDATO';
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -79,7 +79,7 @@ const Header = () => {
                             <div className="flex items-center gap-2 bg-white/50 p-1 rounded-xl border border-white shadow-sm">
                                 {isRecruiter && (
                                     <Link
-                                        href="/dashboard"
+                                        href="/dashboard/home"
                                         className="p-2.5 hover:bg-indigo-50 text-indigo-600 rounded-lg transition-all group/dash ml-1"
                                         title="Portal.Empresa (Dashboard)"
                                     >
@@ -87,10 +87,16 @@ const Header = () => {
                                     </Link>
                                 )}
                                 <Link href="/perfil" className={`flex items-center gap-2 pl-3 pr-1 group ${isRecruiter ? 'border-l border-gray-100 ml-1' : ''}`}>
+                                    {/* Container de Identificação */}
                                     <div className="flex flex-col items-start">
-                                        <span className="text-[10px] font-black text-gray-400 capitalize leading-none mb-1">{user?.profile?.role?.split(' ')[0]}</span>
+                                        <span className="text-[10px] font-black text-gray-400 capitalize leading-none mb-1">
+                                            {user?.profile?.empresas && user.profile.empresas.length > 0
+                                                ? user.profile.empresas[0].role.toLowerCase()
+                                                : "Candidato"}
+                                        </span>
+
                                         <span className="text-xs font-black text-gray-800 leading-none capitalize">
-                                            {user?.profile?.name?.split(' ')[0]}
+                                            {user?.profile?.name?.split(' ')[0] || "Usuário"}
                                         </span>
                                     </div>
                                     <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white overflow-hidden shadow-md group-hover:scale-105 transition-transform">

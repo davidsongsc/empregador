@@ -1,41 +1,42 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import LoadingSpinner from "@/components/LoadingSpinner";
 import Header from "@/components/Header";
 import { useAuthStore } from "@/store/useAuthStore";
+import { MODULE_PERMISSIONS } from "@/constants/permissions";
+import { toast } from "@/components/Notification";
 
 export default function PrivateLayout({ children }: { children: React.ReactNode }) {
-  // Adicionamos o isHydrated para saber se o AuthInitializer já terminou de ler o serverUser
-  const { isAuthenticated, loading, isHydrated } = useAuthStore();
+  const { user, isHydrated } = useAuthStore();
   const router = useRouter();
 
-  useEffect(() => {
-    // SÓ redirecionamos se:
-    // 1. O Store já foi hidratado (o AuthInitializer já rodou)
-    // 2. O carregamento de sessão terminou
-    // 3. O usuário realmente não está autenticado
-    if (isHydrated && !loading && !isAuthenticated) {
-      router.replace("/login");
+  // 1. Lógica de extração baseada no array de empresas
+  const hasAccess = useMemo(() => {
+    if (!user?.profile?.empresas || user.profile.empresas.length === 0) {
+      return false;
     }
-  }, [isAuthenticated, loading, isHydrated, router]);
 
-  // Enquanto o Zustand não foi populado pelo AuthInitializer ou ainda está buscando o /me/
-  if (!isHydrated || loading) {
-    return (
-      <>
-        <Header />
-        <div className="min-h-screen flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </>
+    // Verifica se existe alguma empresa onde o cargo do usuário está na lista de permissões
+    return user.profile.empresas.some(empresa => 
+      MODULE_PERMISSIONS.RECRUITMENT.includes(empresa.role) && empresa.is_active
     );
-  }
+  }, [user]);
 
-  // Se após a hidratação confirmarmos que não está logado, bloqueamos o conteúdo 
-  // enquanto o useEffect acima dispara o router.replace
-  if (!isAuthenticated) return null;
+  useEffect(() => {
+    if (isHydrated && !hasAccess) {
+      // Pegamos o cargo da primeira empresa apenas para o log/toast, se existir
+      const currentRole = user?.profile?.empresas?.[0]?.role || "GUEST";
+      
+      toast.error(`Acesso negado. Seu cargo (${currentRole}) não tem permissão.`);
+      router.replace("/vagas");
+    }
+  }, [isHydrated, hasAccess, user, router]);
+
+  // --- RENDERIZAÇÃO ---
+  if (!isHydrated || !hasAccess) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -43,7 +44,6 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
       <main className="container mx-auto px-4 py-8">
         {children}
       </main>
-    
     </div>
   );
 }

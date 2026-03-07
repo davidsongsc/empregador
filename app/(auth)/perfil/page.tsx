@@ -36,8 +36,6 @@ const App = () => {
       .slice(0, 9);
   };
 
-
-
   useEffect(() => {
     if (profile) {
       setFormData({

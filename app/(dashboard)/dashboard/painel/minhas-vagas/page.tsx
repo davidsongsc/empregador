@@ -11,9 +11,9 @@ import PostJobModal from "@/components/Modal/PostJobModal"
 const MinhasVagas = () => {
     const { user } = useAuthStore()
     const [isPostJobOpen, setIsPostJobOpen] = useState(false);
-    // 1. Integrando o Hook (filtramos pelo ID do usuário logado)
+    const empresaId = user?.profile?.empresas?.[0]?.id;
     const { vagas, loading, error, refresh } = useMyJobs({
-        usuario: user?.id
+        company: empresaId || user?.id
     })
 
     return (

@@ -24,21 +24,7 @@ export async function registerUser(
 }
 
 // Adicionamos o parâmetro 'remember' (opcional, com padrão false)
-export async function login(whatsappNumber: string, password: string, remember: boolean = false) {
-    const data = await api("/auth/login/", {
-        method: "POST",
-        credentials: "include",
-        body: JSON.stringify({
-            whatsapp_number: whatsappNumber,
-            password,
-            remember,
-        }),
-    });
 
-    // Se o login foi ok, mas não veio o objeto 'user' como no /me/,
-    // você precisa formatar aqui ou no componente:
-    return data;
-}
 export async function logout() {
     // O logout precisa limpar os cookies no servidor
     return api("/auth/logout/", {

@@ -1,5 +1,4 @@
 "use client";
-import { login as apiLogin } from "@/services/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -15,9 +14,9 @@ import {
   ChevronDown,
   CheckCircle,
 } from "lucide-react";
-import { login } from "@/services/auth";
 import { toast } from "@/components/Notification";
 import { useAuthStore } from "@/store/useAuthStore";
+import { login } from "@/services/login";
 
 // Lista de países sugerida
 const COUNTRIES = [
@@ -59,37 +58,52 @@ const LoginUser = () => {
 
     try {
       const fullNumber = `${countryCode}${whatsapp.replace(/\D/g, "")}`;
-      const res = await apiLogin(fullNumber, password, rememberMe);
+      // O res aqui deve ser o objeto JSON retornado pelo seu service
+      const res = await login(fullNumber, password, rememberMe);
 
-      if (res?.ok) {
-        const userData = {
-          id: res.id,
-          name: res.name,
-          whatsapp_number: res.whatsapp_number,
-        };
+      console.log("Resposta bruta da API:", res); // LOG DE DEBUG
 
-        // 1. Atualiza o estado local (Zustand)
+      if (res?.ok || res?.user) {
+        // Tentamos pegar o user de vários lugares possíveis
+        const userData = res.user || res.data?.user || res;
+        console.log("Dados do usuário:", userData); // LOG DE DEBUG
+        // Verificação de segurança: o objeto tem a propriedade 'profile'?
+        if (!userData?.profile) {
+          console.error("Estrutura de userData inválida:", userData);
+          setError("Erro na estrutura dos dados do usuário.");
+          return;
+        }
+
+        // 1. Atualiza o Zustand
         useAuthStore.getState().setUser(userData);
 
-        // 2. FORÇA o Next.js a limpar o cache de rotas e cookies
+        // 2. Refresh para garantir cookies/middleware
         router.refresh();
 
-        // 3. Em produção (HTTPS/Cross-domain), damos um respiro para o browser
-        // Isso garante que o Set-Cookie foi processado antes da mudança de página
+        // 3. Lógica de Redirecionamento
         setTimeout(() => {
-          router.push(destination || "/dashboard");
-        }, 150);
+          const empresas = userData.profile.empresas || [];
+
+          if (empresas.length > 1) {
+            router.push("/select-company");
+          } else if (empresas.length === 1) {
+            const companyId = empresas[0].id;
+            useAuthStore.getState().setActiveCompany(companyId);
+            router.push(`/dashboard/painel/companies/${companyId}`);
+          } else {
+            router.push("/vagas");
+          }
+        }, 200);
 
       } else {
         setError(res?.message || "Credenciais inválidas.");
       }
     } catch (err: any) {
-      setError("Erro de conexão. Verifique se o servidor está online.");
+      setError("Erro de conexão com o servidor.");
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-white mt-25">
       {/* LADO ESQUERDO (Mantido igual) */}

@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { LogOut, Bell, Menu, X } from "lucide-react"
 import SidebarNav from "@/components/MiniComponents/SidebarNav"
 import { useAuthStore } from "@/store/useAuthStore"
+import { useRouter } from "next/navigation"
+
 
 export default function DashboardLayout({
   children,
@@ -11,7 +13,10 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const { user, loading, logout } = useAuthStore();
+  const { user, loading, isHydrated, logout } = useAuthStore();
+  if (!isHydrated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex">
@@ -39,7 +44,7 @@ export default function DashboardLayout({
           <SidebarNav />
 
           <div className="pt-6 border-t border-slate-100">
-            <button onClick={()=> logout()} className="w-full flex items-center gap-3 px-4 py-3 text-red-500 font-bold hover:bg-red-50 rounded-xl transition-colors group cursor-pointer">
+            <button onClick={() => logout()} className="w-full flex items-center gap-3 px-4 py-3 text-red-500 font-bold hover:bg-red-50 rounded-xl transition-colors group cursor-pointer">
               <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
               <span className="text-sm">Sair</span>
             </button>
@@ -91,7 +96,7 @@ export default function DashboardLayout({
         <main className="flex-1 overflow-y-auto custom-scrollbar">
           {children}
         </main>
-        
+
       </div>
     </div>
   )
