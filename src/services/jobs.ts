@@ -37,3 +37,15 @@ export async function createJob(jobData: any) {
     body: JSON.stringify(jobData),
   });
 }
+
+export async function getCorporateApplications(companyId: string, jobId?: string): Promise<any> {
+  const query = jobId ? `?job=${jobId}` : '';
+  
+  return api(`/vagas/corporate/candidaturas/${query}`, {
+    method: "GET",
+    headers: {
+      "X-Company-Id": companyId, // Cabeçalho que a View espera
+    },
+    credentials: "include",
+  });
+}

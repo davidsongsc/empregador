@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { UserData } from '@/interfaces/userData';
 import { logout as apiLogout, checkSession } from '@/services/auth';
+import { getCookie, setCookie, deleteCookie } from "@/lib/cookies";
 import Cookies from 'js-cookie';
 
 interface AuthState {
@@ -13,7 +14,7 @@ interface AuthState {
 
   // AÇÕES (Faltava declarar aqui)
   setUser: (user: UserData | null) => void;
-  setActiveCompany: (id: string | null) => void; 
+  setActiveCompany: (id: string | null) => void;
   setLoading: (loading: boolean) => void;
   setHydrated: (state: boolean) => void;
   logout: () => Promise<void>;
@@ -31,21 +32,32 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user) => {
         const empresas = user?.profile?.empresas || [];
-        
-        // MELHORIA: Só resetamos para null se o usuário for NOVO ou se não houver 
-        // um activeCompanyId já salvo (preservando a escolha anterior)
-        const currentActiveId = get().activeCompanyId;
-        const autoSelectedId = empresas.length === 1 ? empresas[0].id : currentActiveId;
+
+        const cookieCompany = getCookie("active_company");
+
+        let activeId = cookieCompany;
+
+        if (!activeId && empresas.length === 1) {
+          activeId = empresas[0].id;
+        }
 
         set({
           user,
           isAuthenticated: !!user,
-          activeCompanyId: autoSelectedId, 
+          activeCompanyId: activeId,
           loading: false,
         });
       },
 
-      setActiveCompany: (id) => set({ activeCompanyId: id }),
+      setActiveCompany: (id) => {
+        if (id) {
+          setCookie("active_company", id);
+        } else {
+          deleteCookie("active_company");
+        }
+
+        set({ activeCompanyId: id });
+      },
 
       setLoading: (loading) => set({ loading }),
 
@@ -57,10 +69,18 @@ export const useAuthStore = create<AuthState>()(
         } catch (err) {
           console.warn("Erro ao deslogar no servidor...");
         } finally {
-          Cookies.remove('access', { path: '/' });
+          deleteCookie("active_company");
+
           localStorage.removeItem('freelacerto_auth_storage');
-          set({ user: null, activeCompanyId: null, isAuthenticated: false, loading: false });
-          window.location.href = '/login';
+
+          set({
+            user: null,
+            activeCompanyId: null,
+            isAuthenticated: false,
+            loading: false
+          });
+
+          window.location.href = "/login";
         }
       },
 
@@ -73,10 +93,10 @@ export const useAuthStore = create<AuthState>()(
 
           if (userData) {
             // USAMOS get().activeCompanyId para garantir que a escolha persista após o refresh
-            set({ 
-              user: userData, 
-              isAuthenticated: true, 
-              loading: false 
+            set({
+              user: userData,
+              isAuthenticated: true,
+              loading: false
               // Note que não tocamos no activeCompanyId, o persist cuida dele
             });
           } else {

@@ -18,7 +18,7 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
     }
 
     // Verifica se existe alguma empresa onde o cargo do usuário está na lista de permissões
-    return user.profile.empresas.some(empresa => 
+    return user.profile.empresas.some(empresa =>
       MODULE_PERMISSIONS.RECRUITMENT.includes(empresa.role) && empresa.is_active
     );
   }, [user]);
@@ -27,7 +27,7 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
     if (isHydrated && !hasAccess) {
       // Pegamos o cargo da primeira empresa apenas para o log/toast, se existir
       const currentRole = user?.profile?.empresas?.[0]?.role || "GUEST";
-      
+
       toast.error(`Acesso negado. Seu cargo (${currentRole}) não tem permissão.`);
       router.replace("/vagas");
     }
@@ -39,11 +39,9 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div >
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        {children}
-      </main>
+      {children}
     </div>
   );
 }

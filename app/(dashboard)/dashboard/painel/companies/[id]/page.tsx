@@ -1,50 +1,25 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useCompanyStore } from '@/store/useCompanyStore';
 import {
   Building2, Users, Star, CreditCard,
   CheckCircle2, Crown, ArrowLeft, Settings,
   Briefcase, HardHat, ShieldCheck, MapPin,
-  ClipboardList, Plus, ExternalLink, TrendingUp
+  ClipboardList, Plus, ExternalLink, TrendingUp, Cpu, Activity
 } from 'lucide-react';
 import { toast } from '@/components/Notification';
 import { useAuthStore } from '@/store/useAuthStore';
-
-export interface CompanyMember {
-  id: number;
-  profile: number;
-  profile_name: string;
-  role: string;
-  joined_at: string;
-}
-
-export interface Department {
-  id: string;
-  name: string;
-  description: string;
-  leaders_detail: CompanyMember[];
-  members_count: number;
-  created_at: string;
-}
-
-export interface CompanyData {
-  id: string;
-  name: string;
-  average_rate: number;
-  members_count: number;
-  members: CompanyMember[];
-  departments: Department[];
-  is_active: boolean;
-}
-
 const CURRENT_SUBSCRIPTION = {
   planName: "Enterprise Ops",
   price: "R$ 890,00/mês",
-  features: ["Gestão de Equipes", "Módulo de Logística", "Relatórios em tempo real"]
+  features: [
+    "Gestão de Equipes",
+    "Módulo de Logística",
+    "Relatórios em tempo real"
+  ]
 };
-
 export default function CompanyProfilePage() {
   const router = useRouter();
   const { activeCompanyId, isHydrated } = useAuthStore();
@@ -55,154 +30,160 @@ export default function CompanyProfilePage() {
       fetchCompanyDetails(activeCompanyId);
     }
   }, [activeCompanyId, isHydrated, fetchCompanyDetails]);
-  console.log("activeCompany:", activeCompany);
-  console.log("isHydrated:", activeCompanyId);
+
   if (!isHydrated || loading) return (
-    <div className="flex h-screen flex-col items-center justify-center gap-4 bg-[#F8FAFC]">
-      <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
-      <p className="animate-pulse font-medium text-slate-500">Sincronizando infraestrutura corporativa...</p>
+    <div className="flex h-screen flex-col items-center justify-center gap-4 bg-[#080808]">
+      <Cpu className="h-10 w-10 text-amber-600 animate-spin" />
+      <p className="animate-pulse font-mono text-[10px] uppercase tracking-[0.4em] text-amber-600/60">Sincronizando infraestrutura Delos...</p>
     </div>
   );
 
   if (!activeCompanyId) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center p-10 text-center gap-4">
-        <Building2 size={48} className="text-slate-300" />
+      <div className="flex h-screen flex-col items-center justify-center bg-[#080808] p-10 text-center gap-6">
+        <div className="relative p-6 border border-white/5 bg-white/[0.02]">
+          <Building2 size={48} className="text-slate-800" />
+        </div>
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Nenhuma empresa selecionada</h2>
-          <p className="text-slate-500">Selecione uma organização para visualizar o painel corporativo.</p>
+          <h2 className="text-sm font-black uppercase tracking-[0.3em] text-white">Organização não identificada</h2>
+          <p className="text-[10px] text-slate-600 uppercase tracking-widest mt-2">Selecione uma empresa para acessar o terminal.</p>
         </div>
         <button
           onClick={() => router.push('/select-company')}
-          className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-all"
+          className="border border-amber-600 text-amber-600 px-8 py-3 font-black text-[10px] uppercase tracking-widest hover:bg-amber-600 hover:text-black transition-all"
         >
-          Selecionar Empresa
+          Acessar Terminal
         </button>
       </div>
     );
   }
 
-  if (!activeCompany) return <div className="p-10 text-center">Erro ao carregar dados da empresa.</div>;
+  if (!activeCompany) return <div className="p-10 text-center text-rose-500 font-mono text-xs uppercase">Erro de comunicação com o host corporativo.</div>;
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] pb-20">
-      <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur-md">
+    <main className="min-h-screen bg-[#080808] text-slate-400 font-sans pb-20 selection:bg-amber-500/30">
+
+      {/* HUD HEADER */}
+      <header className="sticky top-0 z-40 border-b border-white/5 bg-[#0A0A0A]/90 px-6 py-4 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl justify-between items-center">
-          <button onClick={() => router.back()} className="group flex items-center gap-2 text-slate-600 transition-all font-medium hover:text-indigo-600">
-            <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" />
-            <span>Voltar ao Dashboard</span>
+          <button onClick={() => router.back()} className="group flex items-center gap-3 text-slate-500 transition-all font-black text-[10px] uppercase tracking-widest hover:text-amber-500">
+            <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-1" />
+            <span>Retornar ao Painel</span>
           </button>
+
           <div className="flex gap-3">
-            <button className="hidden sm:flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-              <ExternalLink size={16} /> Ver Vagas Públicas
+            <button className="hidden sm:flex items-center gap-2 border border-white/10 bg-white/[0.02] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-amber-600/50 hover:text-amber-500 transition-all">
+              <ExternalLink size={14} /> Vagas Públicas
             </button>
-            <button className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-transform active:scale-95">
-              <Settings size={20} />
+            <button className="flex h-9 w-9 items-center justify-center border border-white/10 bg-white/[0.02] text-slate-400 hover:text-amber-600 hover:border-amber-600 transition-all active:scale-95">
+              <Settings size={18} />
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="mx-auto max-w-7xl p-6 space-y-6">
-        <section className="relative overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
-            <div className="flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white shadow-2xl shadow-indigo-200">
-              <Building2 size={56} />
+      <div className="mx-auto max-w-7xl p-8 space-y-8">
+
+        {/* COMPANY DOSSIER CARD */}
+        <section className="relative overflow-hidden border border-white/5 bg-[#0D0D0D] p-10">
+          {/* Efeito decorativo de fundo */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-amber-600/5 rounded-full blur-[120px] -mr-40 -mt-40" />
+
+          <div className="relative z-10 flex flex-col lg:flex-row gap-10 items-center lg:items-end">
+            <div className="relative group">
+              <div className="absolute inset-0 border border-amber-600/30 group-hover:border-amber-600 transition-colors -m-2" />
+              <div className="flex h-32 w-32 items-center justify-center bg-slate-900 text-amber-600 border border-white/10 relative overflow-hidden">
+                <Building2 size={56} strokeWidth={1.5} />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-500/5 to-transparent h-full w-full animate-scan pointer-events-none" />
+              </div>
             </div>
 
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                <h1 className="text-4xl font-black tracking-tight text-slate-900">{activeCompany.name}</h1>
-                <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-600 border border-emerald-100">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> ONLINE
+            <div className="flex-1 text-center lg:text-left">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
+                <h1 className="text-3xl font-black tracking-[0.2em] uppercase text-white leading-none">{activeCompany.name}</h1>
+                <span className="flex items-center gap-2 border border-emerald-900/30 px-3 py-1 text-[9px] font-black text-emerald-500 tracking-widest uppercase">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Operacional
                 </span>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center justify-center md:justify-start gap-6 text-slate-500">
-                <div className="flex items-center gap-1.5 text-sm font-medium">
-                  <MapPin size={16} className="text-indigo-500" /> Rio de Janeiro, RJ
+              <div className="mt-6 flex flex-wrap items-center justify-center lg:justify-start gap-8 text-slate-600">
+                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
+                  <MapPin size={14} className="text-amber-900" /> Rio de Janeiro, RJ
                 </div>
-                <div className="flex items-center gap-1.5 text-sm font-medium">
-                  <Users size={16} className="text-indigo-500" /> {activeCompany.members_count} Colaboradores
+                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
+                  <Users size={14} className="text-amber-900" /> {activeCompany.members_count} Unidades
                 </div>
-                <div className="flex items-center gap-1.5 text-sm font-medium">
-                  <TrendingUp size={16} className="text-indigo-500" /> {activeCompany.departments?.length || 0} Setores Ativos
+                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
+                  <TrendingUp size={14} className="text-amber-900" /> {activeCompany.departments?.length || 0} Setores
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col items-center gap-1 rounded-3xl bg-slate-50 border border-slate-100 px-8 py-4">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Company Score</span>
-              <div className="flex items-center gap-2 text-3xl font-black text-slate-800">
-                <Star size={28} className="fill-amber-400 text-amber-400" />
+            <div className="flex flex-col items-center gap-2 border border-white/10 bg-white/[0.01] px-10 py-6">
+              <span className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-600">Corp Rating</span>
+              <div className="flex items-center gap-3 text-3xl font-black text-white">
+                <Star size={24} className="fill-amber-600 text-amber-600" />
                 {activeCompany.average_rate?.toFixed(1) || "0.0"}
               </div>
             </div>
           </div>
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 space-y-6">
-            <section className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 p-6">
-                <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800">
-                  <Briefcase className="text-indigo-500" size={22} />
-                  Estrutura de Departamentos
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+          {/* MAIN COLUMN */}
+          <div className="lg:col-span-8 space-y-8">
+
+            {/* DEPARTMENTS SECTION */}
+            <section className="border border-white/5 bg-[#0A0A0A] overflow-hidden">
+              <div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] p-6">
+                <h2 className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-white">
+                  <Briefcase className="text-amber-600" size={16} />
+                  Arquitetura de Departamentos
                 </h2>
-                <button className="flex items-center gap-1 text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
-                  <Plus size={18} /> Novo Setor
+                <button className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-600 hover:text-amber-500 transition-colors">
+                  <Plus size={14} strokeWidth={3} /> Inserir Setor
                 </button>
               </div>
 
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-px bg-white/5">
                 {activeCompany.departments?.map((dept: any) => (
-                  <div key={dept.id} className="group relative rounded-2xl border border-slate-100 bg-white p-5 transition-all hover:border-indigo-200 hover:shadow-md">
-                    <div className="mb-4 flex items-center justify-between">
-                      <div className="rounded-xl bg-indigo-50 p-2.5 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                  <div key={dept.id} className="group relative bg-[#0A0A0A] p-6 hover:bg-white/[0.02] transition-all">
+                    <div className="absolute left-0 top-6 bottom-6 w-[1px] bg-amber-900/30 group-hover:bg-amber-600 transition-all" />
+
+                    <div className="mb-6 flex items-center justify-between">
+                      <div className="border border-white/10 p-2 text-slate-600 group-hover:text-amber-600 group-hover:border-amber-900/50 transition-all">
                         <HardHat size={20} />
                       </div>
-                      <span className="text-[10px] font-bold text-slate-300 font-mono">ID: {String(dept.id).slice(0, 8)}</span>
+                      <span className="text-[8px] font-mono text-slate-800 uppercase tracking-widest">Hash_{String(dept.id).slice(0, 6)}</span>
                     </div>
 
-                    <h4 className="text-lg font-bold text-slate-900">{dept.name}</h4>
+                    <h4 className="text-sm font-black text-white uppercase tracking-widest mb-2">{dept.name}</h4>
 
-                    <div className="mt-1 flex items-center gap-2">
-                      {dept.leaders_detail?.length === 1 ? (
-                        <p className="text-sm font-medium text-indigo-600">
-                          Líder: <span className="text-slate-700">{dept.leaders_detail[0].profile_name}</span>
+                    <div className="mt-1">
+                      {dept.leaders_detail?.length > 0 ? (
+                        <p className="text-[10px] font-bold text-amber-900 uppercase tracking-tighter">
+                          Liderança: <span className="text-slate-500">{dept.leaders_detail[0].profile_name}</span>
                         </p>
-                      ) : dept.leaders_detail?.length > 1 ? (
-                        <div className="group/tooltip relative cursor-help">
-                          <p className="text-sm font-medium text-slate-500 flex items-center gap-1">
-                            <Crown size={14} className="text-amber-500" />
-                            {dept.leaders_detail.length} Líderes selecionados
-                          </p>
-                          <div className="absolute bottom-full left-0 mb-2 hidden w-48 rounded-lg bg-slate-900 p-2 text-[11px] text-white shadow-xl group-hover/tooltip:block z-50">
-                            <p className="mb-1 border-b border-white/10 pb-1 font-bold text-slate-400 uppercase tracking-widest">Liderança:</p>
-                            {dept.leaders_detail.map((leader: any) => (
-                              <div key={leader.id} className="py-0.5">• {leader.profile_name}</div>
-                            ))}
-                            <div className="absolute left-4 top-full h-0 w-0 border-x-8 border-t-8 border-x-transparent border-t-slate-900"></div>
-                          </div>
-                        </div>
                       ) : (
-                        <p className="text-sm italic text-slate-400">Sem liderança definida</p>
+                        <p className="text-[10px] italic text-slate-800 uppercase">Sem comando definido</p>
                       )}
                     </div>
 
-                    <p className="mt-2 text-sm text-slate-500 line-clamp-2">{dept.description || "Setor focado em operações diretas."}</p>
+                    <p className="mt-4 text-[11px] text-slate-600 leading-relaxed font-light italic border-l border-white/5 pl-4 line-clamp-2">
+                      {dept.description || "Setor focado em operações diretas e logística estratégica."}
+                    </p>
 
-                    <div className="mt-5 flex items-center justify-between border-t border-slate-50 pt-4">
-                      <div className="flex -space-x-2">
+                    <div className="mt-8 flex items-center justify-between">
+                      <div className="flex -space-x-1.5">
                         {dept.leaders_detail?.map((leader: any) => (
-                          <div key={leader.id} className="h-7 w-7 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 ring-1 ring-slate-200" title={leader.profile_name}>
+                          <div key={leader.id} className="h-6 w-6 border border-[#0A0A0A] bg-slate-900 flex items-center justify-center text-[8px] font-black text-slate-500 uppercase tracking-tighter ring-1 ring-white/5">
                             {leader.profile_name.charAt(0)}
                           </div>
                         ))}
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
-                        <Users size={14} className="text-slate-400" />
-                        {dept.members_count} Membros
+                      <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-700 uppercase tracking-widest">
+                        <Users size={12} /> {dept.members_count} Unidades
                       </div>
                     </div>
                   </div>
@@ -210,45 +191,46 @@ export default function CompanyProfilePage() {
               </div>
             </section>
 
-            <section className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-slate-100">
-                <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800">
-                  <ShieldCheck className="text-indigo-500" size={22} />
-                  Quadro de Colaboradores
+            {/* MEMBERS TABLE */}
+            <section className="border border-white/5 bg-[#0A0A0A] overflow-hidden">
+              <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+                <h2 className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-white">
+                  <ShieldCheck className="text-amber-600" size={16} />
+                  Quadro de Hosts Ativos
                 </h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-slate-50/50 text-[11px] font-black uppercase tracking-widest text-slate-400">
-                      <th className="px-6 py-4">Colaborador</th>
-                      <th className="px-6 py-4">Função</th>
-                      <th className="px-6 py-4">Entrada</th>
-                      <th className="px-6 py-4 text-right">Ação</th>
+                    <tr className="bg-white/[0.01] text-[9px] font-black uppercase tracking-[0.3em] text-slate-700">
+                      <th className="px-8 py-5">Unidade / Perfil</th>
+                      <th className="px-8 py-5">Protocolo (Role)</th>
+                      <th className="px-8 py-5">Ativação</th>
+                      <th className="px-8 py-5 text-right">Acesso</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-white/5">
                     {activeCompany.members?.map((member: any) => (
-                      <tr key={member.id} className="group hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">
+                      <tr key={member.id} className="group hover:bg-white/[0.02] transition-colors">
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-4">
+                            <div className="h-8 w-8 bg-slate-900 border border-white/5 flex items-center justify-center text-[10px] font-black text-slate-600 uppercase transition-all group-hover:border-amber-900/50 group-hover:text-amber-600">
                               {member.profile_name.charAt(0)}
                             </div>
-                            <span className="font-bold text-slate-700">{member.profile_name}</span>
+                            <span className="text-[11px] font-bold text-slate-300 uppercase tracking-widest">{member.profile_name}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`rounded-md px-2 py-1 text-[10px] font-black uppercase tracking-tighter ${member.role === 'RECRUITER' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'}`}>
+                        <td className="px-8 py-5">
+                          <span className={`px-2 py-0.5 border text-[8px] font-black uppercase tracking-widest ${member.role === 'RECRUITER' ? 'border-amber-900/30 text-amber-600' : 'border-slate-800 text-slate-500'}`}>
                             {member.role}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-500">
+                        <td className="px-8 py-5 text-[10px] font-mono text-slate-600 uppercase tracking-widest">
                           {new Date(member.joined_at).toLocaleDateString('pt-BR')}
                         </td>
-                        <td className="px-6 py-4 text-right">
-                          <button className="text-slate-400 hover:text-indigo-600 transition-colors">
-                            <ExternalLink size={16} />
+                        <td className="px-8 py-5 text-right">
+                          <button className="text-slate-700 hover:text-amber-600 transition-colors">
+                            <ExternalLink size={14} />
                           </button>
                         </td>
                       </tr>
@@ -259,70 +241,96 @@ export default function CompanyProfilePage() {
             </section>
           </div>
 
-          <div className="lg:col-span-4 space-y-6">
-            <section className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-8 text-white shadow-2xl">
-              <div className="absolute -right-10 -top-10 rotate-12 text-white/5">
-                <Crown size={200} />
+          {/* SIDE COLUMN */}
+          <div className="lg:col-span-4 space-y-8">
+
+            {/* SUBSCRIPTION CARD */}
+            <section className="relative overflow-hidden bg-[#0D0D0D] border border-amber-900/20 p-8 text-white">
+              <div className="absolute -right-6 -top-6 rotate-12 text-amber-600/[0.03]">
+                <Crown size={160} />
               </div>
 
               <div className="relative z-10">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="rounded-2xl bg-white/10 p-3 backdrop-blur-xl border border-white/10">
-                    <CreditCard className="text-indigo-400" />
+                <div className="flex items-center justify-between mb-10">
+                  <div className="border border-amber-600/30 bg-amber-600/10 p-2.5">
+                    <CreditCard className="text-amber-600" size={20} />
                   </div>
-                  <span className="rounded-full bg-indigo-500 px-3 py-1 text-[10px] font-black tracking-widest italic uppercase">Enterprise</span>
+                  <span className="px-3 py-1 border border-amber-600 text-amber-600 text-[8px] font-black tracking-[0.3em] italic uppercase">Enterprise Ops</span>
                 </div>
 
-                <h3 className="text-2xl font-black italic tracking-tight">{CURRENT_SUBSCRIPTION.planName}</h3>
-                <p className="mt-1 text-indigo-300 font-medium">{CURRENT_SUBSCRIPTION.price}</p>
+                <h3 className="text-xl font-black italic tracking-widest uppercase">{CURRENT_SUBSCRIPTION.planName}</h3>
+                <p className="mt-2 text-amber-600/60 font-mono text-xs tracking-widest">{CURRENT_SUBSCRIPTION.price}</p>
 
-                <ul className="mt-8 space-y-3">
+                <ul className="mt-8 space-y-4">
                   {CURRENT_SUBSCRIPTION.features.map((item, idx) => (
-                    <li key={idx} className="flex items-center gap-3 text-sm text-slate-300">
-                      <CheckCircle2 size={16} className="text-indigo-400" />
+                    <li key={idx} className="flex items-center gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                      <CheckCircle2 size={14} className="text-amber-900" />
                       {item}
                     </li>
                   ))}
                 </ul>
 
-                <button onClick={() => toast.info("Módulo de faturamento em breve")} className="mt-10 w-full rounded-2xl bg-white py-4 text-sm font-black text-slate-900 transition-all hover:bg-slate-100 active:scale-95 shadow-lg shadow-white/5">
-                  UPGRADE / GESTÃO
+                <button onClick={() => toast.info("Manual Override em breve")} className="mt-12 w-full bg-amber-600 py-4 text-[10px] font-black text-black uppercase tracking-[0.3em] transition-all hover:bg-amber-500 active:scale-95 shadow-[0_0_20px_rgba(217,119,6,0.15)]">
+                  Upgrade / Protocolos
                 </button>
               </div>
             </section>
 
-            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-400 mb-6">
-                <TrendingUp size={16} /> Quick Stats
+            {/* QUICK STATS */}
+            <section className="border border-white/5 bg-[#0A0A0A] p-8 space-y-8">
+              <h3 className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.4em] text-slate-700">
+                <Activity size={14} /> Telemetria de Dados
               </h3>
               <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-2xl bg-slate-50 p-4 border border-slate-100">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Vagas Abertas</p>
-                  <p className="text-2xl font-black text-slate-800">14</p>
+                <div className="bg-white/[0.02] p-5 border border-white/5">
+                  <p className="text-[8px] font-black text-slate-700 uppercase tracking-widest mb-1">Vagas Abertas</p>
+                  <p className="text-2xl font-black text-white italic">14</p>
                 </div>
-                <div className="rounded-2xl bg-slate-50 p-4 border border-slate-100">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Candidaturas</p>
-                  <p className="text-2xl font-black text-slate-800">128</p>
+                <div className="bg-white/[0.02] p-5 border border-white/5">
+                  <p className="text-[8px] font-black text-slate-700 uppercase tracking-widest mb-1">Candidaturas</p>
+                  <p className="text-2xl font-black text-white italic">128</p>
                 </div>
               </div>
             </section>
 
-            <section className="rounded-3xl border border-slate-200 p-6 shadow-sm bg-white">
-              <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-400 mb-4">
-                <ClipboardList size={16} className="text-indigo-500" /> Operações
+            {/* OPERATIONS */}
+            <section className="border border-white/5 bg-[#0A0A0A] p-8">
+              <h3 className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.4em] text-slate-700 mb-6">
+                <ClipboardList size={14} className="text-amber-900" /> Operações
               </h3>
               <div className="grid grid-cols-1 gap-2">
-                <button className="flex w-full items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-xs font-bold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 border border-slate-100">
-                  Escalar Nova Equipe <Plus size={16} />
+                <button className="flex w-full items-center justify-between border border-white/5 bg-white/[0.02] px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all hover:text-amber-600 hover:border-amber-900/30">
+                  Escalar Nova Equipe <Plus size={14} />
                 </button>
-                <button className="flex w-full items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-xs font-bold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 border border-slate-100">
-                  Relatório de Produtividade <ExternalLink size={16} />
+                <button className="flex w-full items-center justify-between border border-white/5 bg-white/[0.02] px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all hover:text-amber-600 hover:border-amber-900/30">
+                  Relatório de Produtividade <ExternalLink size={14} />
                 </button>
               </div>
             </section>
           </div>
         </div>
       </div>
+
+      {/* FOOTER HUD */}
+      <footer className="fixed bottom-0 left-0 right-0 py-2 px-8 bg-[#050505] border-t border-white/5 flex justify-between items-center z-30">
+        <div className="flex items-center gap-4 text-[8px] font-mono text-slate-800 uppercase tracking-[0.4em]">
+          <span className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-amber-600 animate-pulse rounded-full" />
+            CORE_SYSTEM_REDUNDANT
+          </span>
+        </div>
+        <div className="text-[8px] font-mono text-slate-800 italic opacity-40">
+          "Evolution is not a graceful process."
+        </div>
+      </footer>
+
+      <style jsx global>{`
+        @keyframes scan {
+          from { transform: translateY(-100%); }
+          to { transform: translateY(100%); }
+        }
+        .animate-scan { animation: scan 4s linear infinite; }
+      `}</style>
     </main>
   );
 }

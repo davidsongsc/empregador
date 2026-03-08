@@ -58,47 +58,47 @@ const LoginUser = () => {
 
     try {
       const fullNumber = `${countryCode}${whatsapp.replace(/\D/g, "")}`;
-      // O res aqui deve ser o objeto JSON retornado pelo seu service
       const res = await login(fullNumber, password, rememberMe);
 
-      console.log("Resposta bruta da API:", res); // LOG DE DEBUG
+      // Verifica se a resposta é positiva (ajuste conforme o retorno real da sua API)
+      if (res && (res.user || res.profile || res.ok)) {
 
-      if (res?.ok || res?.user) {
-        // Tentamos pegar o user de vários lugares possíveis
+        // Normalização dos dados: garante que pegamos o objeto do usuário independente da casca
         const userData = res.user || res.data?.user || res;
-        console.log("Dados do usuário:", userData); // LOG DE DEBUG
-        // Verificação de segurança: o objeto tem a propriedade 'profile'?
+
         if (!userData?.profile) {
-          console.error("Estrutura de userData inválida:", userData);
-          setError("Erro na estrutura dos dados do usuário.");
+          setError("Perfil de usuário não encontrado.");
           return;
         }
 
-        // 1. Atualiza o Zustand
+        // 1. Atualiza o Zustand (Isso já vai salvar o cookie de sessão via CookiesHandler)
         useAuthStore.getState().setUser(userData);
 
-        // 2. Refresh para garantir cookies/middleware
-        router.refresh();
+        // 2. Lógica de Redirecionamento e Seleção de Empresa
+        const empresas = userData.profile.empresas || [];
 
-        // 3. Lógica de Redirecionamento
-        setTimeout(() => {
-          const empresas = userData.profile.empresas || [];
+        if (empresas.length > 1) {
+          // Se tem várias, vai para a tela de seleção
+          router.push("/select-company");
+        } else if (empresas.length === 1) {
+          // Se tem só uma, já define como ativa e salva o cookie da empresa
+          const companyId = empresas[0].id;
+          useAuthStore.getState().setActiveCompany(companyId);
 
-          if (empresas.length > 1) {
-            router.push("/select-company");
-          } else if (empresas.length === 1) {
-            const companyId = empresas[0].id;
-            useAuthStore.getState().setActiveCompany(companyId);
-            router.push(`/dashboard/painel/companies/${companyId}`);
-          } else {
-            router.push("/vagas");
-          }
-        }, 200);
+          // Redireciona direto para o painel daquela empresa
+          router.push(`/dashboard/painel/companies/${companyId}`);
+        } else {
+          // Caso não tenha empresa vinculada
+          router.push("/vagas");
+        }
+
+        toast.success("Login realizado com sucesso!");
 
       } else {
-        setError(res?.message || "Credenciais inválidas.");
+        setError(res?.message || "Credenciais inválidas ou erro no servidor.");
       }
     } catch (err: any) {
+      console.error("Erro no login:", err);
       setError("Erro de conexão com o servidor.");
     } finally {
       setLoading(false);

@@ -1,6 +1,6 @@
 'use client';
 
-import LoginUser from '@/templates/Usuario/Login';
+import LoginUser from '@/templates/Usuario/singin';
 const LoginPage = () => {
 
 

@@ -169,7 +169,7 @@ const App = () => {
               <div className="space-y-2 mb-8">
                 <div className="flex items-center justify-center gap-2 text-gray-400 text-md font-bold uppercase">
                   <MapPin className="w-3.5 h-3.5" />
-                  {profile?.endereco?.cidade ? `${profile.endereco.bairro}, ${profile.endereco.cidade}` : 'Sem endereço'}
+                  {profile?.endereco?.cidade ? `${profile.endereco.cidade}, ${profile.endereco.estado}` : 'Sem endereço'}
                 </div>
                 <div className="flex items-center justify-center gap-2 text-gray-400 text-sm font-bold lowercase">
                   <Mail className="w-3.5 h-3.5" />
@@ -293,7 +293,7 @@ const App = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Apelido</label>
+                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Sobrenome</label>
                     <input
                       type="text"
                       value={formData.last_name}
