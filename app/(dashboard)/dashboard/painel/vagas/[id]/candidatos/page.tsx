@@ -6,40 +6,33 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useCorporateApplications } from "@/hooks/useCorporateApplications";
 import { updateApplicationStatus } from "@/services/jobService";
 import {
-  User, Phone, ChevronLeft, Loader2, MapPin, Lock, Mail, 
+  User, Phone, ChevronLeft, Loader2, MapPin, Lock, Mail,
   FileText, History, Search, ArrowRight, Zap, X,
-  CheckCircle2, Ban, MoreHorizontal, Calendar, Info
+  CheckCircle2, Ban, MoreHorizontal, Calendar, Info,
+  ChevronRight
 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "@/components/Notification";
-
-// Configuração de Estágios - Identidade Westworld
-const STATUS_CONFIGS: Record<string, { label: string; color: string; glow: string }> = {
-  applied: { label: "Ingresso", color: "text-slate-500 border-slate-800", glow: "bg-slate-500 shadow-[0_0_10px_rgba(100,116,139,0.5)]" },
-  reviewing: { label: "Em Análise", color: "text-amber-500 border-amber-900/30", glow: "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" },
-  shortlisted: { label: "Sincronizado", color: "text-cyan-500 border-cyan-900/30", glow: "bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]" },
-  interview_scheduled: { label: "Diagnóstico", color: "text-indigo-400 border-indigo-900/30", glow: "bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.5)]" },
-  hired: { label: "Ativado", color: "text-emerald-400 border-emerald-900/30", glow: "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" },
-  rejected: { label: "Desativado", color: "text-rose-500 border-rose-900/30", glow: "bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]" },
-};
+import { GROUPED_STATUS, STATUS_CONFIG } from "@/data/statusLabels";
 
 const FLOW_SEQUENCE = [
-  'applied', 'reviewing', 'shortlisted', 'interview_scheduled',
-  'test_submitted', 'offer_sent', 'hired'
+  'applied', 'screening', 'reviewing', 'shortlisted',
+  'interview_scheduled', 'interviewing', 'technical_test',
+  'test_submitted', 'test_review', 'offer_sent', 'hired'
 ];
 
 export default function CandidatosPage() {
   const params = useParams();
   const router = useRouter();
   const jobId = params.id as string;
-  const { activeCompanyId } = useAuthStore();
-
+  const { activeCompanyId, } = useAuthStore();
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
   // Estados de Filtro e UI
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selectedApp, setSelectedApp] = useState<any | null>(null);
-
+  const [isUpdating, setIsUpdating] = useState(false); // Adicione este estado no topo do componente
   // Hook Corporativo Original
   const { candidatos, total, loading, updateStatus } = useCorporateApplications({
     jobId: jobId,
@@ -50,35 +43,59 @@ export default function CandidatosPage() {
 
   // Filtro de busca local (nome)
   const filteredCandidatos = useMemo(() => {
-    return candidatos.filter(app => 
+    return candidatos.filter(app =>
       app.candidate_details?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [candidatos, searchTerm]);
 
   // Lógica de Avanço de Etapa Original
   const handleNextStep = async (app: any) => {
+    // 1. Bloqueio imediato se já estiver carregando
+    if (isUpdating) return;
+
     const currentIndex = FLOW_SEQUENCE.indexOf(app.status);
+
     if (currentIndex !== -1 && currentIndex < FLOW_SEQUENCE.length - 1) {
       const nextStatus = FLOW_SEQUENCE[currentIndex + 1];
+
+      setIsUpdating(true); // 2. Inicia o estado de bloqueio
+
       try {
         await updateApplicationStatus(app.id, nextStatus);
         updateStatus(app.id, nextStatus);
-        toast.success(`Host avançado: ${STATUS_CONFIGS[nextStatus].label}`);
-        if (selectedApp?.id === app.id) setSelectedApp({ ...app, status: nextStatus });
+
+        toast.success(`Protocolo Atualizado: ${STATUS_CONFIG[nextStatus].label}`);
+
+        if (selectedApp?.id === app.id) {
+          setSelectedApp({ ...app, status: nextStatus });
+        }
       } catch (err) {
         toast.error("Falha na atualização de protocolo");
+      } finally {
+        setIsUpdating(false); // 3. Libera o botão independente do resultado
       }
     }
   };
 
-  const handleStatusChange = async (appId: string, newStatus: string) => {
+  const handleStatusChange = async (appId, newStatus) => {
+    if (isUpdating) return; // Bloqueio preventivo
+
+    setIsUpdating(true); // Ativa o lock
     try {
       await updateApplicationStatus(appId, newStatus);
       updateStatus(appId, newStatus);
-      toast.success(`Protocolo alterado para ${STATUS_CONFIGS[newStatus].label}`);
-      if (selectedApp?.id === appId) setSelectedApp(null);
+
+      // Feedback de sistema
+      toast.success(`Protocolo reescrito para: ${STATUS_CONFIG[newStatus].label}`);
+
+      if (selectedApp?.id === appId) {
+        setSelectedApp({ ...selectedApp, status: newStatus });
+      }
+      setIsChangingStatus(false); // Fecha o menu após sucesso
     } catch (err) {
-      toast.error("Erro na comunicação com o servidor");
+      toast.error("Erro na reescrita de dados do Host");
+    } finally {
+      setIsUpdating(false); // Libera o lock
     }
   };
 
@@ -93,7 +110,7 @@ export default function CandidatosPage() {
 
   return (
     <div className="min-h-screen bg-[#080808] text-slate-400 font-sans overflow-x-hidden pb-20 selection:bg-amber-500/30">
-      
+
       {/* HEADER DINÂMICO DELOS */}
       <header className="border-b border-white/5 bg-[#0A0A0A]/90 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -124,7 +141,7 @@ export default function CandidatosPage() {
               className="bg-white/5 border border-white/10 text-[10px] font-bold tracking-widest px-4 py-2.5 outline-none uppercase focus:border-amber-600 text-slate-300 rounded-none cursor-pointer appearance-none"
             >
               <option value="all">STATUS: TODOS</option>
-              {Object.entries(STATUS_CONFIGS).map(([key, val]) => (
+              {Object.entries(STATUS_CONFIG).map(([key, val]) => (
                 <option key={key} value={key} className="bg-[#0A0A0A]">{val.label.toUpperCase()}</option>
               ))}
             </select>
@@ -140,7 +157,7 @@ export default function CandidatosPage() {
           </div>
         ) : (
           filteredCandidatos.map((app) => {
-            const config = STATUS_CONFIGS[app.status] || STATUS_CONFIGS.applied;
+            const config = STATUS_CONFIG[app.status] || STATUS_CONFIG.applied;
             const isUnlocked = app.status !== 'applied';
             const details = app.candidate_details;
 
@@ -151,7 +168,7 @@ export default function CandidatosPage() {
                 className="group flex items-center justify-between p-5 bg-[#0D0D0D] border border-white/5 hover:border-amber-900/40 transition-all cursor-pointer relative overflow-hidden"
               >
                 <div className={`absolute left-0 top-0 bottom-0 w-[2px] transition-all duration-500 ${config.glow}`} />
-                
+
                 <div className="flex items-center gap-6 z-10">
                   <div className="w-14 h-14 bg-slate-900 border border-white/10 flex items-center justify-center grayscale group-hover:grayscale-0 transition-all duration-700">
                     {isUnlocked && details?.foto ? (
@@ -191,14 +208,14 @@ export default function CandidatosPage() {
         {/* Paginação Operacional */}
         {!loading && total > 10 && (
           <div className="flex justify-center gap-2 mt-10">
-            <button 
+            <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
               className="px-4 py-2 border border-white/5 text-[10px] font-black uppercase tracking-widest disabled:opacity-20 hover:bg-white/5 transition-all"
             >
               Anterior
             </button>
-            <button 
+            <button
               onClick={() => setPage(p => p + 1)}
               disabled={page * 10 >= total}
               className="px-4 py-2 border border-white/5 text-[10px] font-black uppercase tracking-widest disabled:opacity-20 hover:bg-white/5 transition-all"
@@ -211,11 +228,11 @@ export default function CandidatosPage() {
 
       {/* DRAWER LATERAL: PAINEL DE CONTROLE DE HOST */}
       <div className={`fixed inset-0 z-50 transition-all duration-500 ${selectedApp ? 'visible' : 'invisible'}`}>
-        <div 
+        <div
           className={`absolute inset-0 bg-black/90 backdrop-blur-sm transition-opacity duration-500 ${selectedApp ? 'opacity-100' : 'opacity-0'}`}
           onClick={() => setSelectedApp(null)}
         />
-        
+
         <div className={`absolute right-0 top-0 bottom-0 w-full max-w-xl bg-[#0A0A0A] border-l border-amber-900/30 shadow-2xl transition-transform duration-500 ease-out transform ${selectedApp ? 'translate-x-0' : 'translate-x-full'}`}>
           {selectedApp && (
             <div className="h-full flex flex-col relative overflow-hidden">
@@ -237,7 +254,7 @@ export default function CandidatosPage() {
                     </h2>
                     <div className="flex items-center gap-3 mt-3">
                       <span className="text-[9px] text-amber-600 font-black tracking-[0.2em] uppercase px-2 py-0.5 border border-amber-900/30">
-                        {STATUS_CONFIGS[selectedApp.status]?.label}
+                        {STATUS_CONFIG[selectedApp.status]?.label}
                       </span>
                     </div>
                   </div>
@@ -281,25 +298,118 @@ export default function CandidatosPage() {
 
                 <div className="space-y-4 pt-10 border-t border-white/5">
                   <h4 className="text-[9px] font-black text-center text-slate-600 uppercase tracking-[0.4em] mb-6">Protocolo de Recrutamento</h4>
-                  
-                  <button 
+
+                  <button
                     onClick={() => handleNextStep(selectedApp)}
-                    disabled={selectedApp.status === 'hired' || selectedApp.status === 'rejected'}
-                    className="w-full py-4.5 bg-amber-600 hover:bg-amber-500 text-black font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 disabled:opacity-10 shadow-[0_0_30px_rgba(217,119,6,0.15)] active:scale-[0.98]"
+                    // O botão desativa se: carregando global, atualizando local, ou status final
+                    disabled={loading || isUpdating || selectedApp.status === 'hired' || selectedApp.status === 'rejected'}
+                    className={`
+    w-full py-4.5 font-black text-xs uppercase tracking-[0.3em] transition-all 
+    flex items-center justify-center gap-3 active:scale-[0.98]
+    ${isUpdating
+                        ? 'bg-gray-100 text-gray-400 cursor-wait'
+                        : 'bg-amber-600 hover:bg-amber-500 text-black shadow-[0_10px_30px_rgba(217,119,6,0.15)]'
+                      }
+    disabled:opacity-40 disabled:pointer-events-none
+  `}
                   >
-                    Avançar Etapa <Zap size={14} fill="black" />
+                    {isUpdating ? (
+                      <>
+                        Sincronizando Protocolo <Loader2 size={14} className="animate-spin" />
+                      </>
+                    ) : (
+                      <>
+                        Avançar Etapa <Zap size={14} fill="black" />
+                      </>
+                    )}
                   </button>
-                  
+
                   <div className="grid grid-cols-2 gap-3">
-                    <button 
+                    <button
                       onClick={() => handleStatusChange(selectedApp.id, 'rejected')}
                       className="py-3.5 border border-rose-900/30 text-[9px] font-bold uppercase tracking-widest text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center gap-2"
                     >
                       <Ban size={12} /> Reprovar
                     </button>
-                    <button className="py-3.5 border border-white/10 text-[9px] font-bold uppercase tracking-widest text-slate-500 hover:bg-white/5 transition-all flex items-center justify-center gap-2">
-                      <MoreHorizontal size={12} /> Alterar Status
-                    </button>
+
+                    <div className="relative group/manual">
+                      {/* Botão de Override Principal */}
+                      <button
+                        disabled={isUpdating}
+                        onClick={() => setIsChangingStatus(!isChangingStatus)}
+                        className={`w-full py-3.5 border text-[9px] font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-2 ${isChangingStatus
+                            ? "bg-amber-600 text-black border-amber-600 shadow-[0_0_20px_rgba(217,119,6,0.2)]"
+                            : "border-white/10 text-slate-500 hover:bg-white/5 hover:border-white/20"
+                          } disabled:opacity-30 disabled:cursor-wait active:scale-95`}
+                      >
+                        {isUpdating ? (
+                          <Loader2 size={12} className="animate-spin text-inherit" />
+                        ) : (
+                          <MoreHorizontal size={12} />
+                        )}
+                        {isUpdating ? "Sincronizando..." : isChangingStatus ? "Fechar_Protocolo" : "Override_Status"}
+                      </button>
+
+                      {/* Dropdown de Status (Menu Flutuante) */}
+                      {isChangingStatus && (
+                        <div className="absolute bottom-full mb-3 left-0 right-0 bg-[#0D0D0D] border border-white/10 p-4 z-50 max-h-[70vh] overflow-y-auto shadow-[0_-20px_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-bottom-2 custom-scrollbar rounded-xl">
+
+                          {Object.entries(GROUPED_STATUS).map(([groupName, keys]) => (
+                            <div key={groupName} className="mb-5 last:mb-0">
+
+                              {/* Header do Grupo: Estética Terminal */}
+                              <div className="flex items-center gap-2 mb-3 px-1">
+                                <div className="w-1 h-1 bg-amber-600 animate-pulse" />
+                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em]">
+                                  {groupName}
+                                </span>
+                                <div className="flex-1 h-[1px] bg-white/[0.03]" />
+                              </div>
+
+                              <div className="grid grid-cols-1 gap-1">
+                                {keys.map((key) => {
+                                  const val = STATUS_CONFIG[key];
+                                  if (!val) return null;
+
+                                  return (
+                                    <button
+                                      key={key}
+                                      disabled={isUpdating}
+                                      onClick={() => handleStatusChange(selectedApp.id, key)}
+                                      className="group/item flex items-center justify-between text-[9px] text-left px-4 py-3 bg-white/[0.02] hover:bg-amber-600 hover:text-black uppercase tracking-widest text-slate-400 transition-all border border-white/[0.03] hover:border-amber-600 rounded-lg disabled:opacity-20 disabled:cursor-not-allowed"
+                                    >
+                                      <span className="flex items-center gap-3">
+                                        {/* Indicador de Status Dinâmico */}
+                                        <div className={`w-1.5 h-1.5 rounded-full ${val.color.replace('text', 'bg')} opacity-30 group-hover/item:opacity-100 group-hover/item:bg-black transition-all`} />
+                                        {val.label}
+                                      </span>
+
+                                      {/* Iconografia de Ação */}
+                                      <div className="flex items-center gap-2">
+                                        {isUpdating ? (
+                                          <Loader2 size={10} className="animate-spin opacity-40" />
+                                        ) : (
+                                          <ChevronRight size={10} className="opacity-0 group-hover/item:opacity-100 -translate-x-2 group-hover/item:translate-x-0 transition-all" />
+                                        )}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Identificador Westworld no Rodapé do Menu */}
+                          <div className="mt-4 pt-3 border-t border-white/[0.03] flex justify-between items-center opacity-20">
+                            <span className="text-[7px] font-mono uppercase tracking-widest">Host ID: {selectedApp.id.slice(0, 8)}</span>
+                            <div className="flex gap-1">
+                              <div className="w-1 h-1 bg-white rounded-full" />
+                              <div className="w-1 h-1 bg-white rounded-full opacity-50" />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="pt-8 mt-4 border-t border-white/5 space-y-3">
@@ -308,7 +418,7 @@ export default function CandidatosPage() {
                         <button onClick={() => window.open(`https://wa.me/${selectedApp.candidate_details.whatsapp}`, '_blank')} className="w-full py-3.5 bg-emerald-600/10 border border-emerald-600/20 text-emerald-500 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center gap-2">
                           <Phone size={14} /> Uplink Direto WhatsApp
                         </button>
-                        <button onClick={() => window.location.href=`mailto:${selectedApp.candidate_details.email}`} className="w-full py-3.5 border border-white/5 text-slate-500 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-slate-300 transition-all flex items-center justify-center gap-2 mt-2">
+                        <button onClick={() => window.location.href = `mailto:${selectedApp.candidate_details.email}`} className="w-full py-3.5 border border-white/5 text-slate-500 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-slate-300 transition-all flex items-center justify-center gap-2 mt-2">
                           <Mail size={14} /> Transmissão via E-mail
                         </button>
                       </div>
@@ -330,7 +440,7 @@ export default function CandidatosPage() {
       <footer className="fixed bottom-0 left-0 right-0 py-2.5 px-6 bg-[#050505]/90 backdrop-blur-xl border-t border-white/5 flex justify-between items-center z-30">
         <div className="flex items-center gap-4 text-[8px] font-mono text-slate-700 uppercase tracking-widest">
           <span className="flex items-center gap-2 text-amber-900/50">
-            <div className="w-1.5 h-1.5 bg-amber-600 animate-pulse rounded-full shadow-[0_0_5px_rgba(217,119,6,0.8)]"/> 
+            <div className="w-1.5 h-1.5 bg-amber-600 animate-pulse rounded-full shadow-[0_0_5px_rgba(217,119,6,0.8)]" />
             SISTEMA OPERACIONAL ATIVO
           </span>
           <span className="hidden md:block opacity-30">| DELOS_SECURE_LAYER_V.4</span>

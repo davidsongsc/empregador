@@ -1,8 +1,5 @@
 "use client";
 
-import { CompanySelectorModal } from "@/components/Modal/CompanySelectorModal";
-
-import { Building2 } from "lucide-react";
 
 export default function GuestLayout({ children }: { children: React.ReactNode }) {
 

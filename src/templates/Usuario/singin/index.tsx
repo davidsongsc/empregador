@@ -86,7 +86,7 @@ const LoginUser = () => {
           useAuthStore.getState().setActiveCompany(companyId);
 
           // Redireciona direto para o painel daquela empresa
-          router.push(`/dashboard/painel/companies/${companyId}`);
+          router.push(`/dashboard/painel/companies`);
         } else {
           // Caso não tenha empresa vinculada
           router.push("/vagas");

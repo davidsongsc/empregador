@@ -53,12 +53,15 @@ interface MyJobsParams extends PaginationParams {
 export async function getMyJobs(params: MyJobsParams): Promise<JobsResponse> {
   const queryString = buildQuery(params);
 
-  return api(`/vagas/?${queryString}`, {
+  return api(`/vagas/internas/?${queryString}`, {
     method: "GET",
     credentials: "include",
+    headers: {
+      // Garantimos que sempre será uma string para o TS não reclamar
+      "X-Company-Id": String(params.company || ""),
+    },
   });
 }
-
 
 /**
  * Interface para os filtros da listagem corporativa
@@ -108,12 +111,22 @@ export async function updateApplicationStatus(applicationId: string, newStatus: 
 
   return api(url, {
     method: "PATCH",
-    body: JSON.stringify({ 
-      status: newStatus 
+    body: JSON.stringify({
+      status: newStatus
     }),
     headers: {
       "Content-Type": "application/json",
     },
     credentials: "include",
+  });
+}
+
+export async function getOwnerJobs(companyId?: string): Promise<JobsResponse> {
+  return api(`/vagas/owner/`, {
+    method: "GET",
+    headers: {
+      // Se companyId for null/undefined, o backend cai na lógica de "vagas do user"
+      ...(companyId && { "X-Company-Id": companyId }),
+    },
   });
 }

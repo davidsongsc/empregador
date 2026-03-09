@@ -30,7 +30,7 @@ export function usePostJob() {
       // O formData agora deve seguir a estrutura:
       // { role: "uuid", requisitos: [{description: ""}], ... }
       await createJob(formData);
-      router.push("/vagas"); // Redireciona para a listagem
+      //router.push("/vagas"); // Redireciona para a listagem
     } catch (err: any) {
       console.error("Erro no postJob:", err);
 

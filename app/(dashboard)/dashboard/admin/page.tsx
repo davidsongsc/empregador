@@ -1,3 +1,5 @@
+"use client";
+
 import { 
   TrendingUp, 
   Users, 
@@ -7,154 +9,192 @@ import {
   ArrowDownRight,
   ShieldCheck,
   Calendar,
-  Briefcase
+  Briefcase,
+  Terminal,
+  Activity,
+  Layers
 } from "lucide-react";
 
 export default function AdminDashboard() {
   return (
-    <div className="min-h-screen bg-slate-50 p-8 font-sans ">
+    <div className="min-h-screen bg-[#0A0A0A] p-4 sm:p-10 font-sans text-slate-400">
       
-      {/* HEADER: Visão de Patrimônio */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Governance Dashboard</h1>
-          <p className="text-slate-500 font-medium">Controle Acionário: <span className="text-indigo-600 font-bold">55% (Sócio Majoritário)</span></p>
-        </div>
-        <div className="flex gap-3">
-          <div className="bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm">
-            <p className="text-[10px] font-black text-slate-400 uppercase">Valuation Estimado (5x)</p>
-            <p className="text-lg font-black text-slate-900">R$ 4.110.000,00</p>
+      {/* VESTÍGIO ANALÓGICO GLOBAL */}
+      <div className="fixed inset-0 pointer-events-none z-[100] opacity-[0.02] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+
+      {/* HEADER: Visão de Patrimônio Delos Style */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6 border-b border-white/5 pb-10">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Terminal size={14} className="text-amber-600" />
+            <span className="text-[9px] font-black tracking-[0.4em] text-slate-600 uppercase">Board_Governance_Protocol</span>
           </div>
-          <button className="bg-slate-900 text-white px-6 py-2 rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center gap-2">
-            <ShieldCheck size={18} className="text-indigo-400" />
-            Term Sheet
+          <h1 className="text-4xl font-light text-white tracking-tighter uppercase">
+            Equity <span className="font-black italic">Control</span>
+          </h1>
+          <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+            Majoritário: <span className="text-amber-600 font-black">55% Shareholder Access</span>
+          </p>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+          <div className="bg-[#141414] border border-white/5 px-6 py-3 relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-1 h-full bg-amber-600/30" />
+            <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] mb-1 group-hover:text-amber-600 transition-colors">Estimated_Valuation (5x)</p>
+            <p className="text-xl font-mono font-black text-white italic">R$ 4.110.000,00<span className="text-[10px] opacity-30 ml-1">.nx</span></p>
+          </div>
+          
+          <button className="bg-white text-black px-8 py-3 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-amber-600 hover:text-white transition-all flex items-center justify-center gap-3 group">
+            <ShieldCheck size={16} className="group-hover:rotate-12 transition-transform" />
+            Term_Sheet.pdf
           </button>
         </div>
       </header>
 
-      {/* GRID DE KPIs FINANCEIROS (Fase de Validação: 40 Clientes) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-3 bg-green-50 text-green-600 rounded-2xl"><DollarSign size={24}/></div>
-            <span className="flex items-center text-green-500 text-xs font-bold">MRR <ArrowUpRight size={14}/></span>
+      {/* GRID DE KPIs FINANCEIROS - Alta Densidade */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[1px] bg-white/5 border border-white/5 mb-12 shadow-2xl">
+        
+        <div className="bg-[#111] p-8 group hover:bg-[#141414] transition-colors relative">
+          <div className="flex justify-between items-start mb-6">
+            <div className="p-3 bg-white/5 border border-white/5 text-emerald-500"><DollarSign size={20}/></div>
+            <span className="flex items-center text-emerald-500 text-[10px] font-mono font-bold tracking-tighter">MRR_FLOW <ArrowUpRight size={12}/></span>
           </div>
-          <p className="text-slate-500 text-xs font-bold uppercase">Faturamento Bruto</p>
-          <p className="text-2xl font-black text-slate-900">R$ 9.200,00</p>
+          <p className="text-slate-600 text-[9px] font-black uppercase tracking-widest mb-1">Faturamento_Bruto</p>
+          <p className="text-3xl font-light text-white tracking-tighter italic">R$ 9.200,00</p>
+          <div className="absolute bottom-0 left-0 w-0 h-[2px] bg-emerald-500 group-hover:w-full transition-all duration-700" />
         </div>
 
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl"><TrendingUp size={24}/></div>
-            <span className="text-indigo-500 text-xs font-bold italic">Meta: 40 Unidades</span>
+        <div className="bg-[#111] p-8 group hover:bg-[#141414] transition-colors relative">
+          <div className="flex justify-between items-start mb-6">
+            <div className="p-3 bg-white/5 border border-white/5 text-amber-600"><TrendingUp size={20}/></div>
+            <span className="text-slate-500 text-[9px] font-mono italic">Target: 40_Units</span>
           </div>
-          <p className="text-slate-500 text-xs font-bold uppercase">Taxa de Conversão</p>
-          <p className="text-2xl font-black text-slate-900">12.5%</p>
+          <p className="text-slate-600 text-[9px] font-black uppercase tracking-widest mb-1">Conversão_Sincronizada</p>
+          <p className="text-3xl font-light text-white tracking-tighter italic">12.5%</p>
+          <div className="absolute bottom-0 left-0 w-0 h-[2px] bg-amber-600 group-hover:w-full transition-all duration-700" />
         </div>
 
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-3 bg-red-50 text-red-600 rounded-2xl"><ArrowDownRight size={24}/></div>
+        <div className="bg-[#111] p-8 group hover:bg-[#141414] transition-colors relative">
+          <div className="flex justify-between items-start mb-6">
+            <div className="p-3 bg-white/5 border border-white/5 text-rose-600"><Activity size={20}/></div>
+            <span className="text-rose-600/50 text-[10px] font-mono">DANGER_ZONE</span>
           </div>
-          <p className="text-slate-500 text-xs font-bold uppercase">Burn Rate (Custos)</p>
-          <p className="text-2xl font-black text-slate-900">R$ 2.500,00</p>
+          <p className="text-slate-600 text-[9px] font-black uppercase tracking-widest mb-1">Burn_Rate (Custos)</p>
+          <p className="text-3xl font-light text-white tracking-tighter italic">R$ 2.500,00</p>
+          <div className="absolute bottom-0 left-0 w-0 h-[2px] bg-rose-600 group-hover:w-full transition-all duration-700" />
         </div>
 
-        <div className="bg-indigo-600 p-6 rounded-[2rem] shadow-lg shadow-indigo-200 text-white">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-3 bg-white/20 rounded-2xl"><PieChartIcon size={24}/></div>
+        <div className="bg-[#181818] p-8 border-l border-white/10 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Layers size={80} className="text-amber-600" />
           </div>
-          <p className="text-indigo-100 text-xs font-bold uppercase">Seu Pró-labore + Lucro</p>
-          <p className="text-2xl font-black">R$ 4.551,40</p>
+          <div className="flex justify-between items-start mb-6">
+            <div className="p-3 bg-amber-600 text-black shadow-[0_0_15px_rgba(217,119,6,0.3)]"><PieChartIcon size={20}/></div>
+          </div>
+          <p className="text-amber-600/60 text-[9px] font-black uppercase tracking-widest mb-1 font-mono">Pró-labore + Dividends</p>
+          <p className="text-3xl font-black text-white tracking-tighter italic">R$ 4.551,40</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-1 shadow-2xl bg-white/5 border border-white/5">
         
-        {/* DISTRIBUIÇÃO DE DIVIDENDOS (CAP TABLE) */}
-        <div className="lg:col-span-1 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-          <h3 className="text-xl font-black text-slate-900 mb-6">Cap Table & Dividendos</h3>
-          <div className="space-y-6">
-            <div className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center font-bold text-xs">CEO</div>
+        {/* CAP TABLE - Estilo Dossiê Militar */}
+        <div className="lg:col-span-1 bg-[#111] p-10 border-r border-white/5">
+          <div className="flex items-center gap-2 mb-8">
+            <div className="w-1 h-4 bg-amber-600" />
+            <h3 className="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em]">Cap_Table & Asset_Dist</h3>
+          </div>
+
+          <div className="space-y-[1px] bg-white/5">
+            <div className="flex justify-between items-center p-5 bg-[#161616] group hover:bg-black transition-all">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 border border-amber-600/40 text-amber-600 flex items-center justify-center font-mono text-[10px] bg-amber-600/5">CEO</div>
                 <div>
-                  <p className="text-sm font-black">Você</p>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Equity: 55%</p>
+                  <p className="text-[11px] font-black text-white uppercase tracking-wider">Você (Operator)</p>
+                  <p className="text-[8px] text-slate-600 font-mono uppercase">Equity_Node: 55%</p>
                 </div>
               </div>
-              <p className="text-sm font-black text-indigo-600">R$ 1.951,40</p>
+              <p className="text-xs font-mono font-black text-amber-500">R$ 1.951,40</p>
             </div>
 
             {['Sócio A', 'Sócio B', 'Sócio C'].map((socio) => (
-              <div key={socio} className="flex justify-between items-center p-4 border-b border-slate-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-200 text-slate-500 rounded-full flex items-center justify-center font-bold text-xs">15%</div>
-                  <p className="text-sm font-bold text-slate-700">{socio}</p>
+              <div key={socio} className="flex justify-between items-center p-5 bg-[#111] hover:bg-[#141414] transition-all border-b border-white/5 last:border-none">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 border border-white/5 text-slate-700 flex items-center justify-center font-mono text-[10px]">15%</div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">{socio}</p>
                 </div>
-                <p className="text-sm font-bold text-slate-900">R$ 532,20</p>
+                <p className="text-xs font-mono font-bold text-slate-200">R$ 532,20</p>
               </div>
             ))}
           </div>
-          <div className="mt-8 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-            <p className="text-[10px] font-black text-amber-700 uppercase mb-1">⚠️ Alerta de Vesting</p>
-            <p className="text-xs text-amber-800 leading-tight font-medium">Os sócios capitalistas possuem 18 meses restantes para o cliff de vesting total.</p>
+          
+          <div className="mt-10 p-5 bg-amber-600/5 border border-amber-600/20 relative">
+            <div className="absolute top-0 right-0 p-2"><Activity size={10} className="text-amber-600 animate-pulse" /></div>
+            <p className="text-[8px] font-black text-amber-600 uppercase tracking-[0.2em] mb-2">⚠️ Vesting_Cliff_Alert</p>
+            <p className="text-[10px] text-slate-500 leading-relaxed font-mono italic">
+              Sócios capitalistas: 18 meses remanescentes para desbloqueio de nodes secundários.
+            </p>
           </div>
         </div>
 
-        {/* OPERAÇÃO SAAS - STATUS DOS CLIENTES */}
-        <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-            <div className="flex justify-between items-center mb-8">
-              <h3 className="text-xl font-black text-slate-900">Funil de Assinaturas</h3>
-              <div className="flex gap-2">
-                <span className="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-bold">Exportar CSV</span>
-                <span className="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-bold">Filtros</span>
-              </div>
+        {/* FUNIL SAAS - Monitor de Fluxo */}
+        <div className="lg:col-span-2 bg-[#111] p-10 flex flex-col">
+          <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
+            <div className="flex flex-col">
+              <h3 className="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em]">Subscription_Funnel</h3>
+              <span className="text-[7px] font-mono text-slate-600 uppercase">Live Feed // Status: Active</span>
             </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-               <div className="text-center">
-                  <p className="text-slate-400 text-[10px] font-black uppercase">Start</p>
-                  <p className="text-xl font-black">22</p>
-               </div>
-               <div className="text-center border-x border-slate-100">
-                  <p className="text-indigo-600 text-[10px] font-black uppercase">Business</p>
-                  <p className="text-xl font-black text-indigo-600">12</p>
-               </div>
-               <div className="text-center">
-                  <p className="text-purple-600 text-[10px] font-black uppercase">Premium</p>
-                  <p className="text-xl font-black text-purple-600">4</p>
-               </div>
-               <div className="text-center border-l border-slate-100">
-                  <p className="text-amber-600 text-[10px] font-black uppercase">Partner</p>
-                  <p className="text-xl font-black text-amber-600">2</p>
-               </div>
+            <div className="flex gap-4">
+              <button className="text-[8px] font-black text-slate-500 hover:text-amber-600 uppercase tracking-widest border border-white/10 px-3 py-1.5 transition-all">Export_Data</button>
+              <button className="text-[8px] font-black text-slate-500 hover:text-amber-600 uppercase tracking-widest border border-white/10 px-3 py-1.5 transition-all">Filters.sh</button>
             </div>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-white/5 border border-white/5 mb-12">
+             {[
+               { label: 'Start', val: '22', color: 'text-slate-400' },
+               { label: 'Business', val: '12', color: 'text-amber-600' },
+               { label: 'Premium', val: '04', color: 'text-white' },
+               { label: 'Partner', val: '02', color: 'text-amber-500 shadow-[0_0_10px_#d97706]' }
+             ].map((stat, i) => (
+               <div key={i} className="bg-[#161616] p-6 text-center group hover:bg-black transition-all">
+                  <p className={`text-[8px] font-black uppercase tracking-[0.3em] mb-2 ${stat.color} opacity-60`}>{stat.label}</p>
+                  <p className={`text-3xl font-light font-mono italic ${stat.color}`}>{stat.val}</p>
+               </div>
+             ))}
+          </div>
 
-            <div className="space-y-4">
-              <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Atividades Recentes</h4>
-              {[
-                { event: 'Nova Assinatura Business', client: 'Agência Prime Eventos', time: 'Há 2h', icon: <Briefcase size={14}/> },
-                { event: 'Upgrade para Premium', client: 'Produções Rio', time: 'Há 5h', icon: <TrendingUp size={14}/> },
-                { event: 'Renovação Anual', client: 'Staff Elite SP', time: 'Há 1 dia', icon: <Calendar size={14}/> },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-white rounded-lg text-slate-400">{item.icon}</div>
-                    <div>
-                      <p className="text-sm font-black text-slate-900">{item.event}</p>
-                      <p className="text-xs text-slate-500">{item.client}</p>
-                    </div>
+          <div className="space-y-2 flex-1 overflow-y-auto custom-scrollbar pr-4">
+            <h4 className="text-[9px] font-black text-slate-700 uppercase tracking-[0.5em] mb-4 border-l-2 border-amber-600/40 pl-3">Recent_Event_Logs</h4>
+            {[
+              { event: 'New Subscription: Business', client: 'Agência Prime Eventos', time: '2H_AGO', icon: <Briefcase size={12}/> },
+              { event: 'Tier Upgrade: Premium', client: 'Produções Rio', time: '5H_AGO', icon: <TrendingUp size={12}/> },
+              { event: 'Annual Renewal: Staff', client: 'Staff Elite SP', time: '1D_AGO', icon: <Calendar size={12}/> },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center justify-between p-4 bg-[#141414] hover:bg-[#181818] border border-white/[0.03] group transition-all cursor-crosshair">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-black border border-white/10 text-slate-600 group-hover:text-amber-600 transition-colors">{item.icon}</div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-200 uppercase tracking-tighter group-hover:text-amber-500 transition-colors">{item.event}</p>
+                    <p className="text-[9px] text-slate-600 font-mono italic">{item.client}</p>
                   </div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">{item.time}</span>
                 </div>
-              ))}
-            </div>
+                <span className="text-[8px] font-mono font-bold text-slate-700 group-hover:text-amber-600/60">{item.time}</span>
+              </div>
+            ))}
           </div>
         </div>
 
       </div>
+      
+      {/* FOOTER HUD */}
+      <footer className="mt-8 flex justify-between items-center text-[8px] font-mono text-slate-800 uppercase tracking-widest px-4 border-t border-white/5 pt-4">
+        <div className="flex items-center gap-4">
+          <span>Grid_Stable: 100%</span>
+          <span className="text-emerald-900">Encrypted_Board_Link</span>
+        </div>
+        <div className="italic">Analysis: Revenue stream healthy. Expansion advised.</div>
+      </footer>
     </div>
   );
 }

@@ -1,125 +1,154 @@
 "use client";
 
-import { useState } from "react";
-import { FileText, Clock, ChevronRight, Plus, LayoutDashboard, AlertCircle, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Clock, ChevronRight, Plus, LayoutDashboard, AlertCircle, Users, BarChart3 } from "lucide-react";
 import Link from "next/link";
-import PostJobModal from "@/components/Modal/PostJobModal";
 import { useDashboard } from "@/hooks/useDashboard";
 import { STATUS_CONFIG } from "@/data/statusLabels";
-
-
+import PostNewJobModal from "@/components/Modal/PostNewJobModal";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function DashboardPage() {
   const { stats, loading, error, refresh } = useDashboard();
   const [isPostJobOpen, setIsPostJobOpen] = useState(false);
-
-  // Cards principais com rotas específicas
+  const { activeCompanyId } = useAuthStore();
+  useEffect(() => {
+    if (activeCompanyId) {
+      refresh();
+    }
+  }, [activeCompanyId, refresh]);
   const cards = [
     {
-      label: "Minhas Vagas",
+      label: "Vagas Ativas",
       value: stats?.total_vagas ?? 0,
-      icon: <LayoutDashboard className="w-5 h-5 text-indigo-600" />,
-      bg: "bg-indigo-50",
+      icon: <LayoutDashboard className="w-5 h-5 text-amber-500" />,
+      bg: "bg-slate-900/50",
       href: "/dashboard/painel/minhas-vagas"
     },
     {
-      label: "Total de Candidatos",
+      label: "Hosts Candidatos",
       value: stats?.total_candidaturas ?? 0,
-      icon: <Users className="w-5 h-5 text-blue-600" />,
-      bg: "bg-blue-50",
+      icon: <Users className="w-5 h-5 text-slate-400" />,
+      bg: "bg-slate-900/50",
       href: "/dashboard/painel/minhas-vagas"
     },
     {
-      label: "Aguardando Análise",
+      label: "Aguardando Resposta",
       value: stats?.novas_candidaturas ?? 0,
-      icon: <Clock className="w-5 h-5 text-orange-600" />,
-      bg: "bg-orange-50",
-      href: "/painel/candidaturas?status=applied" // Filtro direto
+      icon: <Clock className="w-5 h-5 text-amber-600" />,
+      bg: "bg-slate-900/50",
+      href: "/painel/candidaturas?status=applied"
     },
   ];
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-500">
-        <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-        <p>{error}</p>
-        <button onClick={refresh} className="mt-4 text-indigo-600 font-bold underline">Tentar novamente</button>
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-500 font-mono">
+        <AlertCircle className="w-12 h-12 text-red-500 mb-4 opacity-50" />
+        <p className="tracking-widest uppercase text-xs font-bold">System Error: Data Corruption</p>
+        <button onClick={refresh} className="mt-4 text-amber-600 font-black hover:text-amber-500 transition-colors uppercase text-xs tracking-tighter italic underline">
+          Reboot System
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="p-4 sm:p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
-      
-      {/* HEADER */}
-      <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none">Dashboard</h1>
-          <p className="text-slate-500 text-sm mt-2">Gestão de talentos e oportunidades.</p>
+    <div className="sm:py-4 max-w-7xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+
+      {/* HEADER - Estilo Delos Corporate */}
+      <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-slate-800 pb-2">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-[2px] bg-amber-600" />
+            <span className="text-[10px] font-black tracking-[0.4em] text-amber-600 uppercase">Visão Geral</span>
+          </div>
+          <h1 className="text-4xl font-light text-slate-100 tracking-tighter">
+            DASH<span className="font-black">BOARD</span>
+          </h1>
+          <p className="text-slate-500 text-xs font-medium tracking-wide uppercase">Operações de Unidades e Gestão de Fluxo</p>
         </div>
 
         <button
           onClick={() => setIsPostJobOpen(true)}
-          className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-100 active:scale-95 cursor-pointer"
+          className="group relative flex items-center justify-center gap-3 bg-white text-black px-8 py-4 overflow-hidden transition-all hover:bg-amber-600 hover:text-white"
         >
-          <Plus className="w-5 h-5" />
-          Postar Nova Vaga
+          <Plus className="w-4 h-4 transition-transform group-hover:rotate-90" />
+          <span className="font-black text-xs uppercase tracking-[0.2em]">Anunciar Vaga</span>
         </button>
       </section>
 
-      {/* GRID DE STATS (Cards linkados) */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* STATS GRID */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-[1px] bg-slate-800 border border-slate-800 shadow-2xl">
         {cards.map((item, i) => (
-          <Link 
-            key={i} 
+          <Link
+            key={i}
             href={item.href}
-            className="group bg-white p-6 rounded-[28px] border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all flex items-center gap-5 cursor-pointer"
+            className="group bg-slate-950 p-8 transition-all hover:bg-slate-900 flex flex-col gap-6 relative overflow-hidden"
           >
-            <div className={`p-4 rounded-2xl ${item.bg} group-hover:scale-110 transition-transform`}>
-              {loading ? <div className="w-5 h-5 animate-pulse bg-slate-200 rounded" /> : item.icon}
+            {/* Background Detail */}
+            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity">
+              <BarChart3 className="w-16 h-16 text-slate-500" />
             </div>
-            <div className="flex-1">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">{item.label}</p>
+
+            <div className="flex items-center justify-between">
+              <div className="p-3 bg-slate-900 border border-slate-800 group-hover:border-amber-600/50 transition-colors">
+                {loading ? <div className="w-5 h-5 animate-pulse bg-slate-800" /> : item.icon}
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-700 group-hover:text-amber-500 transform group-hover:translate-x-1 transition-all" />
+            </div>
+
+            <div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] mb-2">{item.label}</p>
               {loading ? (
-                <div className="h-8 w-12 bg-slate-100 animate-pulse rounded-lg" />
+                <div className="h-10 w-20 bg-slate-900 animate-pulse" />
               ) : (
-                <p className="text-2xl font-black text-slate-900">{String(item.value).padStart(2, '0')}</p>
+                <p className="text-4xl font-light text-slate-100 italic">
+                  {String(item.value).padStart(2, '0')}<span className="text-amber-600 text-sm not-italic ml-1">.n</span>
+                </p>
               )}
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />
           </Link>
         ))}
       </section>
 
-      {/* STATUS DOS CANDIDATOS (Filtros por status) */}
-      <section className="bg-white border border-slate-200 rounded-[32px] overflow-hidden shadow-sm">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-            <h3 className="font-bold text-slate-900">Funil de Candidatura</h3>
+      {/* FUNIL DE CANDIDATURA - Visual de Monitor de Controle */}
+      <section className="bg-slate-950 border border-slate-800 shadow-2xl">
+        <div className="px-8 py-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-2 h-2 bg-amber-500 rounded-full" />
+              <div className="absolute inset-0 w-2 h-2 bg-amber-500 rounded-full animate-ping opacity-75" />
+            </div>
+            <h3 className="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em]">Progressão de Candidaturas</h3>
           </div>
+          <span className="text-[9px] font-mono text-slate-600 uppercase tracking-widest leading-none">Status: Live Feed</span>
         </div>
 
-        <div className="p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+        <div className="p-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1 bg-slate-800">
           {stats?.resumo_por_status.map((status, idx) => {
-            const config = STATUS_CONFIG[status.status] || { label: status.status, color: "text-indigo-600" };
+            const config = STATUS_CONFIG[status.status] || { label: status.status, color: "text-slate-400" };
             return (
               <Link
                 key={idx}
                 href={`/dashboard/painel/candidaturas?status=${status.status}`}
-                className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center hover:bg-white hover:border-indigo-200 hover:shadow-sm transition-all group"
+                className="bg-slate-950 p-6 text-center hover:bg-slate-900 transition-all group relative"
               >
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight mb-1 group-hover:text-indigo-400">
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter mb-3 group-hover:text-amber-500 transition-colors">
                   {config.label}
                 </p>
-                <p className={`text-xl font-black ${config.color}`}>{status.total}</p>
+                <p className="text-3xl font-light text-slate-200 group-hover:scale-110 transition-transform">
+                  {status.total}
+                </p>
+                {/* Indicador inferior sutil */}
+                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-transparent group-hover:bg-amber-600/30 transition-all" />
               </Link>
             );
           })}
         </div>
       </section>
 
-      <PostJobModal isOpen={isPostJobOpen} onClose={() => setIsPostJobOpen(false)} />
+      <PostNewJobModal isOpen={isPostJobOpen} onClose={() => setIsPostJobOpen(false)} />
     </div>
   );
 }

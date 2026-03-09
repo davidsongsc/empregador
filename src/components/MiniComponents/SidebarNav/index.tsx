@@ -1,67 +1,69 @@
 "use client"
 
-import { 
-  LayoutDashboard, FileText, Settings, CalendarDays, 
-  PhoneCallIcon, AlertOctagon, Globe, Plug, Wallet, 
-  BarChart3, UserCheck, Users, CloudBackup, ChevronRight 
+import {
+  LayoutDashboard, FileText, Settings, CalendarDays,
+  PhoneCallIcon, Globe, Plug, Wallet,
+  BarChart3, UserCheck, Users, CloudBackup, ChevronRight, Lock
 } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { useAuthStore } from "@/store/useAuthStore"
+import { useCompanyStore } from "@/store/useCompanyStore"
 
 const SidebarNav = () => {
   const pathname = usePathname()
   const router = useRouter()
   const { user } = useAuthStore()
+  const { activeCompany } = useCompanyStore()
+  const companyId = activeCompany?.id || user?.profile?.empresas?.find(emp => emp.is_active)?.id
 
-  const userCompany = user?.profile?.empresas?.find(emp => emp.is_active)
-  const companyId = userCompany?.id
-
-  // Definimos os grupos para organizar a mente do usuário
   const menuGroups = [
     {
-      title: "Principal",
+      title: "System_Core",
       items: [
-        { label: "Início", href: "/dashboard/home", icon: LayoutDashboard },
-        { label: "Portal de Vagas", href: "/vagas", icon: Globe },
+        { label: "Dashboard", href: "/dashboard/home", icon: LayoutDashboard },
+        { label: "Portal Global", href: "/vagas", icon: Globe },
       ]
     },
     {
-      title: "Operação de Staff",
+      title: "Host_Operation",
       items: [
         { label: "Vagas", href: "/dashboard/painel/minhas-vagas", icon: FileText },
-        { label: "Candidatos", href: "/dashboard/painel/candidatos", icon: UserCheck, disabled: !companyId },
-        { label: "Eventos", href: "/dashboard/painel/eventos", icon: CalendarDays },
+        { label: "Análise de Unidades", href: "/dashboard/painel/candidatos", icon: UserCheck, disabled: !companyId },
+        { label: "Cronograma", href: "/dashboard/painel/eventos", icon: CalendarDays },
       ]
     },
     {
-      title: "Gestão & Business",
+      title: "Business_Intelligence",
       items: [
-        { label: "Financeiro", href: "/dashboard/painel/financeiro", icon: Wallet, disabled: !companyId },
+        { label: "Recursos", href: "/dashboard/painel/financeiro", icon: Wallet, disabled: !companyId },
         { label: "Relatórios BI", href: "/dashboard/painel/relatorios", icon: BarChart3, disabled: !companyId },
-        { label: "Segurança", href: "/dashboard/painel/seguranca", icon: CloudBackup },
+        { label: "Segurança de Dados", href: "/dashboard/painel/seguranca", icon: CloudBackup },
       ]
     },
     {
-      title: "Configurações",
+      title: "Terminal_Config",
       items: [
-        { label: "Empresa", href: companyId ? `/dashboard/painel/companies/${companyId}` : "/dashboard/painel", icon: Settings, disabled: !companyId },
-        { label: "Usuários", href: "/dashboard/painel/usuarios", icon: Users, disabled: !companyId },
-        { label: "Whatsapp AI", href: "/dashboard/painel/whatsapp", icon: PhoneCallIcon, disabled: true }, // Plano Premium
-        { label: "Administração", href: "/dashboard/admin", icon: Plug, disabled: !companyId },
+        { label: "Parâmetros Empresa", href: companyId ? `/dashboard/painel/companies/` : "/dashboard/painel", icon: Settings, disabled: !companyId },
+        { label: "Acessos", href: "/dashboard/painel/usuarios", icon: Users, disabled: !companyId },
+        { label: "Nexus AI", href: "/dashboard/painel/whatsapp", icon: PhoneCallIcon, disabled: true },
+        { label: "Admin Root", href: "/dashboard/admin", icon: Plug, disabled: !companyId },
       ]
     }
   ]
 
   return (
-    <nav className="flex-1 px-3 space-y-6 overflow-y-auto scrollbar-hide">
+    <nav className="flex-1 px-1 space-y-6 overflow-y-auto no-scrollbar py-2">
       {menuGroups.map((group, idx) => (
-        <div key={idx} className="space-y-1">
-          {/* Título da Categoria */}
-          <h3 className="px-4 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-            {group.title}
-          </h3>
+        <div key={idx} className="space-y-2">
+          {/* Label de Categoria Estilo Delos */}
+          <div className="flex items-center gap-2 px-2 mb-4">
+            <div className="w-1 h-3 bg-amber-600/40" />
+            <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">
+              {group.title}
+            </h3>
+          </div>
 
-          <div className="space-y-1">
+          <div className="space-y-[2px]">
             {group.items.map((item) => {
               const isActive = pathname.startsWith(item.href)
               const Icon = item.icon
@@ -71,30 +73,45 @@ const SidebarNav = () => {
                   key={item.label}
                   onClick={() => !item.disabled && router.push(item.href)}
                   className={`
-                    w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200
-                    ${item.disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
-                    ${isActive
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 font-semibold"
-                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                    }
+                    w-full flex items-center gap-3 px-3 py-2 transition-all duration-300 group relative
+                    ${item.disabled ? "opacity-30 cursor-not-allowed" : "cursor-pointer"}
                   `}
                   disabled={item.disabled}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : "text-slate-400"}`} />
-                  
-                  <span className="text-sm">
+                  {/* Indicador Lateral Ativo */}
+                  <div className={`
+                    absolute left-0 w-[2px] transition-all duration-500
+                    ${isActive ? "h-full bg-amber-600 shadow-[0_0_8px_rgba(217,119,6,0.6)]" : "h-0 bg-transparent group-hover:h-1/2 group-hover:bg-slate-700"}
+                  `} />
+
+                  <Icon className={`
+                    w-4 h-4 shrink-0 transition-colors duration-300
+                    ${isActive ? "text-amber-500" : "text-slate-600 group-hover:text-slate-300"}
+                  `} />
+
+                  <span className={`
+                    text-[11px] uppercase tracking-widest font-bold transition-colors duration-300
+                    ${isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300"}
+                  `}>
                     {item.label}
                   </span>
 
-                  {item.disabled && (
-                    <span className="ml-auto text-[9px] font-black bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded">
-                      PRO
-                    </span>
+                  {item.disabled ? (
+                    <Lock className="ml-auto w-3 h-3 text-slate-700" />
+                  ) : (
+                    isActive && (
+                      <div className="ml-auto flex items-center gap-1">
+                        <div className="w-1 h-1 bg-amber-600 rounded-full animate-pulse" />
+                        <ChevronRight className="w-3 h-3 text-amber-600" />
+                      </div>
+                    )
                   )}
 
-                  {isActive && !item.disabled && (
-                    <ChevronRight className="ml-auto w-4 h-4 text-white/60" />
-                  )}
+                  {/* Background Hover Industrial */}
+                  <div className={`
+                    absolute inset-0 -z-10 transition-colors
+                    ${isActive ? "bg-amber-600/5" : "group-hover:bg-white/[0.02]"}
+                  `} />
                 </button>
               )
             })}

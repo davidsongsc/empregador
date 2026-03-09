@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Briefcase, User, Search, PlusCircle, X, Menu, LogOut, ChevronRight, LayoutDashboard } from 'lucide-react';
+import { Briefcase, User, Search, PlusCircle, X, Menu, LogOut, ChevronRight, LayoutDashboard, Binary } from 'lucide-react';
 import Image from 'next/image';
 
 import { useAuthStore } from '@/store/useAuthStore';
@@ -29,27 +29,31 @@ const Header = () => {
 
     const closeDock = () => setIsDockOpen(false);
 
-
     return (
         <>
-            <header className={`fixed top-0 w-full transition-all duration-500 z-50 hidden md:block px-4 ${isScrolled ? 'pt-2' : 'pt-4'}`}>
-                <div className={`max-w-7xl mx-auto flex items-center justify-between px-6 py-3 rounded-2xl transition-all duration-500 ${isScrolled
-                    ? 'bg-white/90 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.05)] border border-white/40'
-                    : 'bg-white/40 backdrop-blur-md border border-white/20'
-                    }`}>
+            <header className={`fixed top-0 w-full transition-all duration-700 z-50 hidden md:block px-6 ${isScrolled ? 'pt-2' : 'pt-6'}`}>
+                <div className={`max-w-7xl mx-auto flex items-center justify-between px-8 py-4 rounded-[24px] transition-all duration-500 border ${
+                    isScrolled
+                    ? 'bg-white/80 backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.04)] border-gray-100'
+                    : 'bg-white/40 backdrop-blur-md border-white/40'
+                }`}>
 
+                    {/* LOGO - Westworld Style */}
                     <div className="flex-1 flex justify-start">
-                        <Link href="/" className="flex items-center gap-3 group transition-transform hover:scale-[1.02]">
-                            <div className="relative w-10 h-10 flex items-center justify-center bg-indigo-600 rounded-xl shadow-indigo-100 shadow-lg group-hover:rotate-6 transition-all">
-                                <Briefcase className="text-white w-5 h-5" />
+                        <Link href="/" className="flex items-center group">
+                            <div className="flex items-center text-[11px] font-black tracking-[0.5em] uppercase italic">
+                                <span className={`px-4 py-1.5 transition-all duration-700 ${isScrolled ? 'bg-black text-white' : 'bg-white text-black border border-black/10'}`}>
+                                    Freela
+                                </span>
+                                <span className={`px-4 py-1.5 ml-1 transition-all duration-700 ${!isScrolled ? 'bg-amber-600 text-white shadow-lg shadow-amber-200/50' : 'bg-gray-100 text-gray-400'}`}>
+                                    Certo
+                                </span>
                             </div>
-                            <span className="text-xl font-black tracking-tighter text-gray-900">
-                                Freela<span className="text-indigo-600">Certo</span>
-                            </span>
                         </Link>
                     </div>
 
-                    <nav className="hidden lg:flex items-center gap-1 bg-gray-200/30 p-1 rounded-xl border border-gray-100/50">
+                    {/* NAVIGATION - Minimalista Clinical */}
+                    <nav className="hidden lg:flex items-center gap-2 bg-gray-50/50 p-1.5 rounded-2xl border border-gray-100">
                         {[
                             { name: 'Vagas', href: '/vagas' },
                             { name: 'Freelancer', href: '/freelancer' },
@@ -58,150 +62,141 @@ const Header = () => {
                             <Link
                                 key={item.name}
                                 href={item.href}
-                                className="px-5 py-2 rounded-lg text-sm font-black text-gray-700 hover:text-indigo-600 hover:bg-white transition-all duration-300"
+                                className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                    pathname === item.href ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-black hover:bg-white/50'
+                                }`}
                             >
                                 {item.name}
                             </Link>
                         ))}
                     </nav>
 
-                    <div className="flex-1 flex justify-end items-center gap-3">
+                    <div className="flex-1 flex justify-end items-center gap-4">
+                        {/* SEARCH - Industrial Look */}
                         <div className="relative hidden xl:block group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 group-focus-within:text-black transition-colors" />
                             <input
                                 type="text"
-                                placeholder="Pesquisar..."
-                                className="w-48 bg-gray-100/80 border-none rounded-xl py-2.5 pl-9 pr-4 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-100 focus:bg-white transition-all duration-300"
+                                placeholder="PROCURAR_PROTOCOLO..."
+                                className="w-44 bg-gray-100/50 border-2 border-transparent rounded-xl py-2.5 pl-10 pr-4 text-[9px] font-black uppercase tracking-widest outline-none focus:border-black focus:bg-white transition-all duration-500"
                             />
                         </div>
 
                         {isAuthenticated ? (
-                            <div className="flex items-center gap-2 bg-white/50 p-1 rounded-xl border border-white shadow-sm">
+                            <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm">
                                 {isRecruiter && (
                                     <Link
                                         href="/dashboard/home"
-                                        className="p-2.5 hover:bg-indigo-50 text-indigo-600 rounded-lg transition-all group/dash ml-1"
-                                        title="Portal.Empresa (Dashboard)"
+                                        className="p-3 hover:bg-gray-50 text-black rounded-xl transition-all"
+                                        title="Painel de Controle"
                                     >
-                                        <LayoutDashboard className="w-4 h-4 group-hover/dash:scale-110 transition-transform" />
+                                        <Binary className="w-4 h-4" />
                                     </Link>
                                 )}
-                                <Link href="/perfil" className={`flex items-center gap-2 pl-3 pr-1 group ${isRecruiter ? 'border-l border-gray-100 ml-1' : ''}`}>
-                                    {/* Container de Identificação */}
-                                    <div className="flex flex-col items-start">
-                                        <span className="text-[10px] font-black text-gray-400 capitalize leading-none mb-1">
-                                            {user?.profile?.empresas && user.profile.empresas.length > 0
-                                                ? user.profile.empresas[0].role.toLowerCase()
-                                                : "Candidato"}
+                                <Link href="/perfil" className="flex items-center gap-3 pl-4 pr-1 group">
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[8px] font-black text-indigo-600 uppercase tracking-tighter leading-none mb-1">
+                                            {isRecruiter ? "Acesso_Staff" : "Host_Ativo"}
                                         </span>
-
-                                        <span className="text-xs font-black text-gray-800 leading-none capitalize">
-                                            {user?.profile?.name?.split(' ')[0] || "Usuário"}
+                                        <span className="text-[11px] font-black text-black uppercase italic leading-none">
+                                            {user?.profile?.name?.split(' ')[0]}
                                         </span>
                                     </div>
-                                    <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white overflow-hidden shadow-md group-hover:scale-105 transition-transform">
+                                    <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center text-white overflow-hidden shadow-lg group-hover:scale-105 transition-transform border-2 border-white">
                                         {user?.profile?.foto ? (
-                                            <Image src={user.profile.foto} alt="Avatar" width={36} height={36} />
+                                            <Image src={user.profile.foto} alt="Avatar" width={40} height={40} className="object-cover" />
                                         ) : <User className="w-5 h-5" />}
                                     </div>
                                 </Link>
                                 <button
                                     onClick={logout}
-                                    className="p-2.5 hover:bg-red-50 hover:text-red-500 rounded-lg text-gray-400 transition-colors cursor-pointer"
-                                    title="Sair"
+                                    className="p-3 text-gray-300 hover:text-red-600 transition-colors"
                                 >
                                     <LogOut className="w-4 h-4" />
                                 </button>
                             </div>
                         ) : (
-                            <Link href="/login" className="text-sm font-black text-gray-900 px-4 hover:text-indigo-600 transition-colors">
-                                Entrar
+                            <Link href="/login" className="text-[10px] font-black text-black px-6 uppercase tracking-[0.2em] hover:text-indigo-600 transition-colors">
+                                Login
                             </Link>
                         )}
 
                         <button
                             onClick={() => setIsPostJobOpen(true)}
-                            className="bg-gray-900 text-white px-6 py-3 rounded-xl text-sm font-black hover:bg-indigo-600 hover:-translate-y-0.5 transition-all shadow-xl shadow-gray-200 active:scale-95 cursor-pointer"
+                            className="bg-black text-white px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-amber-600 hover:shadow-[0_10px_25px_rgba(217,119,6,0.3)] transition-all active:scale-95"
                         >
-                            Postar Vaga
+                            Nova_Vaga
                         </button>
-
                     </div>
                 </div>
             </header>
 
-            <div className="md:hidden fixed top-0 w-full flex justify-between items-center px-6 py-4 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-50">
-                <Link href="/" className="flex items-center gap-2">
-                    <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100">
-                        <Briefcase className="text-white w-5 h-5" />
+            {/* MOBILE HEADER - Clean Industrial */}
+            <div className="md:hidden fixed top-0 w-full flex justify-between items-center px-6 py-5 z-40 bg-white border-b border-gray-100">
+                <Link href="/" className="flex items-center">
+                    <div className="flex text-[10px] font-black uppercase tracking-widest italic">
+                        <span className="bg-black text-white px-3 py-1">F</span>
+                        <span className="bg-amber-600 text-white px-3 py-1">C</span>
                     </div>
-                    <span className="text-xl font-black tracking-tighter">FreelaCerto</span>
                 </Link>
 
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setIsSearchOpen(true)}
-                        className="p-3 bg-gray-50 rounded-xl text-gray-500 active:scale-90 transition-transform"
-                    >
+                <div className="flex items-center gap-3">
+                    <button onClick={() => setIsSearchOpen(true)} className="p-3 bg-gray-50 rounded-xl text-black">
                         <Search className="w-5 h-5" />
                     </button>
                     {isAuthenticated ? (
-                        <Link href="/perfil" className="w-11 h-11 rounded-xl bg-indigo-600 flex items-center justify-center overflow-hidden border-2 border-white shadow-lg">
+                        <Link href="/perfil" className="w-11 h-11 rounded-xl bg-black flex items-center justify-center overflow-hidden border-2 border-white shadow-xl">
                             {user?.profile?.foto ? (
-                                <Image src={user.profile.foto} alt="Avatar" width={44} height={44} />
+                                <Image src={user.profile.foto} alt="Avatar" width={44} height={44} className="object-cover" />
                             ) : <User className="w-6 h-6 text-white" />}
                         </Link>
                     ) : (
-                        <Link href="/login" className="p-3 bg-gray-900 rounded-xl text-white active:scale-90 transition-transform">
+                        <Link href="/login" className="p-3 bg-black rounded-xl text-white">
                             <User className="w-5 h-5" />
                         </Link>
                     )}
                 </div>
             </div>
 
+            {/* MOBILE SEARCH OVERLAY */}
             {isSearchOpen && (
-                <div className="fixed inset-0 bg-white z-[60] p-6 flex flex-col animate-in slide-in-from-bottom duration-500">
-                    <div className="flex justify-between items-center mb-10">
-                        <span className="font-black text-3xl tracking-tighter">O que você <br /> <span className="text-indigo-600">precisa?</span></span>
-                        <button onClick={() => setIsSearchOpen(false)} className="p-4 bg-gray-100 rounded-2xl active:bg-gray-200">
-                            <X className="w-7 h-7" />
+                <div className="fixed inset-0 bg-white z-[60] p-8 flex flex-col animate-in fade-in slide-in-from-bottom duration-700">
+                    <div className="flex justify-between items-center mb-12">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.4em] mb-2">Protocolo_Busca</span>
+                            <span className="font-black text-4xl tracking-tighter uppercase italic">O que você <br /> procura?</span>
+                        </div>
+                        <button onClick={() => setIsSearchOpen(false)} className="p-4 bg-gray-100 rounded-2xl">
+                            <X className="w-8 h-8 text-black" />
                         </button>
                     </div>
-                    <div className="relative mb-8">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-indigo-600 w-6 h-6" />
+                    <div className="relative mb-10">
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-black w-6 h-6" />
                         <input
                             autoFocus
-                            placeholder="Cargo, tecnologia ou cidade..."
-                            className="w-full bg-gray-50 rounded-3xl py-6 pl-14 pr-6 text-xl font-bold outline-none border-2 border-transparent focus:border-indigo-100 transition-all"
+                            placeholder="CARGO, TECH OU CIDADE..."
+                            className="w-full bg-gray-50 rounded-[24px] py-8 pl-16 pr-8 text-lg font-black uppercase tracking-widest outline-none border-2 border-transparent focus:border-black transition-all"
                         />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        {['Home Office', 'React Native', 'Designer', 'São Paulo'].map(item => (
-                            <button key={item} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl text-left hover:bg-indigo-50 transition-colors">
-                                <span className="text-sm font-bold text-gray-700">{item}</span>
-                                <ChevronRight className="w-4 h-4 text-indigo-300" />
-                            </button>
-                        ))}
                     </div>
                 </div>
             )}
 
-            <div className="md:hidden fixed bottom-8 right-6 flex flex-col items-end z-50">
-                <div className={`flex flex-col gap-4 mb-6 transition-all duration-500 ${isDockOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-16 scale-50 pointer-events-none'
-                    }`}>
+            {/* MOBILE DOCK MENU */}
+            <div className="md:hidden fixed bottom-10 right-8 flex flex-col items-end z-50">
+                <div className={`flex flex-col gap-4 mb-8 transition-all duration-700 ${isDockOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-20 scale-50 pointer-events-none'}`}>
                     {[
-                        ...(isRecruiter ? [{ icon: LayoutDashboard, label: 'Dashboard', href: '/painel/minhas-vagas', color: 'bg-indigo-600 text-white' }] : []),
-                        { icon: PlusCircle, label: 'Postar Vaga', href: '/anunciar', color: isRecruiter ? 'bg-white text-gray-900' : 'bg-indigo-600 text-white' },
-                        { icon: Briefcase, label: 'Minhas Vagas', href: '/vagas', color: 'bg-white text-gray-900' },
-                        { icon: User, label: 'Meu Perfil', href: '/perfil', color: 'bg-white text-gray-900' },
+                        ...(isRecruiter ? [{ icon: LayoutDashboard, label: 'Painel', href: '/dashboard/home', color: 'bg-black text-white' }] : []),
+                        { icon: PlusCircle, label: 'Nova Vaga', href: '/anunciar', color: 'bg-amber-600 text-white' },
+                        { icon: Briefcase, label: 'Ver Vagas', href: '/vagas', color: 'bg-white text-black' },
+                        { icon: User, label: 'Perfil', href: '/perfil', color: 'bg-white text-black' },
                     ].map((item, idx) => (
                         <Link
                             key={idx}
                             href={item.href}
                             onClick={closeDock}
-                            className={`flex items-center gap-4 shadow-2xl py-4 px-6 rounded-3xl border border-gray-100 group active:scale-95 transition-all ${item.color}`}
+                            className={`flex items-center gap-5 shadow-2xl py-5 px-8 rounded-[24px] border border-gray-100 active:scale-95 transition-all ${item.color}`}
                         >
-                            <span className="text-xs font-black uppercase tracking-[0.15em]">{item.label}</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">{item.label}</span>
                             <item.icon className="w-5 h-5" />
                         </Link>
                     ))}
@@ -209,16 +204,18 @@ const Header = () => {
 
                 <button
                     onClick={() => setIsDockOpen(!isDockOpen)}
-                    className={`w-16 h-16 rounded-3xl flex items-center justify-center shadow-[0_20px_50px_rgba(79,70,229,0.4)] transition-all duration-500 active:scale-90 ${isDockOpen ? 'bg-gray-900 -rotate-90' : 'bg-indigo-600 rotate-0'
-                        }`}
+                    className={`w-16 h-16 rounded-[24px] flex items-center justify-center shadow-2xl transition-all duration-700 active:scale-90 ${
+                        isDockOpen ? 'bg-black -rotate-90' : 'bg-amber-600 rotate-0 shadow-amber-200'
+                    }`}
                 >
                     {isDockOpen ? <X className="text-white w-8 h-8" /> : <Menu className="text-white w-8 h-8" />}
                 </button>
             </div>
 
             {isDockOpen && (
-                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-40 md:hidden animate-in fade-in duration-500" onClick={closeDock} />
+                <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-40 md:hidden" onClick={closeDock} />
             )}
+            
             <PostJobModal
                 isOpen={isPostJobOpen}
                 onClose={() => setIsPostJobOpen(false)}

@@ -4,7 +4,7 @@ import { useDashboardStore } from "@/store/useDashboardStore";
 
 export function useDashboard() {
   const { stats, loading, error, fetchStats } = useDashboardStore();
-
+  
   const refresh = useCallback(() => {
     return fetchStats();
   }, [fetchStats]);

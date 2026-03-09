@@ -1,17 +1,17 @@
 "use client";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
-import { Building2, ArrowRight } from "lucide-react";
+import { Building2, ArrowRight, CheckCircle2 } from "lucide-react"; // Adicionei o CheckCircle2
 
 export default function SelectCompany() {
-  const { user, setActiveCompany } = useAuthStore();
+  // 1. Importe o activeCompanyId do seu store
+  const { user, setActiveCompany, activeCompanyId } = useAuthStore();
   const router = useRouter();
   const empresas = user?.profile?.empresas || [];
 
   const handleSelect = (id: string) => {
     setActiveCompany(id);
-    router.push(`/dashboard/painel/companies/${id}`);
-    console.log("Empresa selecionada:", id);
+    router.push(`/dashboard/painel/companies/`);
   };
 
   return (
@@ -23,24 +23,51 @@ export default function SelectCompany() {
         </div>
 
         <div className="space-y-4">
-          {empresas.map((emp) => (
-            <button
-              key={emp.id}
-              onClick={() => handleSelect(emp.id)}
-              className="w-full group flex items-center justify-between p-5 bg-white rounded-2xl border-2 border-transparent hover:border-indigo-600 shadow-sm transition-all active:scale-[0.98]"
-            >
-              <div className="flex items-center gap-4">
-                <div className="bg-indigo-50 p-3 rounded-xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                  <Building2 size={24} />
+          {empresas.map((emp) => {
+            // 2. Verifique se esta empresa é a ativa
+            const isSelected = activeCompanyId === emp.id;
+
+            return (
+              <button
+                key={emp.id}
+                onClick={() => handleSelect(emp.id)}
+                className={`
+                  w-full group flex items-center justify-between p-5 rounded-2xl border-2 transition-all active:scale-[0.98] shadow-sm
+                  ${isSelected 
+                    ? "border-indigo-600 bg-indigo-50/50 shadow-indigo-100" 
+                    : "border-transparent bg-white hover:border-indigo-200"}
+                `}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`
+                    p-3 rounded-xl transition-colors
+                    ${isSelected 
+                      ? "bg-indigo-600 text-white" 
+                      : "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white"}
+                  `}>
+                    <Building2 size={24} />
+                  </div>
+                  <div className="text-left">
+                    <div className="flex items-center gap-2">
+                      <p className={`font-bold ${isSelected ? "text-indigo-900" : "text-gray-900"}`}>
+                        {emp.name}
+                      </p>
+                      {/* 3. Indicador visual de Selecionado */}
+                      {isSelected && <CheckCircle2 size={14} className="text-indigo-600" />}
+                    </div>
+                    <p className={`text-xs uppercase font-black ${isSelected ? "text-indigo-400" : "text-gray-400"}`}>
+                      {emp.role}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <p className="font-bold text-gray-900">{emp.name}</p>
-                  <p className="text-xs text-gray-400 uppercase font-black">{emp.role}</p>
-                </div>
-              </div>
-              <ArrowRight className="text-gray-300 group-hover:text-indigo-600 transition-colors" size={20} />
-            </button>
-          ))}
+                
+                <ArrowRight 
+                  className={`transition-colors ${isSelected ? "text-indigo-600" : "text-gray-300 group-hover:text-indigo-600"}`} 
+                  size={20} 
+                />
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -10,7 +10,7 @@ interface MyJobsState {
   loading: boolean;
   error: string | null;
   cache: Record<string, { data: JobsResponse; timestamp: number }>;
-  
+
   // Ações
   fetchJobs: (filter: any, forceRefresh?: boolean) => Promise<void>;
   invalidateCache: () => void;
@@ -31,15 +31,16 @@ export const useMyJobsStore = create<MyJobsState>((set, get) => ({
       const cached = get().cache[cacheKey];
       if (cached && now - cached.timestamp < CACHE_TTL) {
         set({ data: cached.data, loading: false, error: null });
+        
+
         return;
       }
     }
-
     set({ loading: true, error: null });
 
     try {
       const response = await getMyJobs(filter);
-      
+
       set((state) => ({
         data: response,
         loading: false,
@@ -57,3 +58,4 @@ export const useMyJobsStore = create<MyJobsState>((set, get) => ({
 
   invalidateCache: () => set({ cache: {} })
 }));
+
