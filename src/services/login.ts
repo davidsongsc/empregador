@@ -1,30 +1,18 @@
 import { api } from "@/lib/api";
 
-export async function login(
-  whatsappNumber: string,
-  password: string
-) {
-  try {
-    return await api("/auth/login/", {
-      method: "POST",
-      body: JSON.stringify({
-        whatsapp_number: whatsappNumber,
-        password,
-      }),
+export async function login(whatsappNumber: string, password: string, remember: boolean = false) {
+    const data = await api("/auth/login/", {
+        method: "POST",
+        credentials: "include",
+        body: JSON.stringify({
+            
+            whatsapp_number: whatsappNumber,
+            password,
+            remember,
+        }),
     });
-  } catch (err: any) {
-    if (err?.errors?.whatsapp_number) {
-      throw new Error(err.errors.whatsapp_number[0]);
-    }
 
-    if (err?.errors?.password) {
-      throw new Error(err.errors.password[0]);
-    }
-
-    if (err?.detail) {
-      throw new Error(err.detail);
-    }
-
-    throw new Error("WhatsApp ou senha inválidos");
-  }
+    // Se o login foi ok, mas não veio o objeto 'user' como no /me/,
+    // você precisa formatar aqui ou no componente:
+    return data;
 }
