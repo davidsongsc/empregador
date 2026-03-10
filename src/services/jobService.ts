@@ -1,72 +1,146 @@
+import { JobsResponse } from "@/interfaces/jobResponse";
 import { api } from "@/lib/api";
 
-export interface JobResult {
-  uid: string;
-  tipo_vaga_display: string;
-  role_details: {
-    name: string;
-    category: string;
-  };
-  cargo_exibicao: string;
-  turno: string;
-  candidatos_count?: number;
-  created_at?: string;
-  empresa_nome?: string; // Útil para o feed
-  endereco?: {
-    cidade: string;
-    estado: string;
-    lagradouro: string;
-    cep: string;
-  };
-  salario?: number;
-  descricao?: string;
-  perguntas?: any[];
+// Helper para construir a query string com paginação e filtros
+const buildQuery = (params: Record<string, any>) => {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query.append(key, value.toString());
+    }
+  });
+  return query.toString();
+};
+interface FetchOptions {
+  headers?: Record<string, string>;
+}
+interface PaginationParams {
+  page?: number;
+  page_size?: number;
 }
 
-export interface JobsResponse {
-  count: number;
-  next: string | null;      // ADICIONADO: URL para a próxima página
-  previous: string | null;  // ADICIONADO: URL para a página anterior
-  results: JobResult[];
-}
 /**
- * ROTA PÚBLICA: Busca todas as vagas (usada na Home/Landing Page)
+ * ROTA PÚBLICA: Busca todas as vagas com paginação
  */
-export async function getAllJobs(): Promise<JobsResponse> {
-  return api(`/vagas/`, {
+// jobService.ts
+export async function getAllJobs(
+  params: PaginationParams = {},
+  options: FetchOptions = {} // <--- ADICIONE ESTE ARGUMENTO
+): Promise<JobsResponse> {
+  const queryString = buildQuery(params);
+
+  return api(`/vagas/?${queryString}`, {
     method: "GET",
     credentials: "include",
+    headers: {
+      ...options.headers, // <--- MESCLE OS HEADERS AQUI
+    }
   });
 }
 
 /**
- * ROTA PRIVADA: Busca apenas vagas que o usuário ainda NÃO se candidatou
- * (Requer que a JobFeedView esteja configurada no Django como vimos)
+ * ROTA PRIVADA: Feed de vagas (vagas que o usuário não se candidatou)
  */
-export async function getJobFeed(): Promise<JobsResponse> {
-  // Buscamos o token do localStorage manualmente se o seu 'api' não fizer isso
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+export async function getJobFeed(
+  params: PaginationParams = {},
+  options: FetchOptions = {} // <--- ADICIONE ESTE ARGUMENTO
+): Promise<JobsResponse> {
+  const queryString = buildQuery(params);
 
-  return api(`/vagas/feed/`, {
+  return api(`/vagas/feed/?${queryString}`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      ...options.headers, // <--- MESCLE OS HEADERS AQUI
+    }
+  });
+}
+
+/**
+ * Busca as vagas filtradas (Visão do Recrutador/Empresa)
+ */
+interface MyJobsParams extends PaginationParams {
+  usuario?: string;
+  company?: string;
+}
+
+export async function getMyJobs(params: MyJobsParams): Promise<JobsResponse> {
+  const queryString = buildQuery(params);
+
+  return api(`/vagas/internas/?${queryString}`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      // Garantimos que sempre será uma string para o TS não reclamar
+      "X-Company-Id": String(params.company || ""),
+    },
+  });
+}
+
+/**
+ * Interface para os filtros da listagem corporativa
+ */
+export interface CorporateFilterParams {
+  job?: string;      // UUID da vaga específica
+  status?: string;   // Status da candidatura (applied, hired, etc)
+  page?: number;     // Página atual
+  page_size?: number;// Quantidade por página
+  search?: string;   // Busca textual por nome do candidato
+}
+
+/**
+ * ROTA CORPORATIVA: Busca todos os candidatos vinculados à empresa ativa.
+ * @param companyId UUID da empresa selecionada pelo usuário
+ * @param filters Objeto contendo paginação e filtros de busca
+ */
+
+export async function getCorporateApplications(companyId: string, filters: any) {
+  // LIMPEZA DE SEGURANÇA: Se o ID vier duplicado, pega só o primeiro
+  const cleanCompanyId = companyId.includes(',')
+    ? companyId.split(',')[0].trim()
+    : companyId;
+
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) params.set(key, value.toString()); // .set evita duplicar na URL
+  });
+
+  return api(`/vagas/corporate/candidaturas/?${params.toString()}`, {
     method: "GET",
     headers: {
-      "Authorization": `Bearer ${token}`, // Garante que o Django identifique o user
-      "Content-Type": "application/json",
+      "X-Company-Id": cleanCompanyId, // Envia o ID limpo
     },
     credentials: "include",
   });
 }
 
 /**
- * Busca as vagas filtradas por usuário ou empresa (Visão do Recrutador/Empresa)
+ * Atualiza o status de uma candidatura específica.
+ * @param applicationId UUID da candidatura (id)
+ * @param newStatus O novo status (ex: 'hired', 'rejected')
  */
-export async function getMyJobs(params: { usuario?: string; company?: string }): Promise<JobsResponse> {
-  const query = new URLSearchParams();
-  if (params.usuario) query.append("usuario", params.usuario);
-  if (params.company) query.append("company", params.company);
+export async function updateApplicationStatus(applicationId: string, newStatus: string) {
+  // A URL deve terminar com a barra "/" e NÃO conter QueryParams (?job=...)
+  const url = `/vagas/candidaturas/${applicationId}/`;
 
-  return api(`/vagas/?${query.toString()}`, {
-    method: "GET",
+  return api(url, {
+    method: "PATCH",
+    body: JSON.stringify({
+      status: newStatus
+    }),
+    headers: {
+      "Content-Type": "application/json",
+    },
     credentials: "include",
+  });
+}
+
+export async function getOwnerJobs(companyId?: string): Promise<JobsResponse> {
+  return api(`/vagas/owner/`, {
+    method: "GET",
+    headers: {
+      // Se companyId for null/undefined, o backend cai na lógica de "vagas do user"
+      ...(companyId && { "X-Company-Id": companyId }),
+    },
   });
 }

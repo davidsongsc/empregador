@@ -1,90 +1,123 @@
 "use client";
 
-import { User, FileText, Sparkles, Clock, GraduationCap, Bell } from 'lucide-react';
+import { User, FileText, Sparkles, Briefcase, GraduationCap, Activity } from 'lucide-react';
 
-const SkeletonPulse = ({ className }: { className: string }) => (
-  <div className={`animate-pulse bg-gray-200 rounded-2xl ${className}`} />
+const SkeletonPulse = ({ className, style }: { className: string; style?: React.CSSProperties }) => (
+  <div 
+    className={`animate-pulse ${className}`} 
+    style={{ 
+        backgroundColor: 'var(--delos-grey)', 
+        opacity: 0.1,
+        ...style 
+    }} 
+  />
 );
 
 const PerfilLoading = () => {
   return (
-    <div className="min-h-screen bg-gray-50 pt-32 pb-20 px-4">
-      <div className="max-w-6xl mx-auto grid lg:grid-cols-12 gap-8">
+    <div 
+      style={{ backgroundColor: 'var(--delos-surface)' }} 
+      className="min-h-screen pt-32 pb-20 px-4 md:px-8 transition-colors duration-500"
+    >
+      <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-10">
 
-        {/* --- COLUNA LATERAL SKELETON --- */}
-        <aside className="lg:col-span-4 space-y-6">
-          {/* Card Usuário */}
-          <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm text-center">
-            <div className="w-24 h-24 bg-gray-100 rounded-full mx-auto mb-4 border-4 border-white shadow-sm flex items-center justify-center">
-              <User className="w-10 h-10 text-gray-200" />
+        {/* --- SIDEBAR SKELETON (MONITORAMENTO) --- */}
+        <aside className="lg:col-span-4 space-y-8">
+          <div 
+            style={{ borderColor: 'rgba(var(--delos-grey), 0.1)' }}
+            className="bg-white dark:bg-[#080808] p-8 rounded-sm border shadow-2xl relative overflow-hidden"
+          >
+            {/* ID Técnico Fictício */}
+            <div className="absolute top-0 left-0 p-2 bg-[var(--delos-black)] opacity-10 text-[7px] font-mono tracking-widest uppercase">
+              Initializing_Unit::LOADING...
             </div>
-            <SkeletonPulse className="h-6 w-3/4 mx-auto mb-2" />
-            <SkeletonPulse className="h-4 w-1/2 mx-auto mb-6" />
-            <div className="h-14 w-full bg-gray-100 rounded-2xl" />
+
+            <div className="relative w-40 h-40 mx-auto mb-8 mt-4">
+              <div className="w-full h-full bg-black/5 dark:bg-white/5 rounded-full border border-[var(--delos-black)]/10 flex items-center justify-center">
+                <User className="w-16 h-16 opacity-10" />
+              </div>
+              {/* Scanner Line Animation */}
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[var(--delos-indigo)]/10 to-transparent h-1/2 w-full animate-pulse pointer-events-none" />
+            </div>
+
+            <div className="space-y-4">
+              <SkeletonPulse className="h-8 w-3/4 mx-auto rounded-sm" />
+              <SkeletonPulse className="h-4 w-1/2 mx-auto rounded-sm" />
+              <div className="pt-6 border-t border-black/5 dark:border-white/5">
+                <SkeletonPulse className="h-12 w-full rounded-sm" />
+              </div>
+            </div>
           </div>
 
-          {/* Card IA */}
-          <div className="bg-indigo-50 p-8 rounded-[40px] border border-indigo-100 relative overflow-hidden">
-            <Sparkles className="absolute -right-2 -top-2 w-24 h-24 text-indigo-100 opacity-50" />
-            <div className="flex items-center gap-2 mb-4">
-              <SkeletonPulse className="h-5 w-32 bg-indigo-100" />
+          {/* Widget IA Skeleton */}
+          <div className="bg-[var(--delos-black)] p-8 rounded-sm relative overflow-hidden">
+            <Activity className="absolute -right-4 -bottom-4 w-24 h-24 opacity-5 text-indigo-500" />
+            <div className="flex items-center gap-2 mb-6">
+               <div className="w-2 h-2 bg-[var(--delos-amber)] animate-pulse rounded-full" />
+               <SkeletonPulse className="h-3 w-24 opacity-20" />
             </div>
             <div className="space-y-4">
-              <div className="bg-white/60 h-20 rounded-2xl border border-white" />
-              <div className="bg-white/60 h-20 rounded-2xl border border-white" />
+               <div className="h-16 w-full bg-white/5 border border-white/5 rounded-sm" />
             </div>
-          </div>
-
-          {/* Currículo */}
-          <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="w-4 h-4 text-gray-200" />
-              <SkeletonPulse className="h-4 w-24" />
-            </div>
-            <div className="h-24 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100" />
           </div>
         </aside>
 
-        {/* --- COLUNA PRINCIPAL SKELETON --- */}
+        {/* --- CONTEÚDO PRINCIPAL SKELETON --- */}
         <main className="lg:col-span-8 space-y-8">
           
-          {/* Candidaturas */}
-          <div className="bg-white p-8 md:p-10 rounded-[40px] border border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between mb-8">
-              <SkeletonPulse className="h-8 w-64" />
-              <SkeletonPulse className="h-6 w-20 rounded-full" />
+          {/* Dashboard de Candidaturas */}
+          <div 
+            style={{ borderColor: 'rgba(var(--delos-grey), 0.1)' }}
+            className="bg-white dark:bg-[#080808] p-8 md:p-12 rounded-sm border shadow-sm"
+          >
+            <div className="flex items-end justify-between mb-12">
+              <div className="space-y-3">
+                <SkeletonPulse className="h-10 w-64 rounded-sm" />
+                <SkeletonPulse className="h-3 w-48 rounded-sm opacity-50" />
+              </div>
+              <SkeletonPulse className="h-16 w-16 rounded-sm" />
             </div>
 
             <div className="space-y-4">
-              {[1, 2].map((i) => (
-                <div key={i} className="flex items-center justify-between p-6 rounded-3xl bg-gray-50 border border-transparent">
-                  <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-gray-200 rounded-2xl" />
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex flex-col md:flex-row md:items-center justify-between p-6 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-sm">
+                  <div className="flex items-center gap-6">
+                    <div className="w-12 h-12 bg-black/10 dark:bg-white/10 rounded-sm" />
                     <div className="space-y-2">
-                      <SkeletonPulse className="h-5 w-48" />
-                      <SkeletonPulse className="h-4 w-32" />
+                      <SkeletonPulse className="h-4 w-40 md:w-64" />
+                      <SkeletonPulse className="h-3 w-24 md:w-32 opacity-50" />
                     </div>
                   </div>
-                  <SkeletonPulse className="h-8 w-24 rounded-full" />
+                  <div className="mt-4 md:mt-0">
+                    <SkeletonPulse className="h-8 w-24 rounded-full" />
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Grid de Dicas */}
-          <div className="grid md:grid-cols-2 gap-6">
+          {/* Grids de Biografia e Histórico */}
+          <div className="grid md:grid-cols-2 gap-8">
             {[1, 2].map((i) => (
-              <div key={i} className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm">
-                <div className="w-12 h-12 bg-gray-100 rounded-2xl mb-6" />
-                <SkeletonPulse className="h-6 w-3/4 mb-4" />
-                <SkeletonPulse className="h-4 w-full mb-2" />
-                <SkeletonPulse className="h-4 w-5/6 mb-6" />
-                <SkeletonPulse className="h-4 w-24" />
+              <div key={i} className="bg-white dark:bg-[#080808] p-8 rounded-sm border border-black/5 dark:border-white/5">
+                <div className="flex justify-between items-center mb-8">
+                  <div className="w-10 h-10 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 flex items-center justify-center">
+                    {i === 1 ? <Briefcase className="w-4 h-4 opacity-10" /> : <GraduationCap className="w-4 h-4 opacity-10" />}
+                  </div>
+                  <SkeletonPulse className="h-3 w-16" />
+                </div>
+                <div className="space-y-4">
+                  <SkeletonPulse className="h-4 w-3/4" />
+                  <div className="space-y-2 pt-4">
+                    <SkeletonPulse className="h-3 w-full opacity-50" />
+                    <SkeletonPulse className="h-3 w-5/6 opacity-50" />
+                  </div>
+                </div>
               </div>
             ))}
           </div>
-        </main>
 
+        </main>
       </div>
     </div>
   );

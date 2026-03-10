@@ -1,12 +1,24 @@
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthStore } from "@/store/useAuthStore"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
+let refreshing = false
+let subscribers: (() => void)[] = []
+
+function subscribe(cb: () => void) {
+    subscribers.push(cb)
+}
+
+function notifySubscribers() {
+    subscribers.forEach(cb => cb())
+    subscribers = []
+}
 
 export async function api(
     url: string,
     options: RequestInit = {},
     isPublic = false,
-    isRetry = false
+    isRetry = false,
+    serverCookies?: string
 ) {
     const isServer = typeof window === "undefined";
     const isFormData = options.body instanceof FormData;
@@ -14,23 +26,37 @@ export async function api(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-    let serverHeaders = {};
+    let serverHeaders: Record<string, string> = {};
+    let activeCompanyId: string | null = null;
+
     if (isServer) {
         try {
-            const { cookies: nextCookies } = await import("next/headers");
-            const cookieStore = await nextCookies();
-            serverHeaders = {
-                Cookie: cookieStore.toString(),
-            };
-        } catch (e) {}
+            const { cookies } = await import("next/headers");
+
+            const cookieStore = await cookies();
+
+            const allCookies = cookieStore.toString();
+
+            if (allCookies) {
+                serverHeaders["Cookie"] = allCookies;
+            }
+
+            activeCompanyId = cookieStore.get("active_company")?.value || null;
+
+        } catch (e) {
+            console.error("Erro ao ler cookies no servidor:", e);
+        }
+    } else {
+        activeCompanyId = useAuthStore.getState().activeCompanyId;
     }
 
     const config: RequestInit = {
-        credentials: "include", 
+        credentials: "include",
         signal: controller.signal,
         ...options,
         headers: {
             ...(isFormData ? {} : { "Content-Type": "application/json" }),
+            ...(activeCompanyId ? { "X-Company-ID": activeCompanyId } : {}),
             ...serverHeaders,
             ...options.headers,
         },
@@ -42,7 +68,7 @@ export async function api(
 
         if (response.ok) {
             if (response.status === 204) return { ok: true };
-            
+
             const data = await response.json();
 
             if (!isServer && data?.user) {
@@ -55,8 +81,11 @@ export async function api(
         if (response.status === 401 && !isPublic) {
             if (url.includes("/auth/login/")) {
                 const errorData = await response.json().catch(() => ({}));
-                console.log("Erro de login recebido:", errorData);
-                throw { status: 401, errors: errorData.detail, message: errorData.detail || "Credenciais inválidas" };
+                throw {
+                    status: 401,
+                    errors: errorData,
+                    message: errorData.detail || "Credenciais inválidas",
+                };
             }
 
             if (isServer || isRetry || url.includes("/auth/refresh/")) {
@@ -64,7 +93,8 @@ export async function api(
                 throw { status: 401, message: "Sessão expirada" };
             }
 
-            const { isRefreshing, startRefresh, stopRefresh, subscribe } = useRefreshManager();
+            const { isRefreshing, startRefresh, stopRefresh, subscribe } =
+                useRefreshManager();
 
             if (isRefreshing()) {
                 return new Promise((resolve) => {
@@ -73,18 +103,19 @@ export async function api(
             }
 
             startRefresh();
-            const refreshed = await refreshToken();
+            const refreshed = await refreshToken(serverHeaders);
             stopRefresh();
 
             if (refreshed) {
                 return api(url, options, isPublic, true);
-            } else {
-                handleGlobalLogout();
-                throw { status: 401, message: "Sessão encerrada" };
             }
+
+            handleGlobalLogout();
+            throw { status: 401, message: "Sessão encerrada" };
         }
 
         const errorData = await response.json().catch(() => ({}));
+
         throw {
             status: response.status,
             message: errorData.detail || errorData.message || "Erro na requisição",
@@ -92,38 +123,41 @@ export async function api(
         };
 
     } catch (error: any) {
-        if (error.name === 'AbortError') {
-            throw { status: 408, message: "Conexão lenta demais." };
+        if (error.name === "AbortError") {
+            throw { status: 408, message: "Tempo limite da requisição excedido." };
         }
+
         if (error.status) throw error;
 
         throw {
             status: 503,
             message: "Não foi possível conectar ao servidor.",
-            errors: {}
+            errors: {},
         };
     }
 }
 
-let refreshing = false;
-let subscribers: (() => void)[] = [];
 const useRefreshManager = () => ({
     isRefreshing: () => refreshing,
-    startRefresh: () => { refreshing = true; },
-    stopRefresh: () => { 
-        refreshing = false; 
-        subscribers.forEach(cb => cb());
+    startRefresh: () => {
+        refreshing = true;
+    },
+    stopRefresh: () => {
+        refreshing = false;
+        subscribers.forEach((cb) => cb());
         subscribers = [];
     },
-    subscribe: (cb: () => void) => subscribers.push(cb)
+    subscribe: (cb: () => void) => subscribers.push(cb),
 });
 
-async function refreshToken(): Promise<boolean> {
+async function refreshToken(serverHeaders?: Record<string, string>) {
     try {
-        const res = await fetch(`${API_URL}/auth/refresh//`, {
+        const res = await fetch(`${API_URL}/auth/refresh/`, {
             method: "POST",
-            credentials: "include", 
+            credentials: "include",
+            headers: serverHeaders || {},
         });
+
         return res.ok;
     } catch {
         return false;
@@ -132,9 +166,6 @@ async function refreshToken(): Promise<boolean> {
 
 function handleGlobalLogout() {
     if (typeof window !== "undefined") {
-        useAuthStore.getState().logout(); 
-        if (!window.location.pathname.includes('/login')) {
-            window.location.href = "/login?session=expired";
-        }
+        useAuthStore.getState().logout();
     }
 }

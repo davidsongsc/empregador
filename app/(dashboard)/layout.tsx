@@ -1,42 +1,46 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import LoadingSpinner from "@/components/LoadingSpinner";
 import Header from "@/components/Header";
 import { useAuthStore } from "@/store/useAuthStore";
+import { MODULE_PERMISSIONS } from "@/constants/permissions";
+import { toast } from "@/components/Notification";
 
 export default function PrivateLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuthStore();
+  const { user, isHydrated } = useAuthStore();
   const router = useRouter();
 
-  useEffect(() => {
-    // Se parou de carregar e NÃO está autenticado, manda pro login
-    if (!loading && !isAuthenticated) {
-      router.replace("/login");
+  // 1. Lógica de extração baseada no array de empresas
+  const hasAccess = useMemo(() => {
+    if (!user?.profile?.empresas || user.profile.empresas.length === 0) {
+      return false;
     }
-  }, [isAuthenticated, loading, router]);
 
-  // Enquanto o AuthContext verifica o cookie de 30 dias...
-  if (loading) {
-    return (
-      <>
-        <Header />
-        <div className="min-h-screen flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </>
+    // Verifica se existe alguma empresa onde o cargo do usuário está na lista de permissões
+    return user.profile.empresas.some(empresa =>
+      MODULE_PERMISSIONS.RECRUITMENT.includes(empresa.role) && empresa.is_active
     );
+  }, [user]);
+
+  useEffect(() => {
+    if (isHydrated && !hasAccess) {
+      // Pegamos o cargo da primeira empresa apenas para o log/toast, se existir
+      const currentRole = user?.profile?.empresas?.[0]?.role || "GUEST";
+
+      toast.error(`Acesso negado. Seu cargo (${currentRole}) não tem permissão.`);
+      router.replace("/vagas");
+    }
+  }, [isHydrated, hasAccess, user, router]);
+
+  // --- RENDERIZAÇÃO ---
+  if (!isHydrated || !hasAccess) {
+    return null;
   }
 
-  // Se não está logado, bloqueia a renderização enquanto o router.replace acontece
-  if (!isAuthenticated) return null;
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Opcional: Coloque o Header fixo aqui se todas as páginas privadas usarem */}
-      <Header />
-      <main>{children}</main>
-    </div>
+    <>
+      {children}
+    </>
   );
 }

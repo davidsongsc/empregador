@@ -1,49 +1,66 @@
+// middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { decodeJwt } from "jose"; // Usamos jose no middleware por ser Edge-compatible
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // No Middleware do Next.js, o cookie deve ser lido via request.cookies
-  const hasAccess = request.cookies.has("access");
+// Mapeamento de permissões: quais roles podem acessar quais caminhos
+const ROLE_PERMISSIONS: Record<string, string[]> = {
+  // Rotas exclusivas de candidatos
+  "/vagas": ["CANDIDATO", "CANDIDATO_VIP", "TALENTO", "DEVELOPER", "SUPER_ADMIN"],
   
-  // Log para depuração local (veja no terminal do VS Code, não no navegador)
-  console.log(`[Middleware] Path: ${pathname} | Autenticado: ${hasAccess}`);
+  // Rotas de recrutadores e empresas
+  "/anunciar": ["RECRUITER", "RECRUITER_VIP", "RECRUITER_LEAD", "COMPANY_ADMIN", "DEVELOPER", "SUPER_ADMIN"],
+  
+  // Dashboard administrativo e suporte
+  "/dashboard": ["SUPPORT_N1", "SUPPORT_N2", "SUPPORT_N3", "MODERATOR", "ADMIN_N1", "ADMIN_N2", "SUPER_ADMIN", "DEVELOPER"],
+  
+  // Perfil é comum, mas você pode restringir se necessário
+  "/perfil": ["ANY"], 
+};
 
-  const isPrivateRoute =
-    pathname.startsWith("/vagas") ||
-    pathname.startsWith("/perfil") ||
-    pathname.startsWith("/anunciar") ||
-    pathname.startsWith("/dashboard");
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const token = request.cookies.get("access")?.value;
 
   const isAuthRoute = pathname === "/login" || pathname === "/cadastro";
 
-  // --- REGRA 1: PROTEÇÃO DE ROTAS PRIVADAS ---
-  if (isPrivateRoute && !hasAccess) {
-    const loginUrl = new URL("/login", request.url);
-    // Preserva a rota original para redirecionar após o login
-    loginUrl.searchParams.set("from", pathname);
-
-    const response = NextResponse.redirect(loginUrl);
-    // Limpa qualquer cache de redirecionamento para evitar loops infinitos
-    response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
-    return response;
+  // 1. Se tentar acessar rota de login já estando logado
+  if (isAuthRoute && token) {
+    return NextResponse.redirect(new URL("/vagas", request.url));
   }
 
-  // --- REGRA 2: REDIRECIONAR SE JÁ LOGADO (EVITA TELA DE LOGIN) ---
-  if (isAuthRoute && hasAccess) {
-    // Se o usuário já tem o cookie, mandamos para o dashboard ou vagas
-    return NextResponse.redirect(new URL("/vagas", request.url));
+  // 2. Verificação de Rotas Privadas
+  const matchedPath = Object.keys(ROLE_PERMISSIONS).find(path => pathname.startsWith(path));
+
+  if (matchedPath) {
+    // Se não tem token, tchau.
+    if (!token) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("from", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    try {
+      // Decodificamos o cargo do usuário
+      const payload = decodeJwt(token);
+      const userRole = (payload.role as string) || "";
+
+      const allowedRoles = ROLE_PERMISSIONS[matchedPath];
+
+      // Se a rota exige cargos específicos e o user não tem o cargo certo
+      if (!allowedRoles.includes("ANY") && !allowedRoles.includes(userRole)) {
+        // Redireciona para uma página de "Sem Permissão" ou volta para a home
+        return NextResponse.redirect(new URL("/403", request.url));
+      }
+    } catch (e) {
+      // Token inválido/corrompido
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Matcher otimizado: ignora arquivos de sistema e pastas de mídia
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico|img|.*\\.png|.*\\.jpg).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|img|.*\\.png|.*\\.jpg).*)"],
 };
