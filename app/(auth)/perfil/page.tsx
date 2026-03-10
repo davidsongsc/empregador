@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  User, FileText, Bell, ChevronRight, Sparkles, Target, Zap, GraduationCap, 
-  TrendingUp, LogOut, MapPin, X, Save, Loader2, Camera, Mail, AlertCircle,
-  LayoutDashboard, Briefcase, Calendar, Award, Plus, MapPinned
+  User, FileText, ChevronRight, Sparkles, Zap, GraduationCap,
+  TrendingUp, LogOut, MapPin, Loader2, Camera, Mail,
+  Briefcase, Plus, Activity, Terminal
 } from 'lucide-react';
 import { useBuscaCep } from '@/hooks/useBuscaCep';
 import { useProfile } from '@/hooks/useProfile';
@@ -14,13 +14,13 @@ import { useMyApplications } from '@/hooks/useMyApplications';
 import ApplicationDashboard from '@/components/ApplicationDashboard';
 import { toast } from '@/components/Notification';
 import PerfilLoading from '@/components/PerfilLoading';
-import { uploadProfilePhoto } from '@/services/auth';
+import { EditProfileModal } from '@/components/Modal/ProfileEditModal';
 
 const App = () => {
-  const { logout, isAuthenticated } = useAuthStore();
+   const { logout, isAuthenticated } = useAuthStore();
   const { profile, saveProfile, loading: profileLoading, isSaving } = useProfile();
   const { applications, loading: appsLoading, totalCount } = useMyApplications();
-  const { lookup, loading: cepLoading } = useBuscaCep();
+  const { lookup } = useBuscaCep();
 
   const [formData, setFormData] = useState({
     name: '', last_name: '', ocupation: '', email: '', bio: '', data_nascimento: '',
@@ -30,7 +30,6 @@ const App = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<any>({});
-  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -54,7 +53,7 @@ const App = () => {
     }
   }, [profile]);
 
-  // Handler para busca de CEP automático
+  // Handler CEP Automático
   useEffect(() => {
     const cleanCep = formData.endereco.cep.replace(/\D/g, "");
     if (cleanCep.length === 8) {
@@ -90,251 +89,201 @@ const App = () => {
     }
   };
 
-  const hasError = (fieldName: string, nested?: string) => {
-    if (nested) return !!fieldErrors[nested]?.[fieldName];
-    return !!fieldErrors[fieldName];
-  };
-
   if (appsLoading || profileLoading) return <PerfilLoading />;
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] pt-32 pb-20 px-4 text-[#1a1a1a]">
-      <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-10">
-        
-        {/* SIDEBAR - Inspirada no minimalismo da Dellos */}
+    <div
+      style={{ backgroundColor: 'var(--delos-surface)', color: 'var(--delos-black)' }}
+      className="min-h-screen pt-32 pb-20 px-4 transition-colors duration-500 font-sans relative overflow-hidden"
+    >
+      {/* Efeito de Scanline Global sutil */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-50 bg-[length:100%_2px,3px_100%]" />
+
+      <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-10 relative z-10">
+
+        {/* SIDEBAR - MONITORAMENTO DA UNIDADE */}
         <aside className="lg:col-span-4 space-y-8">
-          <div className="bg-white border border-gray-100 rounded-[32px] p-8 shadow-sm relative overflow-hidden">
+          <div
+            style={{ borderColor: 'rgba(var(--delos-grey), 0.1)' }}
+            className="bg-white dark:bg-[#080808] border rounded-sm p-8 shadow-2xl relative overflow-hidden group transition-all"
+          >
+            {/* ID Técnico da Unidade */}
+            <div className="absolute top-0 left-0 p-2 bg-[var(--delos-black)] text-[var(--delos-surface)] text-[7px] font-mono tracking-[0.3em] uppercase">
+              Host_Unit::DRV_{profile?.id?.slice(0, 5) || "NUL"}
+            </div>
+
             <div className="absolute top-6 right-6 z-20">
-              <button onClick={logout} className="group p-2 flex items-center gap-2 text-gray-400 hover:text-red-600 transition-all font-bold text-[10px] uppercase tracking-tighter">
-                Sair <LogOut className="w-4 h-4" />
+              <button
+                onClick={logout}
+                className="group p-2 flex items-center gap-2 text-gray-400 hover:text-[var(--delos-red)] transition-all font-black text-[9px] uppercase tracking-widest"
+              >
+                Terminate <LogOut className="w-3 h-3" />
               </button>
             </div>
 
-            <div className="relative w-40 h-40 mx-auto mb-8">
-              <div className="w-full h-full bg-[#f3f4f6] rounded-full border-[6px] border-white shadow-xl overflow-hidden flex items-center justify-center">
-                {isUploading ? (
-                  <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-                ) : profile?.foto ? (
-                  <img src={profile.foto} alt="Avatar" className="w-full h-full object-cover" />
+            <div className="relative w-44 h-44 mx-auto mb-10 mt-4">
+              {/* Moldura de Foco de Câmera */}
+              <div className="absolute -inset-4 border border-indigo-600/20 rounded-full animate-[spin_10s_linear_infinite] border-dashed" />
+
+              <div className="w-full h-full bg-[#111] rounded-full border-[1px] border-[var(--delos-black)] shadow-2xl overflow-hidden flex items-center justify-center relative">
+                {profile?.foto ? (
+                  <img src={profile.foto} alt="Avatar" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
                 ) : (
-                  <User className="w-16 h-16 text-gray-300" />
+                  <User className="w-16 h-16 text-gray-700" />
                 )}
+                {/* Overlay de Scan do Rosto */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-indigo-500/10 to-transparent h-1/2 w-full animate-[pan_3s_infinite] pointer-events-none" />
               </div>
-              <button 
+
+              <button
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-2 right-2 bg-indigo-600 text-white p-3 rounded-full shadow-lg hover:bg-black transition-colors border-4 border-white"
+                style={{ backgroundColor: 'var(--delos-indigo)' }}
+                className="absolute bottom-2 right-2 text-white p-3 rounded-sm shadow-lg hover:bg-black transition-all border border-white/10"
               >
                 <Camera className="w-4 h-4" />
               </button>
               <input type="file" ref={fileInputRef} className="hidden" accept="image/*" />
             </div>
 
-            <div className="text-center">
-              <h2 className="text-4xl font-black tracking-tighter uppercase italic leading-none mb-2">
-                {profile?.name ? `${profile.name} ${profile.last_name}` : 'Novo Membro'}
+            <div className="text-center space-y-4">
+              <h2 className="text-4xl font-black tracking-tighter uppercase italic leading-none">
+                {profile?.name ? `${profile.name} ${profile.last_name}` : 'Subject_Unknown'}
               </h2>
-              <div className="inline-block px-4 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] mb-6">
-                {profile?.ocupation || 'Cargo não definido'}
+
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-1.5 h-1.5 bg-[var(--delos-amber)] rounded-full animate-pulse" />
+                <span className="text-[10px] font-mono font-black text-[var(--delos-indigo)] uppercase tracking-[0.3em]">
+                  {profile?.ocupation || 'Assignment_Pending'}
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 mb-8">
-                <div className="flex items-center justify-center gap-2 text-gray-500 text-xs font-bold">
-                  <MapPin className="w-3.5 h-3.5 text-indigo-400" />
-                  {profile?.endereco?.cidade ? `${profile.endereco.cidade}, ${profile.endereco.estado}` : 'Localização pendente'}
+              <div className="py-4 border-y border-[var(--delos-grey)]/10 space-y-2">
+                <div className="flex items-center justify-center gap-2 opacity-60 text-[10px] font-mono uppercase tracking-widest">
+                  <MapPin className="w-3 h-3" />
+                  {profile?.endereco?.cidade || 'Loc_Unknown'}
                 </div>
-                <div className="flex items-center justify-center gap-2 text-gray-500 text-xs font-bold">
-                  <Mail className="w-3.5 h-3.5 text-indigo-400" />
+                <div className="flex items-center justify-center gap-2 opacity-40 text-[10px] font-mono lowercase">
+                  <Mail className="w-3 h-3" />
                   {profile?.email}
                 </div>
               </div>
 
               <button
                 onClick={() => setIsEditModalOpen(true)}
-                className="w-full py-5 bg-black text-white rounded-[20px] font-black text-[11px] uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all active:scale-95 shadow-lg shadow-indigo-100"
+                style={{ backgroundColor: 'var(--delos-black)', color: 'var(--delos-surface)' }}
+                className="w-full py-5 rounded-sm font-black text-[10px] uppercase tracking-[0.4em] hover:bg-[var(--delos-indigo)] transition-all active:scale-95 shadow-2xl"
               >
-                Editar Perfil Corporativo
+                Override_Profile_Data
               </button>
             </div>
           </div>
 
-          {/* Widget IA - Westworld Style */}
-          <div className="bg-black p-8 rounded-[32px] text-white relative overflow-hidden">
-            <Sparkles className="absolute -right-6 -top-6 w-32 h-32 opacity-10" />
-            <h3 className="font-black text-xs uppercase tracking-[0.3em] mb-6 flex items-center gap-2 text-indigo-400">
-              <TrendingUp className="w-4 h-4" /> Career Intelligence
+          {/* CAREER INTELLIGENCE - WESTWORLD WIDGET */}
+          <div
+            style={{ backgroundColor: 'var(--delos-black)', color: 'var(--delos-surface)' }}
+            className="p-8 rounded-sm relative overflow-hidden border border-white/5 shadow-2xl"
+          >
+            <Activity className="absolute -right-4 -bottom-4 w-24 h-24 opacity-5 text-indigo-500" />
+            <h3
+              style={{ color: 'var(--delos-amber)' }}
+              className="font-black text-[10px] uppercase tracking-[0.4em] mb-6 flex items-center gap-2"
+            >
+              <Terminal className="w-3 h-3" /> Cognitive_Link
             </h3>
-            <div className="space-y-3">
-              <div className="bg-white/5 border border-white/10 p-4 rounded-2xl hover:bg-white/10 transition-colors cursor-pointer group">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-[9px] font-black text-indigo-300 uppercase mb-1 italic">Proxima Skill</p>
-                    <p className="font-bold text-sm">Especialização em {profile?.ocupation}</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <div className="space-y-4">
+              <div className="bg-white/5 border border-white/10 p-4 rounded-sm hover:bg-white/10 transition-all cursor-pointer group">
+                <p className="text-[8px] font-mono text-[var(--delos-amber)] uppercase mb-2 tracking-widest opacity-70">Suggested_Evolution</p>
+                <div className="flex justify-between items-center">
+                  <p className="font-black text-xs uppercase tracking-tighter italic">Especialização: {profile?.ocupation}</p>
+                  <ChevronRight className="w-4 h-4 text-indigo-500 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
             </div>
           </div>
         </aside>
 
-        {/* CONTEÚDO PRINCIPAL */}
+        {/* CONTEÚDO PRINCIPAL - DASHBOARD OPERACIONAL */}
         <main className="lg:col-span-8 space-y-8">
           <ApplicationDashboard applications={applications} totalCount={totalCount} />
 
-          {/* Biografia */}
-          <section className="bg-white p-10 rounded-[32px] border border-gray-100 shadow-sm">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-6 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-indigo-600" /> Resumo Executivo
+          {/* BIOGRAFIA ESTILO RELATÓRIO TÉCNICO */}
+          <section
+            className="bg-white dark:bg-[#080808] p-10 rounded-sm border border-black/5 dark:border-white/5 shadow-sm relative transition-all"
+          >
+            <div className="absolute top-0 right-0 p-3 opacity-10">
+              <FileText size={40} />
+            </div>
+            <h3 className="text-[9px] font-mono font-black uppercase tracking-[0.5em] opacity-30 mb-8 flex items-center gap-2">
+              <span className="w-8 h-[1px] bg-[var(--delos-indigo)]" /> Core_Narrative
             </h3>
-            <p className="text-gray-600 font-bold leading-relaxed text-xl italic border-l-4 border-indigo-600 pl-6">
-              "{profile?.bio || "Sua trajetória profissional começa com um bom resumo. Clique em editar para adicionar."}"
+            <p className="font-bold leading-relaxed text-2xl italic border-l-2 border-[var(--delos-indigo)] pl-8 opacity-90 tracking-tighter">
+              "{profile?.bio || "Trajectory data not initialized. Please synchronize your executive summary."}"
             </p>
           </section>
 
-          {/* Experiências e Educação Grid */}
+          {/* GRIDS DE HISTÓRICO */}
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm group">
-              <div className="flex justify-between items-center mb-6">
-                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-black group-hover:bg-black group-hover:text-white transition-all">
-                  <Briefcase className="w-5 h-5" />
+            {/* Experiência */}
+            <div className="bg-white dark:bg-[#080808] p-8 rounded-sm border border-black/5 dark:border-white/5 group transition-all">
+              <div className="flex justify-between items-center mb-8">
+                <div className="w-10 h-10 bg-black/5 dark:bg-white/5 flex items-center justify-center text-[var(--delos-black)] group-hover:bg-[var(--delos-indigo)] group-hover:text-white transition-all border border-black/5 dark:border-white/10">
+                  <Briefcase className="w-4 h-4" />
                 </div>
-                <button className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1">
-                  <Plus className="w-3 h-3" /> Adicionar
+                <button className="text-[8px] font-mono font-black text-[var(--delos-indigo)] uppercase tracking-[0.3em] hover:underline">
+                  Add_Entry+
                 </button>
               </div>
-              <h3 className="text-lg font-black uppercase italic mb-4">Experiência</h3>
-              <div className="space-y-4">
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] mb-6 italic">Work_History</h3>
+              <div className="space-y-6">
                 {profile?.experiences?.length ? profile.experiences.map((exp: any) => (
-                  <div key={exp.id} className="border-l-2 border-gray-100 pl-4 py-1">
-                    <p className="font-bold text-sm text-gray-900">{exp.cargo}</p>
-                    <p className="text-xs text-gray-500">{exp.empresa} • {exp.data_entrada.split('-')[0]}</p>
+                  <div key={exp.id} className="relative pl-6 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[1px] before:bg-indigo-500/20">
+                    <p className="font-black text-xs uppercase tracking-tight">{exp.cargo}</p>
+                    <p className="text-[10px] opacity-40 font-mono uppercase mt-1">{exp.empresa} // {exp.data_entrada?.split('-')[0]}</p>
                   </div>
-                )) : <p className="text-xs text-gray-400 italic font-bold">Nenhuma experiência registrada.</p>}
+                )) : <p className="text-[10px] font-mono opacity-30 italic">No records found in database.</p>}
               </div>
             </div>
 
-            <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm group">
-              <div className="flex justify-between items-center mb-6">
-                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-black group-hover:bg-black group-hover:text-white transition-all">
-                  <GraduationCap className="w-5 h-5" />
+            {/* Educação */}
+            <div className="bg-white dark:bg-[#080808] p-8 rounded-sm border border-black/5 dark:border-white/5 group transition-all">
+              <div className="flex justify-between items-center mb-8">
+                <div className="w-10 h-10 bg-black/5 dark:bg-white/5 flex items-center justify-center text-[var(--delos-black)] group-hover:bg-[var(--delos-indigo)] group-hover:text-white transition-all border border-black/5 dark:border-white/10">
+                  <GraduationCap className="w-4 h-4" />
                 </div>
-                <button className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1">
-                  <Plus className="w-3 h-3" /> Adicionar
+                <button className="text-[8px] font-mono font-black text-[var(--delos-indigo)] uppercase tracking-[0.3em] hover:underline">
+                  Add_Entry+
                 </button>
               </div>
-              <h3 className="text-lg font-black uppercase italic mb-4">Educação</h3>
-              <div className="space-y-4">
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] mb-6 italic">Academic_Logs</h3>
+              <div className="space-y-6">
                 {profile?.educations?.length ? profile.educations.map((edu: any) => (
-                  <div key={edu.id} className="border-l-2 border-gray-100 pl-4 py-1">
-                    <p className="font-bold text-sm text-gray-900">{edu.curso}</p>
-                    <p className="text-xs text-gray-500">{edu.instituicao}</p>
+                  <div key={edu.id} className="relative pl-6 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[1px] before:bg-indigo-500/20">
+                    <p className="font-black text-xs uppercase tracking-tight">{edu.curso}</p>
+                    <p className="text-[10px] opacity-40 font-mono uppercase mt-1">{edu.instituicao}</p>
                   </div>
-                )) : <p className="text-xs text-gray-400 italic font-bold">Histórico acadêmico vazio.</p>}
+                )) : <p className="text-[10px] font-mono opacity-30 italic">Academic history not synchronized.</p>}
               </div>
             </div>
           </div>
         </main>
       </div>
 
-      {/* MODAL DE EDIÇÃO - Atualizado com campos faltantes */}
-      <AnimatePresence>
-        {isEditModalOpen && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsEditModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-3xl rounded-[40px] shadow-2xl relative z-10 overflow-hidden">
-              
-              <div className="p-8 border-b border-gray-50 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="bg-black p-2 rounded-lg text-white"><User className="w-4 h-4" /></div>
-                  <h2 className="text-xl font-black uppercase italic">Configuração de Perfil</h2>
-                </div>
-                <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
-              </div>
+      <style jsx global>{`
+        @keyframes pan {
+          from { transform: translateY(-100%); }
+          to { transform: translateY(200%); }
+        }
+      `}</style>
 
-              <form onSubmit={handleSave} className="p-8 max-h-[80vh] overflow-y-auto space-y-8">
-                {/* Dados Básicos */}
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Nome</label>
-                    <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-4 px-5 font-bold outline-none transition-all" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Sobrenome</label>
-                    <input type="text" value={formData.last_name} onChange={e => setFormData({ ...formData, last_name: e.target.value })} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-4 px-5 font-bold outline-none transition-all" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Nascimento</label>
-                    <input type="date" value={formData.data_nascimento} onChange={e => setFormData({ ...formData, data_nascimento: e.target.value })} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-4 px-5 font-bold outline-none transition-all" />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Cargo Atual</label>
-                    <input type="text" value={formData.ocupation} onChange={e => setFormData({ ...formData, ocupation: e.target.value })} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-4 px-5 font-bold outline-none transition-all" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Email Profissional</label>
-                    <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-4 px-5 font-bold outline-none transition-all" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Bio / Pitch Pessoal</label>
-                  <textarea rows={3} value={formData.bio} onChange={e => setFormData({ ...formData, bio: e.target.value })} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-4 px-5 font-bold outline-none transition-all resize-none" />
-                </div>
-
-                {/* Localização Detalhada */}
-                <div className="pt-6 border-t border-gray-100">
-                  <h4 className="text-[10px] font-black uppercase text-indigo-600 mb-6 flex items-center gap-2">
-                    <MapPinned className="w-4 h-4" /> Localização & Endereço
-                  </h4>
-                  <div className="grid md:grid-cols-12 gap-6">
-                    <div className="md:col-span-4 space-y-2">
-                      <label className="text-[9px] font-black uppercase text-gray-400">CEP</label>
-                      <input type="text" value={formData.endereco.cep} onChange={e => setFormData({ ...formData, endereco: { ...formData.endereco, cep: e.target.value } })} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-4 px-5 font-bold outline-none transition-all" />
-                    </div>
-                    <div className="md:col-span-8 space-y-2">
-                      <label className="text-[9px] font-black uppercase text-gray-400">Logradouro (Rua/Avenida)</label>
-                      <input type="text" value={formData.endereco.logradouro} onChange={e => setFormData({ ...formData, endereco: { ...formData.endereco, logradouro: e.target.value } })} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-4 px-5 font-bold outline-none transition-all" />
-                    </div>
-                    <div className="md:col-span-3 space-y-2">
-                      <label className="text-[9px] font-black uppercase text-gray-400">Número</label>
-                      <input type="text" value={formData.endereco.numero} onChange={e => setFormData({ ...formData, endereco: { ...formData.endereco, numero: e.target.value } })} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-4 px-5 font-bold outline-none transition-all" />
-                    </div>
-                    <div className="md:col-span-9 space-y-2">
-                      <label className="text-[9px] font-black uppercase text-gray-400">Complemento / Referência</label>
-                      <input type="text" value={formData.endereco.complemento} onChange={e => setFormData({ ...formData, endereco: { ...formData.endereco, complemento: e.target.value } })} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-4 px-5 font-bold outline-none transition-all" />
-                    </div>
-                    <div className="md:col-span-5 space-y-2">
-                      <label className="text-[9px] font-black uppercase text-gray-400">Bairro</label>
-                      <input type="text" value={formData.endereco.bairro} onChange={e => setFormData({ ...formData, endereco: { ...formData.endereco, bairro: e.target.value } })} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-4 px-5 font-bold outline-none transition-all" />
-                    </div>
-                    <div className="md:col-span-5 space-y-2">
-                      <label className="text-[9px] font-black uppercase text-gray-400">Cidade</label>
-                      <input type="text" value={formData.endereco.cidade} onChange={e => setFormData({ ...formData, endereco: { ...formData.endereco, cidade: e.target.value } })} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-4 px-5 font-bold outline-none transition-all" />
-                    </div>
-                    <div className="md:col-span-2 space-y-2">
-                      <label className="text-[9px] font-black uppercase text-gray-400">UF</label>
-                      <input type="text" maxLength={2} value={formData.endereco.estado} onChange={e => setFormData({ ...formData, endereco: { ...formData.endereco, estado: e.target.value.toUpperCase() } })} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-4 px-5 font-bold outline-none transition-all text-center" />
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="w-full bg-black text-white py-6 rounded-2xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 hover:bg-indigo-600 transition-all disabled:opacity-50"
-                >
-                  {isSaving ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
-                  {isSaving ? "Processando..." : "Sincronizar Dados"}
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <EditProfileModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        formData={formData}
+        setFormData={setFormData}
+        handleSave={handleSave}
+        isSaving={isSaving}
+      />
     </div>
   );
 };

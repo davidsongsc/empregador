@@ -6,7 +6,15 @@ import { X, Calendar, Clock, MapPin, Loader2, ChevronDown } from "lucide-react";
 import { eventService } from "@/services/eventService";
 import { toast } from "@/components/Notification";
 import { useEventStore } from "@/store/useEventStore";
-
+import { EventSchedule } from "@/interfaces/events"; // Ajuste o caminho conforme seu projeto
+interface CreateScheduleFormData {
+  event: string;
+  chamada: string;
+  address: string;
+  start_time: string;
+  end_time: string;
+  is_published: boolean;
+}
 interface CreateScheduleModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,11 +29,14 @@ export default function CreateScheduleModal({ isOpen, onClose, selectedEventUid 
 
   const hasFetchedOnce = useRef(false);
 
-  const { register, handleSubmit, reset, formState: { isSubmitting, errors } } = useForm({
+  const { register, handleSubmit, reset, formState: { isSubmitting, errors } } = useForm<CreateScheduleFormData>({
     defaultValues: {
-      event: selectedEventUid || "", // O campo no Django chama-se 'event' (UID)
+      event: selectedEventUid || "",
+      chamada: "",
+      address: "",
+      start_time: "",
+      end_time: "",
       is_published: false,
-      address: ""
     }
   });
 
@@ -47,10 +58,10 @@ export default function CreateScheduleModal({ isOpen, onClose, selectedEventUid 
       await eventService.createSchedule(data);
 
       toast.success("Escala programada com sucesso!");
-      
+
       // Se tiver uma função de refresh na página pai, chame-a aqui
       // ou use fetchEvents() se quiser atualizar a lista global
-      
+
       onClose();
       reset();
     } catch (err) {
@@ -79,7 +90,7 @@ export default function CreateScheduleModal({ isOpen, onClose, selectedEventUid 
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
-          
+
           {/* SELETO DE EVENTO (Apenas se não vier via props) */}
           {!selectedEventUid && (
             <div className="space-y-2">

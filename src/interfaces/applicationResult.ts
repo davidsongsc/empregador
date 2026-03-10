@@ -7,6 +7,12 @@ export interface CandidateDetails {
   experiences: any[];
   certifications: any[];
   educations: any[];
+  localizacao: string | null;
+  whatsapp: string | null;
+  linkedin: string | null;
+  github: string | null;
+  email: string | null;
+  data_nascimento: string | null;
 }
 export interface JobDetails {
   id: string;

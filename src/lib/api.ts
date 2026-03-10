@@ -1,11 +1,24 @@
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthStore } from "@/store/useAuthStore"
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
+let refreshing = false
+let subscribers: (() => void)[] = []
+
+function subscribe(cb: () => void) {
+    subscribers.push(cb)
+}
+
+function notifySubscribers() {
+    subscribers.forEach(cb => cb())
+    subscribers = []
+}
 
 export async function api(
     url: string,
     options: RequestInit = {},
     isPublic = false,
-    isRetry = false
+    isRetry = false,
+    serverCookies?: string
 ) {
     const isServer = typeof window === "undefined";
     const isFormData = options.body instanceof FormData;
@@ -123,9 +136,6 @@ export async function api(
         };
     }
 }
-
-let refreshing = false;
-let subscribers: (() => void)[] = [];
 
 const useRefreshManager = () => ({
     isRefreshing: () => refreshing,

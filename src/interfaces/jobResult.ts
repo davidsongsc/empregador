@@ -19,4 +19,5 @@ export interface JobResult {
   salario?: number;
   descricao?: string;
   perguntas?: any[];
+  is_active?: boolean;
 }

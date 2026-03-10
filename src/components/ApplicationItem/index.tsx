@@ -1,40 +1,80 @@
-import { Briefcase, Clock, ChevronRight } from 'lucide-react';
-const STATUS_CONFIG: Record<string, { bg: string; text: string }> = {
-    applied: { bg: 'bg-blue-100', text: 'text-blue-700' },
-    reviewing: { bg: 'bg-orange-100', text: 'text-orange-700' },
-    interview: { bg: 'bg-purple-100', text: 'text-purple-700' },
-    hired: { bg: 'bg-green-100', text: 'text-green-700' },
-    rejected: { bg: 'bg-gray-100', text: 'text-black' },
-    withdrawn: { bg: 'bg-gray-100', text: 'text-gray-700' },
-};
+import { STATUS_CONFIG } from '@/data/statusLabels';
+import { Briefcase, Clock, ChevronRight, Zap } from 'lucide-react';
+
 const ApplicationItem = ({ cand }: { cand: any }) => {
-    // Busca a cor no mapa ou usa um padrão cinza
-    const theme = STATUS_CONFIG[cand.status] || { bg: 'bg-gray-100', text: 'text-gray-700' };
+    const config = STATUS_CONFIG[cand.status] || { 
+        label: 'PENDENTE', 
+        color: 'text-slate-500 border-slate-500/20',
+        glow: 'bg-slate-500/40' 
+    };
 
     return (
-        <div className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-3xl bg-gray-50 border border-transparent hover:border-indigo-100 hover:bg-white hover:shadow-xl hover:shadow-indigo-50/50 transition-all duration-300 group">
-            <div className="flex items-center gap-5">
-                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
-                    <Briefcase className="w-6 h-6" />
+        <div 
+            style={{ 
+                backgroundColor: 'rgba(var(--delos-grey), 0.05)',
+                borderColor: 'var(--delos-border)' 
+            }}
+            className="group relative flex flex-col md:flex-row md:items-center justify-between p-5 border transition-all duration-500 hover:bg-[var(--delos-surface)]"
+        >
+            {/* Indicador de Status Lateral (Aceleração de Host) */}
+            <div 
+                className={`absolute left-0 top-0 bottom-0 w-[2px] transition-all duration-500 opacity-20 group-hover:opacity-100 ${config.bg}`} 
+            />
+
+            <div className="flex items-center gap-6 z-10">
+                {/* Avatar/Icon com visual de Scanner */}
+                <div 
+                    style={{ borderColor: 'var(--delos-border)' }}
+                    className="w-14 h-14 bg-black/5 dark:bg-white/5 border flex items-center justify-center text-[var(--delos-amber)] transition-all duration-500 group-hover:border-[var(--delos-amber)]/40"
+                >
+                    <Briefcase size={20} strokeWidth={1.5} />
                 </div>
-                <div>
-                    <h4 className="font-black text-gray-900 text-lg leading-tight">{cand.cargo}</h4>
-                    <div className="flex items-center gap-3 mt-1">
-                        <p className="text-sm text-indigo-600 font-bold">{cand.empresa_nome}</p>
-                        <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                        <div className="flex items-center gap-1 text-xs text-gray-400 font-medium">
-                            <Clock className="w-3 h-3" /> {cand.data_aplicacao}
+
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        <span style={{ color: 'var(--delos-amber)' }} className="text-[8px] font-mono font-bold tracking-[0.2em] opacity-60">
+                            HOST_UNIT::{cand.id.slice(0, 8).toUpperCase()}
+                        </span>
+                        <Zap size={8} style={{ color: 'var(--delos-amber)' }} className="animate-pulse" />
+                    </div>
+                    
+                    <h4 style={{ color: 'var(--delos-black)' }} className="font-black text-sm uppercase tracking-widest leading-none italic">
+                        {cand.cargo}
+                    </h4>
+                    
+                    <div className="flex items-center gap-3">
+                        <p style={{ color: 'var(--delos-indigo)' }} className="text-[10px] font-black uppercase tracking-tighter">
+                            {cand.empresa_nome}
+                        </p>
+                        <div className="flex items-center gap-1 text-[9px] font-mono opacity-40" style={{ color: 'var(--delos-black)' }}>
+                            <Clock size={10} /> {cand.data_aplicacao}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="flex items-center justify-between md:justify-end gap-4 mt-4 md:mt-0 border-t md:border-t-0 pt-4 md:pt-0 border-gray-100">
-                <span className={`text-[10px] font-black uppercase px-5 py-2 rounded-full tracking-wider ${theme.bg} ${theme.text}`}>
-                    {cand.status_display}
-                </span>
-                <button className="bg-white p-3 rounded-xl border border-gray-100 hover:bg-gray-900 hover:text-white transition-all">
-                    <ChevronRight className="w-4 h-4" />
+            <div className="flex items-center justify-between md:justify-end gap-6 mt-4 md:mt-0 relative z-10">
+                {/* Status Wrapper */}
+                <div className="flex flex-col items-end gap-1.5">
+                    <span className="text-[7px] font-mono opacity-30 uppercase tracking-[0.3em]" style={{ color: 'var(--delos-black)' }}>
+                        System_Response
+                    </span>
+                    <span 
+                        className={`text-[9px] font-black uppercase px-4 py-1.5 border tracking-[0.2em] transition-all ${config.color} bg-transparent`}
+                    >
+                        {cand.status_display || config.label}
+                    </span>
+                </div>
+
+                {/* Botão de Ação Minimalista */}
+                <button 
+                    style={{ 
+                        borderColor: 'var(--delos-border)',
+                        color: 'var(--delos-black)' 
+                    }}
+                    className="w-10 h-10 flex items-center justify-center border hover:bg-[var(--delos-black)] hover:text-[var(--delos-surface)] transition-all duration-300 group-hover:rotate-90"
+                >
+                    <ChevronRight size={16} />
                 </button>
             </div>
         </div>

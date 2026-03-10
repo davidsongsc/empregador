@@ -31,12 +31,23 @@ export const MODULE_PERMISSIONS = {
     'DEVELOPER',
     'SUPER_ADMIN'
   ],
+  
 
   // ==========================================
   // RECRUTAMENTO / VAGAS
   // ==========================================
   RECRUITMENT: [
     'RECRUITER',
+    'RECRUITER_VIP',
+    'RECRUITER_LEAD',
+    'COMPANY_ADMIN',
+    'ACCOUNT_MANAGER',
+    'AGENCY_USER',
+    'DEVELOPER',
+    'SUPER_ADMIN'
+  ],  
+  SUPERVISION: [
+    
     'RECRUITER_VIP',
     'RECRUITER_LEAD',
     'COMPANY_ADMIN',
@@ -112,4 +123,26 @@ export const MODULE_PERMISSIONS = {
     'DEVELOPER'
   ],
 
+  ATENDIMENT: [
+    'AGENCY_USER',
+    'SUPPORT_N2',
+    'SUPPORT_N3',
+    'ACCOUNT_MANAGER',
+    'SALES_EXECUTIVE', // Opcional: se o comercial puder dar suporte inicial
+    'SUPER_ADMIN',
+    'DEVELOPER'
+  ],
+
+  // ==========================================
+  // OPERACIONAL (Focado na execução e rotinas internas)
+  // ==========================================
+  OPERATIONAL: [
+    'RECRUITER_LEAD',
+    'COMPANY_ADMIN',
+    'ACCOUNT_MANAGER',
+    'MODERATOR',
+    'ADMIN_N1',
+    'SUPER_ADMIN',
+    'DEVELOPER'
+  ],
 };

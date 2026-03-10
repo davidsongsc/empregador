@@ -1,4 +1,4 @@
-import { FileSpreadsheet, Zap, CheckCircle2, banknote } from "lucide-react";
+import { FileSpreadsheet, Zap, CheckCircle2 } from "lucide-react";
 
 export default function FinanceiroPage() {
   return (

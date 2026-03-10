@@ -8,18 +8,39 @@ import {
 import { useMyJobsStore } from "@/hooks/useMyJobsStore"
 import { useAuthStore } from "@/store/useAuthStore"
 import Link from "next/link"
-import PostJobModal from "@/components/Modal/PostJobModal"
 import PostNewJobModal from "@/components/Modal/PostNewJobModal"
+import { useManageJob } from "@/hooks/useManageJob"
+import { ConfirmationModal } from "@/components/Modal/ConfirmationModal"
+import { checkModuleAccess } from "@/utils/hasRecruitmentPermission"
 
 const MinhasVagas = () => {
   const { user, activeCompanyId } = useAuthStore()
   const { data, loading, fetchJobs } = useMyJobsStore()
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [jobEditing, setJobEditing] = useState<any>(null);
   const [isPostJobOpen, setIsPostJobOpen] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [searchTerm, setSearchTerm] = useState("")
+  const canAccessSupervision = checkModuleAccess(user?.profile?.empresas, 'SUPERVISION');
 
+  const {
+    openDeleteConfirmation, // Substitui o antigo removeJob
+    confirmRemoval,
+    isDeleteModalOpen,
+    setIsDeleteModalOpen,
+    loading: deleting
+  } = useManageJob();
+
+  const handleEdit = (job: any) => {
+    setJobEditing(job);
+    setIsModalOpen(true);
+  };
+
+  const handleCreate = () => {
+    setJobEditing(null); // Limpa para modo criação
+    setIsModalOpen(true);
+  };
   const currentFilter = useMemo(() => ({
     // O backend usará isso para filtrar o QuerySet
     company: activeCompanyId,
@@ -67,8 +88,11 @@ const MinhasVagas = () => {
           </div>
 
           <button
-            onClick={() => setIsPostJobOpen(true)}
-            className="group bg-white text-black px-3 sm:px-5 py-2 transition-all hover:bg-amber-600 hover:text-white flex items-center gap-2 shadow-lg active:scale-95 rounded-sm"
+            onClick={() => handleCreate()}
+            type="button"
+
+            className={`group bg-white text-black px-3 sm:px-5 py-2 transition-all hover:bg-amber-600 hover:text-white flex items-center gap-2 shadow-lg active:scale-95 rounded-sm ${!canAccessSupervision ? 'pointer-events-none opacity-50 bg-slate-800 cursor-not-allowed text-slate-400' : ''}`}
+            disabled={!canAccessSupervision}
           >
             <Plus size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
             <span className="font-black text-[9px] uppercase tracking-[0.1em] hidden sm:inline">Nova Vaga</span>
@@ -188,6 +212,41 @@ const MinhasVagas = () => {
                       </button>
                     </div>
                   )}
+                  <div>
+                    <div className="hidden lg:grid lg:col-span-2 justify-center">
+                      <span className={`
+    px-2 py-0.5 border text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-500
+    ${vaga.is_active
+                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
+                          : 'bg-red-500/10 border-red-500/20 text-red-500/70'
+                        }
+    group-hover:border-amber-600/40 group-hover:text-amber-500
+  `}>
+                        {/* Ícone de pulso apenas se estiver ativo */}
+                        <span className="flex items-center gap-1.5">
+                          {vaga.is_active && (
+                            <span className="w-1 h-1 bg-emerald-500 rounded-full animate-ping" />
+                          )}
+                          {vaga.is_active ? 'Online' : 'Offline'}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => handleEdit(vaga)}
+                      className="p-2 text-slate-600 hover:text-amber-500 transition-colors"
+                      title="Reconfigurar Instância"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button
+                      onClick={() => openDeleteConfirmation(vaga.uid)} // Passa o UID para o estado interno do hook
+                      className="p-2 text-slate-700 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               ))
             )}
@@ -217,8 +276,27 @@ const MinhasVagas = () => {
       </main>
 
       <PostNewJobModal
-        isOpen={isPostJobOpen}
-        onClose={() => { setIsPostJobOpen(false); fetchJobs(currentFilter, true); }}
+        isOpen={isModalOpen} // Use o estado unificado
+        jobToEdit={jobEditing} // Passe o objeto da vaga ou null
+        onClose={() => {
+          setIsModalOpen(false);
+          setJobEditing(null);
+          fetchJobs(currentFilter, true);
+        }}
+      />
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={async () => {
+          // Esta função executa o deleteJob(uid) que está guardado no hook
+          const success = await confirmRemoval();
+          if (success) {
+            fetchJobs(currentFilter, true); // Recarrega a matriz de vagas
+          }
+        }}
+        title="TERMINAR_INSTÂNCIA"
+        description="Você está prestes a remover permanentemente este registro da base de dados ativa."
+        loading={deleting}
       />
     </div>
   )

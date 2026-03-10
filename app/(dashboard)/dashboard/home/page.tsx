@@ -7,6 +7,7 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { STATUS_CONFIG } from "@/data/statusLabels";
 import PostNewJobModal from "@/components/Modal/PostNewJobModal";
 import { useAuthStore } from "@/store/useAuthStore";
+import { checkModuleAccess } from "@/utils/hasRecruitmentPermission";
 
 export default function DashboardPage() {
   const { stats, loading, error, refresh } = useDashboard();
@@ -17,6 +18,15 @@ export default function DashboardPage() {
       refresh();
     }
   }, [activeCompanyId, refresh]);
+  const { user } = useAuthStore()
+
+  const empresas = user?.profile?.empresas
+
+  const canAccessSupervision = checkModuleAccess(empresas, 'SUPERVISION');
+  const operador = user?.profile?.name;
+  const empresaName = user?.profile?.empresas?.find(
+    (empresa) => empresa.id === activeCompanyId
+  )?.name
   const cards = [
     {
       label: "Vagas Ativas",
@@ -64,17 +74,18 @@ export default function DashboardPage() {
             <span className="text-[10px] font-black tracking-[0.4em] text-amber-600 uppercase">Visão Geral</span>
           </div>
           <h1 className="text-4xl font-light text-slate-100 tracking-tighter">
-            DASH<span className="font-black">BOARD</span>
+            {empresaName} | <span className="font-black uppercase">{operador} </span>
           </h1>
           <p className="text-slate-500 text-xs font-medium tracking-wide uppercase">Operações de Unidades e Gestão de Fluxo</p>
         </div>
 
         <button
           onClick={() => setIsPostJobOpen(true)}
-          className="group relative flex items-center justify-center gap-3 bg-white text-black px-8 py-4 overflow-hidden transition-all hover:bg-amber-600 hover:text-white"
+          disabled={!canAccessSupervision}
+          className={`group relative flex items-center justify-center gap-3  text-black px-8 py-4 overflow-hidden transition-all  ${!canAccessSupervision ? 'bg-slate-800' : 'bg-white hover:bg-amber-600 hover:text-white'}`}
         >
           <Plus className="w-4 h-4 transition-transform group-hover:rotate-90" />
-          <span className="font-black text-xs uppercase tracking-[0.2em]">Anunciar Vaga</span>
+          <span className={`font-black text-xs uppercase tracking-[0.2em] ${!canAccessSupervision ? 'opacity-50 cursor-not-allowed' : ''}`}>Anunciar Vaga</span>
         </button>
       </section>
 

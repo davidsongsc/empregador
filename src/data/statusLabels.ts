@@ -36,6 +36,13 @@ const STATUS_LABELS = Object.fromEntries(
   Object.entries(STATUS_CONFIG).map(([key, value]) => [key, value.label])
 );
 
+
+export const FLOW_SEQUENCE = [
+  'applied', 'screening', 'reviewing', 'shortlisted',
+  'interview_scheduled', 'interviewing', 'technical_test',
+  'test_submitted', 'test_review', 'offer_sent', 'hired'
+];
+
 export const GROUPED_STATUS = {
   "01_Inscrição": ["applied", "withdrawn"],
   "02_Triagem": ["screening", "reviewing", "shortlisted"],

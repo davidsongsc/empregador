@@ -4,14 +4,14 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Script from 'next/script';
 import "./globals.css";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+
 import { Notification } from "@/components/Notification";
 import CookieBanner from "@/components/CookieBanner";
 import { AuthInitializer } from "@/components/AuthInitializer";
 import { cookies } from "next/headers";
 import { jwtDecode } from "jwt-decode";
 import { UserData } from "@/interfaces/userData";
-
+import { ThemeProvider } from "@/components/Theme/Provider";
 // Importamos redirect para o lado do servidor
 import { redirect } from "next/navigation";
 import { CompanySwitcher } from "@/components/Company/Switcher";
@@ -47,21 +47,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {/* Inicializa o Zustand com os dados do servidor */}
-        <AuthInitializer serverUser={serverUser} />
+        <ThemeProvider>
+          {/* Inicializa o Zustand com os dados do servidor */}
+          <AuthInitializer serverUser={serverUser} />
 
-        <AuthProvider>
-          <Header />
-          <main className="min-h-screen">
-            {children}
+          <AuthProvider>
+            <Header />
+            <main className="min-h-screen">
+              {children}
 
-            {/* O switcher agora é um Client Component isolado */}
-            <CompanySwitcher />
-          </main>
-          <Notification />
-    
-        </AuthProvider>
-        <CookieBanner />
+              {/* O switcher agora é um Client Component isolado */}
+              <CompanySwitcher />
+            </main>
+            <Notification />
+
+          </AuthProvider>
+          <CookieBanner />
+        </ThemeProvider>
       </body>
     </html>
   );

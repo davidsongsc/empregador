@@ -1,64 +1,76 @@
-"use client";
+import { create } from "zustand";
+import { Event } from "@/interfaces/events";
+import { eventService } from "@/services/eventService";
+import { toast } from "@/components/Notification";
 
-import { useEffect, useState, useCallback } from "react";
-import { useEventStore } from "@/store/useEventStore";
-import { useParams } from "next/navigation";
-
-export function useEvents() {
-  const params = useParams();
-  const eventUid = params?.uid as string;
-
-  // Estados locais para controle de filtros (Search e Pagination)
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-
-  // Seletores da Store (Zustand)
-  const events = useEventStore((s) => s.events);
-  const count = useEventStore((s) => s.count);
-  const activeEvent = useEventStore((s) => s.activeEvent);
-  const loading = useEventStore((s) => s.loading);
-  const error = useEventStore((s) => s.error);
-
-  // Ações da Store
-  const fetchEvents = useEventStore((s) => s.fetchEvents);
-  const fetchEventDetails = useEventStore((s) => s.fetchEventDetails);
-  const publish = useEventStore((s) => s.publishSchedule);
-
-  /**
-   * Função de carregamento inteligente.
-   * Se houver UID na URL, foca no detalhe. Caso contrário, foca na lista.
-   */
-  const loadData = useCallback(async () => {
-    if (eventUid) {
-      await fetchEventDetails(eventUid);
-    } else {
-      await fetchEvents(page, search);
-    }
-  }, [eventUid, page, search, fetchEvents, fetchEventDetails]);
-
-  // Dispara o fetch sempre que o contexto (UID, Página ou Busca) mudar
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  return {
-    // Dados (Garantindo que events seja sempre um array para o .map)
-    events: Array.isArray(events) ? events : [],
-    activeEvent,
-    count: count || 0,
-    loading,
-    error,
-
-    // Filtros e Paginação
-    page,
-    setPage,
-    search,
-    setSearch,
-    totalPages: Math.ceil((count || 0) / 10), // Baseado no PAGE_SIZE: 10 do Django
-
-    // Ações
-    refresh: loadData,
-    publish,
-    eventUid
-  };
+interface EventState {
+  events: Event[];
+  count: number;
+  activeEvent: Event | null;
+  loading: boolean;
+  error: string | null;
+  fetchEvents: (page?: number) => Promise<void>;
+  fetchEventDetails: (uid: string) => Promise<void>;
+  publishSchedule: (scheduleUid: string) => Promise<void>;
 }
+
+export const useEventStore = create<EventState>((set, get) => ({
+  events: [],
+  count: 0,
+  activeEvent: null,
+  loading: false,
+  error: null,
+
+  fetchEvents: async (page = 1) => {
+    // Evita chamadas duplicadas se já estiver carregando
+    if (get().loading) return;
+
+    set({ loading: true, error: null });
+
+    try {
+      const data = await eventService.getEvents(page);
+      
+      // Ajuste: Garantimos que estamos passando apenas UM objeto para o set
+      set({
+        events: data.results || [],
+        count: data.count || 0,
+        loading: false,
+      });
+    } catch (err) {
+      set({ 
+        error: "Erro ao carregar lista", 
+        loading: false 
+      });
+      toast.error("Erro ao carregar lista");
+    }
+  },
+
+  fetchEventDetails: async (uid: string) => {
+    set({ loading: true });
+    try {
+      const data = await eventService.getEventByUid(uid);
+      set({ activeEvent: data, loading: false });
+    } catch (err) {
+      set({ loading: false, error: "Erro ao carregar detalhes" });
+    }
+  },
+
+  publishSchedule: async (scheduleUid: string) => {
+    try {
+      await eventService.publishJobs(scheduleUid);
+      toast.success("Vagas publicadas com sucesso!");
+
+      const active = get().activeEvent;
+      if (active) {
+        const updatedSchedules = active.schedules.map((s) =>
+          s.uid === scheduleUid ? { ...s, is_published: true } : s
+        );
+        set({ 
+          activeEvent: { ...active, schedules: updatedSchedules } 
+        });
+      }
+    } catch (err) {
+      toast.error("Erro ao publicar vagas.");
+    }
+  },
+}));

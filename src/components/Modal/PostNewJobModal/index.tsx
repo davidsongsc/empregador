@@ -4,20 +4,23 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
     Plus, X, Loader2, DollarSign, MapPin,
     Clock10, ChevronRight, CheckCircle, ShieldCheck,
-    MessageSquare, Mail, Search, Sparkles, Terminal, Cpu
+    MessageSquare, Mail, Search, Sparkles, Terminal, Cpu,
+    Activity
 } from 'lucide-react';
 import { usePostJob } from '@/hooks/usePostJob';
 import { useRoles } from '@/hooks/useRoles';
 import { createRole } from '@/services/roles';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from '@/components/Notification';
+import { updateJob } from '@/services/jobs';
 
 interface PostJobModalProps {
     isOpen: boolean;
     onClose: () => void;
+    jobToEdit?: any;
 }
 
-const PostNewJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
+const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
     const { user } = useAuthStore();
     const [step, setStep] = useState(1);
     const { postJob, loading: posting } = usePostJob();
@@ -38,8 +41,44 @@ const PostNewJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
     const [novoRequisito, setNovoRequisito] = useState('');
     const [newRoleCategory, setNewRoleCategory] = useState('Geral');
     const [showCategorySelector, setShowCategorySelector] = useState(false);
-
+    const [isActive, setIsActive] = useState(true);
     useEffect(() => { if (!isOpen) setStep(1); }, [isOpen]);
+    useEffect(() => {
+        if (isOpen && jobToEdit) {
+            // MODO EDIÇÃO: Mapeia os dados da API para o formulário
+            setSelectedRoleUid(jobToEdit.role_details?.uid || '');
+            setRoleSearch(jobToEdit.role_details?.name || '');
+            setTituloPersonalizado(jobToEdit.titulo_personalizado || '');
+            setSalario(jobToEdit.salario?.toString() || '');
+            setLocal(jobToEdit.endereco?.cidade || jobToEdit.local || '');
+            setTurno(jobToEdit.turno || '');
+            setDescricao(jobToEdit.descricao || '');
+            setTipoVaga(jobToEdit.tipo_vaga || 'FREELANCER');
+            setContatoOpt(jobToEdit.metodo_contato || 'plataforma');
+            setIsActive(jobToEdit.is_active );
+            
+            // Sanitização de arrays (Benefícios e Requisitos)
+            // Se o backend enviar objetos [{description: '...'}], extraímos apenas a string
+            const reqs = jobToEdit.requisitos?.map((r: any) => typeof r === 'string' ? r : r.description) || [];
+            const bens = jobToEdit.beneficios?.map((b: any) => typeof b === 'string' ? b : b.description) || [];
+
+            setRequisitos(reqs);
+            setBeneficios(bens);
+        } else if (isOpen && !jobToEdit) {
+            // MODO CRIAÇÃO: Reset de todos os campos para o padrão Delos
+            setRoleSearch('');
+            setSelectedRoleUid('');
+            setTituloPersonalizado('');
+            setSalario('');
+            setDescricao('');
+            setIsCreatingRole(false)
+
+            // ... resetar os demais estados
+        }
+    }, [isOpen, jobToEdit]);
+
+    const modalTitle = jobToEdit ? "Editar_Vaga" : "Criar_Vaga";
+    const buttonLabel = jobToEdit ? "Proximo" : "Avançar";
 
     const filteredRoles = useMemo(() => {
         if (!roleSearch || selectedRoleUid) return [];
@@ -78,11 +117,10 @@ const PostNewJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
     };
 
     const handleFinalizar = async () => {
-        const companyId = user?.profile?.empresas?.[0]?.id || "";
         const payload = {
             role: selectedRoleUid,
             titulo_personalizado: tituloPersonalizado,
-            company: companyId,
+            company: user?.profile?.empresas?.[0]?.id || "",
             salario: salario ? parseFloat(salario) : null,
             turno,
             endereco: local.trim() ? { cidade: local } : null,
@@ -90,13 +128,26 @@ const PostNewJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
             beneficios: beneficios.map(b => ({ description: b })),
             requisitos: requisitos.map(r => ({ description: r })),
             metodo_contato: contatoOpt,
+            tipo_vaga: tipoVaga,
+            is_active: isActive,
             perguntas: []
+
         };
+
         try {
-            await postJob(payload);
-            toast.success("Instance_Deployed");
+            if (jobToEdit?.uid) {
+                // Chamada de PATCH para Edição
+                await updateJob(jobToEdit.uid, payload);
+                toast.success("Unit_Reconfigured");
+            } else {
+                // Chamada de POST para Criação
+                await postJob(payload);
+                toast.success("Instance_Deployed");
+            }
             onClose();
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            toast.error("Protocol_Execution_Failed");
+        }
     };
 
     if (!isOpen) return null;
@@ -107,7 +158,7 @@ const PostNewJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
             <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
 
             <div className="bg-[#101010] w-full max-w-4xl max-h-[95vh] border border-white/5 shadow-[0_0_50px_rgba(0,0,0,1)] overflow-hidden relative animate-in zoom-in-95 duration-300">
-                
+
                 {/* BOTÃO FECHAR */}
                 <button onClick={onClose} className="absolute right-6 top-6 p-2 text-slate-600 hover:text-amber-600 z-[110] transition-colors">
                     <X className="w-5 h-5" />
@@ -118,12 +169,12 @@ const PostNewJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
                     <div className="p-8 border-b border-white/5 bg-[#141414]">
                         <div className="flex items-center gap-3 mb-4">
                             <Cpu className="w-4 h-4 text-amber-600" />
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.4em]">Unit_Initialization_Sequence</span>
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.4em]">{modalTitle}</span>
                         </div>
                         <div className="flex justify-between items-end">
                             <div>
                                 <h1 className="text-3xl font-light text-white tracking-tighter uppercase">Configurar <span className="font-black">Instância</span></h1>
-                                <p className="text-[10px] font-mono text-slate-600 mt-1 uppercase tracking-widest italic">Protocol_ID: {Math.random().toString(16).slice(2,8).toUpperCase()}</p>
+                                <p className="text-[10px] font-mono text-slate-600 mt-1 uppercase tracking-widest italic">Protocol_ID: {Math.random().toString(16).slice(2, 8).toUpperCase()}</p>
                             </div>
                             <div className="flex gap-2 pb-2">
                                 {[1, 2, 3].map((s) => (
@@ -134,7 +185,7 @@ const PostNewJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
                     </div>
 
                     <div className="p-8 md:p-12 overflow-y-auto custom-scrollbar space-y-12">
-                        
+
                         {/* ETAPA 1: DEFINIÇÃO DE CORE */}
                         {step === 1 && (
                             <div className="space-y-10 animate-in fade-in slide-in-from-right-4">
@@ -217,7 +268,7 @@ const PostNewJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
                                 </section>
 
                                 <button onClick={() => setStep(2)} disabled={!selectedRoleUid} className="w-full bg-white text-black py-5 font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 hover:bg-amber-600 hover:text-white transition-all disabled:opacity-5">
-                                    Next_Sequence <ChevronRight className="w-4 h-4" />
+                                    Avançar <ChevronRight className="w-4 h-4" />
                                 </button>
                             </div>
                         )}
@@ -288,7 +339,7 @@ const PostNewJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
 
                                 <div className="flex gap-2 pt-6">
                                     <button onClick={() => setStep(1)} className="w-1/4 bg-[#141414] border border-white/5 py-4 font-black text-[9px] uppercase tracking-widest text-slate-600 hover:text-white transition-all italic">Previous</button>
-                                    <button onClick={() => setStep(3)} className="flex-1 bg-white text-black py-4 font-black text-[10px] uppercase tracking-[0.3em] hover:bg-amber-600 hover:text-white transition-all">Proceed_to_Contact</button>
+                                    <button onClick={() => setStep(3)} className="flex-1 bg-white text-black py-4 font-black text-[10px] uppercase tracking-[0.3em] hover:bg-amber-600 hover:text-white transition-all">{buttonLabel}</button>
                                 </div>
                             </div>
                         )}
@@ -296,6 +347,7 @@ const PostNewJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
                         {/* ETAPA 3: PROTOCOLO DE CONTATO */}
                         {step === 3 && (
                             <div className="space-y-12 animate-in fade-in slide-in-from-right-4">
+
                                 <div className="text-center space-y-2">
                                     <h2 className="text-[11px] font-black text-amber-600 uppercase tracking-[0.5em]">Canal_de_Comunicação</h2>
                                     <p className="text-[9px] text-slate-600 font-mono uppercase tracking-widest">Defina o método de interceptação de candidatos</p>
@@ -325,14 +377,40 @@ const PostNewJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
                                         );
                                     })}
                                 </div>
+                                {/* NOVO: SWITCH DE STATUS DA INSTÂNCIA */}
+                                <div className="flex items-center justify-between p-6 bg-white/5 border border-white/5 rounded-sm">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`p-3 rounded-lg transition-all ${isActive ? 'bg-emerald-500/10 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'bg-red-500/10 text-red-500'}`}>
+                                            <Activity size={20} className={isActive ? 'animate-pulse' : ''} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-[10px] font-black text-white uppercase tracking-widest">Status da Vaga</h3>
+                                            <p className="text-[8px] text-slate-500 uppercase font-mono tracking-tighter">
+                                                {isActive ? 'Publicado: Visível na Matriz Global' : 'Offline: Oculto para Candidatos'}
+                                            </p>
+                                        </div>
+                                    </div>
 
+                                    <button
+                                        onClick={() => setIsActive(!isActive)}
+                                        className={`relative w-14 h-7 transition-all duration-500 border ${isActive ? 'bg-emerald-600/20 border-emerald-500/50' : 'bg-red-600/20 border-red-500/50'}`}
+                                    >
+                                        {/* Knob Estilo Industrial */}
+                                        <div className={`absolute top-1 bottom-1 w-5 transition-all duration-500 ${isActive ? 'left-7 bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'left-1 bg-red-500 shadow-[0_0_10px_#ef4444]'}`}>
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <div className="w-[1px] h-2 bg-white/30 mx-[1px]" />
+                                                <div className="w-[1px] h-2 bg-white/30 mx-[1px]" />
+                                            </div>
+                                        </div>
+                                    </button>
+                                </div>
                                 <div className="pt-10 space-y-4">
                                     <button
                                         onClick={handleFinalizar}
                                         disabled={posting}
                                         className="w-full bg-amber-600 text-black py-6 font-black text-xs uppercase tracking-[0.4em] flex items-center justify-center gap-4 hover:bg-white transition-all shadow-[0_0_30px_rgba(217,119,6,0.2)]"
                                     >
-                                        {posting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Finalize_Deployment <CheckCircle className="w-4 h-4" /></>}
+                                        {posting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Salvar <CheckCircle className="w-4 h-4" /></>}
                                     </button>
                                     <button onClick={() => setStep(2)} className="w-full text-[8px] font-black text-slate-700 uppercase tracking-widest hover:text-slate-400 transition-colors text-center italic underline">Review_Parameters</button>
                                 </div>

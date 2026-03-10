@@ -1,103 +1,130 @@
 import { api } from "@/lib/api";
 
-/**
- * Serviço responsável pela comunicação com os endpoints de Empresas (Companies)
- */
+export interface Company {
+  id: string;
+  name: string;
+  is_active: boolean;
+  average_rate: number;
+  members_count: number;
+  parent?: string | null;
+  subscription?: any;
+}
+
+export interface CompanyMemberDetail {
+  id: number;
+  profile: number;
+  profile_name: string;
+  role: string;
+  joined_at: string;
+}
+
+export interface Department {
+  id: string;
+  company: string;
+  name: string;
+  description: string;
+  leaders_detail: CompanyMemberDetail[]; // Onde o Mario está
+  members_count: number;
+  created_at: string;
+}
+
+export const departmentService = {
+  // O Django filtra no backend pelo Header X-Company-ID que sua api envia
+  getDepartments: () => api("/company/departments/"),
+
+  createDepartment: (data: Partial<Department>) =>
+    api("/company/departments/", { method: "POST", body: JSON.stringify(data) }),
+
+  updateDepartment: (id: string, data: Partial<Department>) =>
+    api(`/company/departments/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+
+  deleteDepartment: (id: string) =>
+    api(`/company/departments/${id}/`, { method: "DELETE" }),
+};
 export const companyService = {
-    /**
-     * Lista todas as empresas com suporte a paginação, filtros e pesquisa.
-     * O backend deve retornar o CompanySimpleSerializer para listagem.
-     */
-    getCompanies: async (page: number = 1, search: string = "", activeOnly: boolean = false): Promise<any> => {
-        const params: any = {
-            page: page.toString(),
-            ...(search && { search }),
-            ...(activeOnly && { is_active: "true" })
-        };
+  // --- CORE COMPANIES (GLOBAL & ADMIN) ---
 
-        const query = new URLSearchParams(params).toString();
+  getCompanies: async (page: number = 1, search: string = "", activeOnly: boolean = false) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      ...(search && { search }),
+      ...(activeOnly && { is_active: "true" })
+    });
+    return await api(`/company/companies/?${params.toString()}`);
+  },
 
-        return await api(`/company/companies/?${query}`, {
-            method: "GET"
-        });
-    },
+  getCompanyById: async (id: string) => {
+    return await api(`/company/companies/${id}/`);
+  },
 
-    /**
-     * Obtém os detalhes completos de uma empresa, incluindo membros e média de avaliação.
-     * @param id UUID da empresa
-     */
-    getCompanyById: async (id: string): Promise<any> => {
-        if (!id) throw new Error("ID da empresa é obrigatório");
-        return await api(`/company/companies/${id}/`, {
-            method: "GET"
-        });
-    },
+  getMyCompanies: async () => {
+    return await api("/company/companies/my-companies/");
+  },
 
-    /**
-     * Cria uma nova empresa. 
-     * O campo 'created_by' é preenchido automaticamente pelo backend via serializer.
-     */
-    createCompany: async (data: { name: string; is_active?: boolean }): Promise<any> => {
-        return await api("/company/companies/", {
-            method: "POST",
-            body: JSON.stringify(data),
-        });
-    },
+  createCompany: async (data: { name: string; is_active?: boolean }) => {
+    return await api("/company/companies/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
 
-    /**
-     * Atualiza os dados de uma empresa.
-     */
-    updateCompany: async (id: string, data: any): Promise<any> => {
-        if (!id) throw new Error("ID da empresa é obrigatório para atualização");
-        return await api(`/company/companies/${id}/`, {
-            method: "PATCH", // Usamos PATCH para atualizações parciais
-            body: JSON.stringify(data),
-        });
-    },
+  updateCompany: async (id: string, data: Partial<Company>) => {
+    return await api(`/company/companies/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
 
-    /**
-     * Remove uma empresa permanentemente.
-     */
-    deleteCompany: async (id: string): Promise<any> => {
-        return await api(`/company/companies/${id}/`, {
-            method: "DELETE",
-        });
-    },
+  rateCompany: async (id: string, rate: number) => {
+    return await api(`/company/companies/${id}/rate/`, {
+      method: "POST",
+      body: JSON.stringify({ rate }),
+    });
+  },
 
-    /**
-     * Envia uma avaliação para a empresa (Rota customizada via @action na ViewSet).
-     * @param id UUID da empresa
-     * @param rate Valor de 0 a 5
-     */
-    rateCompany: async (id: string, rate: number): Promise<any> => {
-        return await api(`/company/companies/${id}/rate/`, {
-            method: "POST",
-            body: JSON.stringify({ rate }),
-        });
-    },
-    getDepartments: async (companyId: string) => {
-        return await api(`/departments/?company=${companyId}`, { method: "GET" });
-    },
+  // --- INTERNAL STRUCTURE (DEPARTMENTS) ---
 
-    createDepartment: async (data: { company: string; name: string; description?: string }) => {
-        return await api("/departments/", {
-            method: "POST",
-            body: JSON.stringify(data),
-        });
-    },
+  /**
+   * Busca departamentos. 
+   * Se o companyId não for passado, o backend filtrará via Header X-Company-ID
+   */
+  getDepartments: async (companyId?: string): Promise<Department[]> => {
+    const url = companyId ? `/company/departments/?company=${companyId}` : "/company/departments/";
+    const res = await api(url);
 
-    updateDepartment: async (id: string, data: any) => {
-        return await api(`/departments/${id}/`, {
-            method: "PATCH",
-            body: JSON.stringify(data),
-        });
-    },
-    /**
-     * Busca as empresas onde o usuário logado é membro.
-     */
-    getMyCompanies: async (): Promise<any> => {
-        return await api("/company/companies/my-companies/", {
-            method: "GET",
-        });
+    // 1. Se o Django enviou com paginação padrão (results: [])
+    if (res.results && Array.isArray(res.results)) {
+      return res.results;
     }
+
+    // 2. TRATAMENTO PARA O ESPALHAMENTO DA SUA API {...data}
+    // Removemos a chave 'ok' para sobrar apenas os índices "0", "1", etc.
+    const { ok, ...items } = res;
+
+    // Transformamos o objeto {0: {...}, 1: {...}} em um Array real [...]
+    const arrayData = Object.values(items).filter(
+      (i: any) => i && typeof i === 'object' && ('id' in i || 'name' in i)
+    ) as Department[];
+
+    return arrayData;
+  },
+  createDepartment: async (data: Partial<Department>) => {
+    return await api("/departments/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateDepartment: async (id: string, data: Partial<Department>) => {
+    return await api(`/departments/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteDepartment: async (id: string) => {
+    return await api(`/departments/${id}/`, {
+      method: "DELETE",
+    });
+  }
 };

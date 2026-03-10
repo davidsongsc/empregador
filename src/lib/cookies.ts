@@ -1,11 +1,19 @@
 export function getCookie(name: string): string | null {
+
   if (typeof document === "undefined") return null
 
-  const match = document.cookie.match(
-    new RegExp("(^| )" + name + "=([^;]+)")
-  )
+  const cookies = document.cookie.split("; ")
 
-  return match ? decodeURIComponent(match[2]) : null
+  for (const cookie of cookies) {
+
+    const [key, value] = cookie.split("=")
+
+    if (key === name) {
+      return decodeURIComponent(value)
+    }
+  }
+
+  return null
 }
 
 export function setCookie(name: string, value: string, days = 30) {
@@ -21,3 +29,4 @@ export function deleteCookie(name: string) {
   if (typeof document === "undefined") return
   document.cookie = `${name}=; Max-Age=0; path=/`
 }
+

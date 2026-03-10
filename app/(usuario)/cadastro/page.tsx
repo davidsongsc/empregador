@@ -1,6 +1,6 @@
 'use client';
 
-import RegisterPage from "@/templates/Usuario/Cadastro";
+import RegisterPage from "@/templates/Usuario/register";
 
 const CadastroPage = () => {
 

@@ -29,25 +29,31 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       loading: true,
       isHydrated: false,
+      setUser: (user) =>
+        set((state) => {
 
-      setUser: (user) => {
-        const empresas = user?.profile?.empresas || [];
+          // evita re-render se o mesmo usuário já estiver no estado
+          if (state.user?.id === user?.id) {
+            return state
+          }
 
-        const cookieCompany = getCookie("active_company");
+          const empresas = user?.profile?.empresas || []
 
-        let activeId = cookieCompany;
+          const cookieCompany = getCookie("active_company")
 
-        if (!activeId && empresas.length === 1) {
-          activeId = empresas[0].id;
-        }
+          let activeId = cookieCompany
 
-        set({
-          user,
-          isAuthenticated: !!user,
-          activeCompanyId: activeId,
-          loading: false,
-        });
-      },
+          if (!activeId && empresas.length === 1) {
+            activeId = empresas[0].id
+          }
+
+          return {
+            user,
+            isAuthenticated: !!user,
+            activeCompanyId: activeId,
+            loading: false,
+          }
+        }),
 
       setActiveCompany: (id) => {
         if (id) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Briefcase, User, Search, PlusCircle, X, Menu, LogOut, ChevronRight, LayoutDashboard, Binary } from 'lucide-react';
 import Image from 'next/image';
@@ -8,22 +8,31 @@ import Image from 'next/image';
 import { useAuthStore } from '@/store/useAuthStore';
 import { usePathname } from 'next/dist/client/components/navigation';
 import PostJobModal from '@/components/Modal/PostJobModal';
-
+import LogoFreelaCerto from '../MiniComponents/Logo';
+import { useUIStore } from '@/store/useUiStore';
+import { checkModuleAccess } from '@/utils/hasRecruitmentPermission';
 const Header = () => {
-    const [isScrolled, setIsScrolled] = useState(false);
+    const isScrolled = useUIStore((state) => state.isScrolled);
+    const setScrolled = useUIStore((state) => state.setScrolled);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isDockOpen, setIsDockOpen] = useState(false);
     const { user, isAuthenticated, logout } = useAuthStore();
     const pathname = usePathname();
     const isDashboardRoute = pathname.startsWith('/dashboard');
     const [isPostJobOpen, setIsPostJobOpen] = useState(false);
-    const isRecruiter = user?.is_staff || user?.profile?.role !== 'CANDIDATO';
+    const isRecruiter = checkModuleAccess(user?.profile?.empresas, 'RECRUITMENT');
 
     useEffect(() => {
-        const handleScroll = () => setIsScrolled(window.scrollY > 20);
-        window.addEventListener('scroll', handleScroll);
+        const handleScroll = () => {
+            const scrolled = window.scrollY > 20;
+            if (useUIStore.getState().isScrolled !== scrolled) {
+                setScrolled(scrolled);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+    }, [setScrolled]);
 
     if (isDashboardRoute) return null;
 
@@ -32,39 +41,26 @@ const Header = () => {
     return (
         <>
             <header className={`fixed top-0 w-full transition-all duration-700 z-50 hidden md:block px-6 ${isScrolled ? 'pt-2' : 'pt-6'}`}>
-                <div className={`max-w-7xl mx-auto flex items-center justify-between px-8 py-4 rounded-[24px] transition-all duration-500 border ${
-                    isScrolled
+                <div className={`max-w-7xl mx-auto flex items-center justify-between px-8 py-4 rounded-[24px] transition-all duration-500 border ${isScrolled
                     ? 'bg-white/80 backdrop-blur-2xl shadow-[0_15px_40px_rgba(0,0,0,0.04)] border-gray-100'
                     : 'bg-white/40 backdrop-blur-md border-white/40'
-                }`}>
+                    }`}>
 
                     {/* LOGO - Westworld Style */}
-                    <div className="flex-1 flex justify-start">
-                        <Link href="/" className="flex items-center group">
-                            <div className="flex items-center text-[11px] font-black tracking-[0.5em] uppercase italic">
-                                <span className={`px-4 py-1.5 transition-all duration-700 ${isScrolled ? 'bg-black text-white' : 'bg-white text-black border border-black/10'}`}>
-                                    Freela
-                                </span>
-                                <span className={`px-4 py-1.5 ml-1 transition-all duration-700 ${!isScrolled ? 'bg-amber-600 text-white shadow-lg shadow-amber-200/50' : 'bg-gray-100 text-gray-400'}`}>
-                                    Certo
-                                </span>
-                            </div>
-                        </Link>
-                    </div>
+                    <LogoFreelaCerto />
 
                     {/* NAVIGATION - Minimalista Clinical */}
                     <nav className="hidden lg:flex items-center gap-2 bg-gray-50/50 p-1.5 rounded-2xl border border-gray-100">
                         {[
                             { name: 'Vagas', href: '/vagas' },
-                            { name: 'Freelancer', href: '/freelancer' },
+                            { name: 'Comercial', href: '/comercial/marketing' },
                             { name: 'Empresas', href: '/empresas' }
                         ].map((item) => (
                             <Link
                                 key={item.name}
                                 href={item.href}
-                                className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                    pathname === item.href ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-black hover:bg-white/50'
-                                }`}
+                                className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${pathname === item.href ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-black hover:bg-white/50'
+                                    }`}
                             >
                                 {item.name}
                             </Link>
@@ -204,9 +200,8 @@ const Header = () => {
 
                 <button
                     onClick={() => setIsDockOpen(!isDockOpen)}
-                    className={`w-16 h-16 rounded-[24px] flex items-center justify-center shadow-2xl transition-all duration-700 active:scale-90 ${
-                        isDockOpen ? 'bg-black -rotate-90' : 'bg-amber-600 rotate-0 shadow-amber-200'
-                    }`}
+                    className={`w-16 h-16 rounded-[24px] flex items-center justify-center shadow-2xl transition-all duration-700 active:scale-90 ${isDockOpen ? 'bg-black -rotate-90' : 'bg-amber-600 rotate-0 shadow-amber-200'
+                        }`}
                 >
                     {isDockOpen ? <X className="text-white w-8 h-8" /> : <Menu className="text-white w-8 h-8" />}
                 </button>
@@ -215,7 +210,7 @@ const Header = () => {
             {isDockOpen && (
                 <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-40 md:hidden" onClick={closeDock} />
             )}
-            
+
             <PostJobModal
                 isOpen={isPostJobOpen}
                 onClose={() => setIsPostJobOpen(false)}
@@ -224,4 +219,4 @@ const Header = () => {
     );
 };
 
-export default Header;
+export default React.memo(Header);

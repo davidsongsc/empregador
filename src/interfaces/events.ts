@@ -22,7 +22,7 @@ export interface StaffAssignment {
 export interface EventSchedule {
   uid: string;
   chamada: string;
-  event: string; // UID do evento pai
+  event: string; 
   start_time: string;
   end_time: string;
   start_time_display: string;

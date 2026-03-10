@@ -1,129 +1,44 @@
 @import "tailwindcss";
+@config "../tailwind.config.ts";
 
-html,
-body {
-  height: 100%;
-  /* Fundo base do sistema Delos */
-  background-color: #101010;
+:root {
+  --delos-surface: #FDFDFD;
+  --delos-black: #000000;
+  --delos-amber: #E17100;
+  --delos-grey: #7d7d7e;
+  --delos-indigo: #4F39F6;
+  --delos-red: #FF3B30;
+  /* Variações Utilitárias */
+  --delos-border: rgba(0, 0, 0, 0.08);
+  --delos-subtext: rgba(0, 0, 0, 0.45);
 }
 
-/* --- TEMA DA BARRA DE ROLAGEM (Scrollbar) --- */
+.dark {
+  --delos-surface: #050505;
+  --delos-black: #FDFDFD;
+  --delos-amber: #D97706;
+  --delos-grey: #404040;
+  --delos-indigo: #6366F1;
+  --delos-red: #FF3B30;
+  /* Variações Utilitárias */
+  --delos-border: rgba(255, 255, 255, 0.08);
+  --delos-subtext: rgba(255, 255, 255, 0.45);
+}
 
-/* 1. Largura da barra */
-::-webkit-scrollbar {
+/* Scrollbar Delos Style */
+.custom-scrollbar::-webkit-scrollbar {
   width: 4px;
-  /* Vertical */
-  height: 4px;
-  /* Horizontal */
 }
 
-/* 2. Fundo da pista (Track) */
-::-webkit-scrollbar-track {
-  background: #080808;
-  /* Quase preto para profundidade */
-  border-left: 1px solid rgba(255, 255, 255, 0.02);
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* 3. Botão de rolagem (Thumb) */
-::-webkit-scrollbar-thumb {
-  background: #222222;
-  /* Cinza industrial discreto */
-  border-radius: 0px;
-  /* Cantos retos Brutalistas */
-  transition: background 0.3s ease;
-}
-
-/* 4. Thumb no Hover - Ativa o Âmbar Delos */
-::-webkit-scrollbar-thumb:hover {
-  background: #d97706;
-  /* amber-600 */
-  box-shadow: 0 0 10px rgba(217, 119, 6, 0.4);
-}
-
-/* 5. Canto inferior quando as duas barras se encontram */
-::-webkit-scrollbar-corner {
-  background: #080808;
-}
-
-/* --- AJUSTES DE INPUTS E BODY --- */
-
-input {
-  background: #181818;
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  transition: all 0.3s ease;
-
-  /* Mobile / Pequenas telas */
-  font-size: 0.8em;
-}
-
-/* Responsividade para telas grandes (lg: 1024px) */
-@media (min-width: 1024px) {
-  input {
-    font-size: 1.45em;
-  }
-}
-
-input:focus {
-  outline: none;
-  border-color: rgba(217, 119, 6, 0.4);
-  background: #1c1c1c;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
-}
-
-/* --- TEMA DO PLACEHOLDER --- */
-
-input::placeholder {
-  color: #334155;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  opacity: 1;
-  /* Mobile / Pequenas telas */
-  font-size: 0.8em;
-}
-
-/* Responsividade do Placeholder para telas grandes */
-@media (min-width: 1024px) {
-  input::placeholder {
-    font-size: 1.45em;
-    /* Ajustado conforme seu pedido para 1.45em em LG */
-  }
-}
-
-/* Fallbacks para outros navegadores */
-input:-ms-input-placeholder {
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  font-size: 0.8em;
-}
-
-input::-ms-input-placeholder {
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  font-size: 0.8em;
-}
-
-@media (min-width: 1024px) {
-  input:-ms-input-placeholder {
-    font-size: 1.45em;
-  }
-
-  input::-ms-input-placeholder {
-    font-size: 1.45em;
-  }
-}
-
-body {
-  color: #cbd5e1;
-  /* slate-300 */
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--delos-grey);
+  border-radius: 10px;
 }
 
 button {
   cursor: pointer;
-}
-
-/* Utilitário para esconder scrollbar se necessário em áreas específicas */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
 }

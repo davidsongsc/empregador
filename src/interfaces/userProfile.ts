@@ -1,4 +1,5 @@
 export type UserProfile = {
+  id?: string;
   name?: string;
   last_name?: string;
   full_name?: string;
@@ -8,13 +9,15 @@ export type UserProfile = {
   bio?: string;
   foto?: string | null;
   endereco?: Endereco;
-  // AJUSTE AQUI: Definido como Array de objetos
+  data_nascimento?: string;
   empresas?: {
     id: string;
     name: string;
     role: string;
     is_active: boolean;
   }[];
+  experiences?: Experience[];
+  educations?: Educations[];
 };
 
 export type Endereco = {
@@ -25,4 +28,22 @@ export type Endereco = {
   bairro?: string;
   cidade?: string;
   estado?: string;
+  complemento?: string;
+};
+
+export type Experience = {
+  id?: string;
+  cargo?: string;
+  empresa?: string;
+  inicio?: string;
+  fim?: string;
+  descricao?: string;
+};
+
+export type Educations = {
+  id?: string;
+  instituicao?: string;
+  curso?: string;
+  inicio?: string;
+  fim?: string;
 };

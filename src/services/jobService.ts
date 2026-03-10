@@ -11,7 +11,9 @@ const buildQuery = (params: Record<string, any>) => {
   });
   return query.toString();
 };
-
+interface FetchOptions {
+  headers?: Record<string, string>;
+}
 interface PaginationParams {
   page?: number;
   page_size?: number;
@@ -20,25 +22,37 @@ interface PaginationParams {
 /**
  * ROTA PÚBLICA: Busca todas as vagas com paginação
  */
-export async function getAllJobs(params: PaginationParams = {}): Promise<JobsResponse> {
-  // Se não passar nada, o Django assume page_size=10 conforme configuramos
+// jobService.ts
+export async function getAllJobs(
+  params: PaginationParams = {},
+  options: FetchOptions = {} // <--- ADICIONE ESTE ARGUMENTO
+): Promise<JobsResponse> {
   const queryString = buildQuery(params);
 
   return api(`/vagas/?${queryString}`, {
     method: "GET",
     credentials: "include",
+    headers: {
+      ...options.headers, // <--- MESCLE OS HEADERS AQUI
+    }
   });
 }
 
 /**
  * ROTA PRIVADA: Feed de vagas (vagas que o usuário não se candidatou)
  */
-export async function getJobFeed(params: PaginationParams = {}): Promise<JobsResponse> {
+export async function getJobFeed(
+  params: PaginationParams = {},
+  options: FetchOptions = {} // <--- ADICIONE ESTE ARGUMENTO
+): Promise<JobsResponse> {
   const queryString = buildQuery(params);
 
   return api(`/vagas/feed/?${queryString}`, {
     method: "GET",
-    credentials: "include", // O token 'access' geralmente já vai via cookie se configurado no seu 'api'
+    credentials: "include",
+    headers: {
+      ...options.headers, // <--- MESCLE OS HEADERS AQUI
+    }
   });
 }
 

@@ -1,8 +1,13 @@
 "use client"
-import { CheckCircle2, ChevronLeft, X, Briefcase, Info, FileText, HelpCircle, Sparkles, Loader2, ChevronRight, Binary, Plus, Trash2, Calendar } from "lucide-react"
+import { 
+  CheckCircle2, ChevronLeft, X, Briefcase, Info, FileText, 
+  HelpCircle, Sparkles, Loader2, ChevronRight, Binary, 
+  Plus, Trash2, Calendar, Zap, Fingerprint, Database 
+} from "lucide-react"
 import React, { useState, useMemo } from "react"
 import { applicationService } from "@/services/applicationService"
 import { toast } from "@/components/Notification"
+import { motion, AnimatePresence } from "framer-motion"
 
 type Props = {
   open: boolean
@@ -14,7 +19,6 @@ const JobApplyModal = ({ open, onClose, job }: Props) => {
   const [stepIndex, setStepIndex] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   
-  // Estado para Experiências (Substituindo o Upload)
   const [experiences, setExperiences] = useState<any[]>([
     { empresa: '', cargo: '', data_entrada: '', atualmente_trabalhando: false }
   ])
@@ -32,12 +36,12 @@ const JobApplyModal = ({ open, onClose, job }: Props) => {
 
   const steps = useMemo(() => {
     const list = []
-    list.push({ id: "vaga", label: "Protocolo" })
-    list.push({ id: "experiencias", label: "DNA / Trajetória" }) // Nova Etapa
+    list.push({ id: "vaga", label: "Protocolo", icon: <Binary size={14}/> })
+    list.push({ id: "experiencias", label: "DNA_Trajectory", icon: <Database size={14}/> })
     questionGroups.forEach((group, index) => {
-      list.push({ id: `perguntas-${index}`, label: `Análise ${index + 1}`, data: group })
+      list.push({ id: `perguntas-${index}`, label: `Análise_${index + 1}`, data: group, icon: <Fingerprint size={14}/> })
     })
-    list.push({ id: "impulsionar", label: "Otimização" })
+    list.push({ id: "impulsionar", label: "Optimization", icon: <Zap size={14}/> })
     return list
   }, [questionGroups])
 
@@ -65,10 +69,7 @@ const JobApplyModal = ({ open, onClose, job }: Props) => {
         question_uid: uid,
         answer: text
       }))
-      
-      // Enviamos as experiências junto ou em uma chamada separada dependendo do seu serviço
-      await applicationService.applyToJob(job.uid, formattedAnswers, experiences)
-      
+      await applicationService.applyToJob(job.uid, formattedAnswers, experiences as any)
       toast.success("Sincronização de perfil concluída.");
       onClose()
     } catch (err: any) {
@@ -78,194 +79,173 @@ const JobApplyModal = ({ open, onClose, job }: Props) => {
     }
   }
 
+  const inputClassName = "w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:border-[var(--delos-amber)] rounded-sm py-3 px-4 font-bold outline-none transition-all text-sm";
+  const labelClassName = "text-[8px] font-mono font-black uppercase tracking-[0.3em] opacity-40 mb-1.5 block text-left";
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-0 md:p-4">
-      <div className="bg-[#FDFDFD] w-full h-full md:h-auto md:max-w-3xl md:rounded-[40px] shadow-2xl flex flex-col overflow-hidden border border-white/20 relative">
+    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-md p-0 md:p-4">
+      <motion.div 
+        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+        style={{ backgroundColor: 'var(--delos-surface)', color: 'var(--delos-black)' }}
+        className="w-full h-[95vh] md:h-auto md:max-w-4xl md:rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden border-t md:border border-white/10 relative"
+      >
         
         {/* Delos Calibration Grid */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{
-          backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)',
-          backgroundSize: '40px 40px'
-        }} />
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[length:40px_40px] [background-image:linear-gradient(to_right,var(--delos-black)_1px,transparent_1px),linear-gradient(to_bottom,var(--delos-black)_1px,transparent_1px)]" />
 
         {/* Header */}
-        <div className="px-10 py-8 flex items-center justify-between bg-white relative z-10">
+        <div className="px-6 md:px-10 py-6 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 relative z-10">
           <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-black rounded-2xl flex items-center justify-center shadow-lg group">
-              <Binary className="w-7 h-7 text-white animate-pulse" />
+            <div style={{ backgroundColor: 'var(--delos-black)', color: 'var(--delos-surface)' }} className="w-12 h-12 rounded-sm flex items-center justify-center shadow-xl group">
+              <Binary className="w-6 h-6 animate-pulse" />
             </div>
-            <div>
-              <h3 className="text-2xl font-black text-black uppercase italic tracking-tighter leading-none mb-1">
+            <div className="text-left">
+              <h3 className="text-lg md:text-xl font-black uppercase italic tracking-tighter leading-none mb-1">
                 {job.cargo_exibicao}
               </h3>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-600">
+              <div className="flex items-center gap-2 text-[8px] font-mono font-black uppercase tracking-widest text-[var(--delos-indigo)]">
                 <span>{job.empresa_nome}</span>
-                <div className="w-1 h-1 bg-gray-300 rounded-full" />
-                <span className="text-gray-400 italic">{currentStep.label}</span>
+                <div className="w-1 h-1 bg-[var(--delos-grey)] opacity-30 rounded-full" />
+                <span className="opacity-40 italic">Phase::{currentStep.label}</span>
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="p-3 hover:bg-gray-100 rounded-full transition-all active:scale-90"><X className="w-6 h-6 text-black" /></button>
+          <button onClick={onClose} className="p-2 hover:bg-red-500 hover:text-white transition-all rounded-sm opacity-50 hover:opacity-100"><X className="w-6 h-6" /></button>
         </div>
 
-        {/* Progress bar */}
-        <div className="flex w-full bg-gray-100 h-1 px-10">
-          {steps.map((_, i) => (
-            <div key={i} className={`h-full transition-all duration-700 relative ${i <= stepIndex ? "bg-black" : "bg-transparent"}`}
-              style={{ width: `${100 / steps.length}%` }} />
+        {/* Multi-Step Timeline */}
+        <div className="flex w-full bg-black/5 dark:bg-white/5 h-12 border-b border-black/5 dark:border-white/5 overflow-x-auto no-scrollbar">
+          {steps.map((s, i) => (
+            <div 
+              key={i} 
+              className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 transition-all duration-500 border-r border-black/5 dark:border-white/5 ${i === stepIndex ? "bg-[var(--delos-amber)]/10 text-[var(--delos-amber)]" : "opacity-30"}`}
+            >
+              {s.icon}
+              <span className="text-[9px] font-mono font-black uppercase tracking-widest">{s.label}</span>
+            </div>
           ))}
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-10 custom-scrollbar min-h-[500px] max-h-[70vh] relative z-10">
+        <div className="flex-1 overflow-y-auto p-6 md:p-12 custom-scrollbar min-h-[400px] max-h-[60vh] relative z-10">
           
-          {/* ETAPA: VAGA */}
-          {currentStep.id === "vaga" && (
-            <div className="animate-in fade-in slide-in-from-bottom-6 duration-500 space-y-6">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-4 bg-indigo-600" />
-                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400 italic">Requisitos do Host</span>
-              </div>
-              <p className="text-gray-600 font-bold leading-relaxed text-lg italic bg-white border border-gray-100 p-8 rounded-[32px] shadow-sm">
-                "{job.descricao}"
-              </p>
-            </div>
-          )}
-
-          {/* ETAPA: EXPERIÊNCIAS (DNA PROFISSIONAL) */}
-          {currentStep.id === "experiencias" && (
-            <div className="animate-in fade-in slide-in-from-right-6 duration-500 space-y-8">
-              <div className="flex justify-between items-end">
-                <div className="space-y-1">
-                  <h4 className="text-xl font-black uppercase italic tracking-tighter">Trajetória Profissional</h4>
-                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Mapeamento de experiências anteriores</p>
+          <AnimatePresence mode="wait">
+            {/* ETAPA: VAGA */}
+            {currentStep.id === "vaga" && (
+              <motion.div key="vaga" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 text-left">
+                <div className="flex items-center gap-3">
+                  <div className="w-1 h-4 bg-[var(--delos-indigo)]" />
+                  <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] opacity-40">Operational_Requirements</span>
                 </div>
-                <button 
-                  onClick={handleAddExperience}
-                  className="px-4 py-2 bg-black text-white rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-600 transition-colors"
-                >
-                  <Plus className="w-3 h-3" /> Adicionar
-                </button>
-              </div>
+                <div className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 p-8 rounded-sm italic leading-relaxed text-lg tracking-tighter opacity-80 border-l-4 border-l-[var(--delos-indigo)]">
+                  "{job.descricao}"
+                </div>
+              </motion.div>
+            )}
 
-              <div className="space-y-4">
-                {experiences.map((exp, idx) => (
-                  <div key={idx} className="p-6 bg-white border border-gray-100 rounded-[28px] shadow-sm relative group/card">
-                    <button 
-                      onClick={() => handleRemoveExperience(idx)}
-                      className="absolute top-4 right-4 p-2 text-gray-300 hover:text-red-500 opacity-0 group-hover/card:opacity-100 transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Empresa / Unidade</label>
-                        <input 
-                          type="text" 
-                          value={exp.empresa}
-                          onChange={(e) => updateExperience(idx, 'empresa', e.target.value)}
-                          className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-3 px-5 font-bold text-sm outline-none transition-all"
-                          placeholder="Ex: Imperio Sapolio"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Cargo Desempenhado</label>
-                        <input 
-                          type="text" 
-                          value={exp.cargo}
-                          onChange={(e) => updateExperience(idx, 'cargo', e.target.value)}
-                          className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-3 px-5 font-bold text-sm outline-none transition-all"
-                          placeholder="Ex: Gestor de Tráfego"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[9px] font-black uppercase text-gray-400 ml-1">Data de Entrada</label>
-                        <div className="relative">
-                          <input 
-                            type="date" 
-                            value={exp.data_entrada}
-                            onChange={(e) => updateExperience(idx, 'data_entrada', e.target.value)}
-                            className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl py-3 px-5 font-bold text-sm outline-none transition-all"
-                          />
+            {/* ETAPA: EXPERIÊNCIAS */}
+            {currentStep.id === "experiencias" && (
+              <motion.div key="exp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+                <div className="flex justify-between items-center border-b border-black/5 dark:border-white/5 pb-4">
+                  <div className="text-left">
+                    <h4 className="text-sm font-black uppercase italic tracking-widest">DNA_Career_History</h4>
+                    <p className="text-[8px] font-mono opacity-40 uppercase tracking-[0.2em]">Sincronizando registros de experiências anteriores</p>
+                  </div>
+                  <button onClick={handleAddExperience} className="px-4 py-2 border border-[var(--delos-black)] hover:bg-[var(--delos-black)] hover:text-[var(--delos-surface)] transition-all text-[9px] font-black uppercase tracking-widest flex items-center gap-2 rounded-sm">
+                    <Plus size={12} /> ADD_REGISTRY
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {experiences.map((exp, idx) => (
+                    <div key={idx} className="p-6 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm relative group/card">
+                      <button onClick={() => handleRemoveExperience(idx)} className="absolute top-2 right-2 p-2 text-red-500/40 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div className="text-left">
+                          <label className={labelClassName}>Empresa_Unit</label>
+                          <input type="text" value={exp.empresa} onChange={(e) => updateExperience(idx, 'empresa', e.target.value)} className={inputClassName} placeholder="Ex: Delos_Corp" />
+                        </div>
+                        <div className="text-left">
+                          <label className={labelClassName}>Functional_Role</label>
+                          <input type="text" value={exp.cargo} onChange={(e) => updateExperience(idx, 'cargo', e.target.value)} className={inputClassName} />
+                        </div>
+                        <div className="text-left">
+                          <label className={labelClassName}>Sync_Date</label>
+                          <input type="date" value={exp.data_entrada} onChange={(e) => updateExperience(idx, 'data_entrada', e.target.value)} className={inputClassName} />
+                        </div>
+                        <div className="flex items-end pb-2">
+                          <label className="flex items-center gap-3 cursor-pointer group/check">
+                            <input type="checkbox" checked={exp.atualmente_trabalhando} onChange={(e) => updateExperience(idx, 'atualmente_trabalhando', e.target.checked)} className="w-4 h-4 rounded-none border-[var(--delos-grey)] text-[var(--delos-indigo)] focus:ring-0 bg-transparent" />
+                            <span className="text-[9px] font-mono font-black uppercase tracking-widest opacity-60">Status::Active_Role</span>
+                          </label>
                         </div>
                       </div>
-                      <div className="flex items-end pb-1">
-                        <label className="flex items-center gap-3 cursor-pointer group/check">
-                          <input 
-                            type="checkbox" 
-                            checked={exp.atualmente_trabalhando}
-                            onChange={(e) => updateExperience(idx, 'atualmente_trabalhando', e.target.checked)}
-                            className="w-5 h-5 rounded border-2 border-gray-200 text-black focus:ring-0 transition-all"
-                          />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover/check:text-black">Atualmente aqui</span>
-                        </label>
-                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* PERGUNTAS */}
-          {currentStep.id.startsWith("perguntas") && (
-            <div className="animate-in fade-in slide-in-from-right-6 duration-500 space-y-8">
-              <div className="flex items-center gap-2 border-b border-gray-100 pb-4">
-                <HelpCircle className="w-5 h-5 text-indigo-600" />
-                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-black italic">Diagnóstico Técnico</span>
-              </div>
-              <div className="grid gap-8">
-                {(currentStep as any).data.map((q: any, index: number) => (
-                  <div key={q.uid || index} className="space-y-3">
-                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest block pl-1 italic">
-                      {index + 1}. {q.question}
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={answers[q.uid] || ""}
-                      onChange={(e) => setAnswers(prev => ({ ...prev, [q.uid]: e.target.value }))}
-                      className="w-full rounded-[24px] border-2 border-gray-100 bg-gray-50 px-6 py-5 text-sm font-bold focus:border-black focus:bg-white transition-all outline-none resize-none"
-                      placeholder="Aguardando input de dados..."
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* OTIMIZAÇÃO (IMPULSIONAR) */}
-          {currentStep.id === "impulsionar" && (
-            <div className="animate-in zoom-in-95 duration-500 h-full flex items-center">
-              <div className="bg-black rounded-[40px] p-12 text-white shadow-2xl relative overflow-hidden w-full group">
-                <Sparkles className="absolute -right-6 -top-6 w-48 h-48 opacity-10 rotate-12 group-hover:rotate-0 transition-transform duration-1000" />
-                <div className="relative z-10 text-center max-w-md mx-auto">
-                  <h4 className="text-3xl font-black italic uppercase tracking-tighter mb-4">Otimizar Processamento?</h4>
-                  <p className="text-gray-400 text-sm mb-10 leading-relaxed font-bold">
-                    Hosts com prioridade de triagem têm <span className="text-white">3x mais matches</span> confirmados pelo sistema Delos.
-                  </p>
-                  <label className="flex items-center justify-center gap-5 bg-white/5 p-6 rounded-3xl cursor-pointer hover:bg-white/10 transition-all border border-white/10 group/check">
-                    <input type="checkbox" className="w-6 h-6 rounded border-2 border-white/20 bg-transparent text-indigo-500 focus:ring-0" />
-                    <div className="text-left">
-                      <span className="block text-[11px] font-black uppercase tracking-[0.2em]">Ativar Turbo Protocol</span>
-                      <span className="text-[9px] text-indigo-400 font-bold uppercase italic">Taxa de prioridade: R$ 5,99</span>
-                    </div>
-                  </label>
+                  ))}
                 </div>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+
+            {/* PERGUNTAS */}
+            {currentStep.id.startsWith("perguntas") && (
+              <motion.div key="questions" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+                <div className="flex items-center gap-3 border-b border-black/5 dark:border-white/5 pb-4">
+                  <Fingerprint className="text-[var(--delos-indigo)]" size={18} />
+                  <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em]">Cognitive_Diagnostics</span>
+                </div>
+                <div className="grid gap-8 text-left">
+                  {(currentStep as any).data.map((q: any, index: number) => (
+                    <div key={q.uid || index} className="space-y-3">
+                      <label className="text-[10px] font-black opacity-60 uppercase tracking-widest block italic">
+                        {index + 1}. {q.question}
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={answers[q.uid] || ""}
+                        onChange={(e) => setAnswers(prev => ({ ...prev, [q.uid]: e.target.value }))}
+                        className={`${inputClassName} resize-none py-4`}
+                        placeholder="Waiting for neural input..."
+                      />
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* OTIMIZAÇÃO */}
+            {currentStep.id === "impulsionar" && (
+              <motion.div key="turbo" initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="h-full flex items-center">
+                <div className="bg-[var(--delos-black)] rounded-sm p-8 md:p-12 text-[var(--delos-surface)] shadow-2xl relative overflow-hidden w-full group border border-white/10">
+                  <div className="absolute inset-0 opacity-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none" />
+                  <Sparkles className="absolute -right-6 -top-6 w-48 h-48 opacity-10 rotate-12 group-hover:rotate-0 transition-transform duration-1000 text-[var(--delos-amber)]" />
+                  <div className="relative z-10 text-center max-w-md mx-auto space-y-6">
+                    <h4 className="text-3xl font-black italic uppercase tracking-tighter">Optimize_Sync?</h4>
+                    <p className="text-xs opacity-50 uppercase tracking-widest leading-relaxed">
+                      Unidades com prioridade de triagem têm <span className="text-[var(--delos-amber)]">300% mais detecção</span> pelas redes neurais corporativas.
+                    </p>
+                    <label className="flex items-center justify-center gap-5 bg-white/5 p-6 rounded-sm cursor-pointer hover:bg-white/10 transition-all border border-white/10 group/check">
+                      <input type="checkbox" className="w-5 h-5 rounded-none border-white/20 bg-transparent text-[var(--delos-amber)] focus:ring-0" />
+                      <div className="text-left">
+                        <span className="block text-[10px] font-black uppercase tracking-[0.2em]">Enable_Turbo_Protocol</span>
+                        <span className="text-[8px] font-mono text-[var(--delos-amber)] uppercase opacity-70">Priority_Fee::R$ 5,99</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Footer */}
-        <div className="p-10 border-t bg-white flex items-center justify-between gap-6 relative z-10">
+        {/* Footer Actions */}
+        <div className="p-6 md:p-10 border-t border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 flex items-center justify-between gap-6 relative z-10">
           <button
             type="button"
             onClick={() => setStepIndex(i => i - 1)}
             disabled={stepIndex === 0 || isSubmitting}
-            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-black transition-all disabled:opacity-0"
+            className="flex items-center gap-2 text-[9px] font-mono font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-all disabled:invisible"
           >
-            <ChevronLeft className="w-4 h-4" /> Fase Anterior
+            <ChevronLeft className="w-4 h-4" /> REVERSE_PHASE
           </button>
 
           <button
@@ -275,19 +255,20 @@ const JobApplyModal = ({ open, onClose, job }: Props) => {
               if (stepIndex < steps.length - 1) setStepIndex(i => i + 1)
               else handleSubmit()
             }}
-            className="flex-1 md:flex-none px-12 py-5 bg-black hover:bg-indigo-600 text-white rounded-[20px] font-black text-[11px] uppercase tracking-[0.3em] shadow-xl shadow-gray-200 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
+            style={{ backgroundColor: 'var(--delos-black)', color: 'var(--delos-surface)' }}
+            className="flex-1 md:flex-none px-12 py-5 rounded-sm font-black text-[10px] uppercase tracking-[0.4em] shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-4 disabled:opacity-30"
           >
             {isSubmitting ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                {stepIndex === steps.length - 1 ? "Sincronizar Protocolo" : "Próxima Fase"}
+                {stepIndex === steps.length - 1 ? "EXECUTE_FINAL_SYNC" : "NEXT_UPGRADE_PHASE"}
                 <ChevronRight className="w-4 h-4" />
               </>
             )}
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }

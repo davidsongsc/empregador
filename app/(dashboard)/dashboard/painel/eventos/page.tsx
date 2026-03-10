@@ -1,6 +1,8 @@
 "use client";
 
-import { useEvents } from "@/hooks/useEvents";
+import { useEventStore } from "@/store/useEventStore";
+import { Event } from "@/interfaces/events";
+
 import {
     Plus, Search, Calendar,
     ArrowRight, LayoutGrid, List as ListIcon,
@@ -11,7 +13,7 @@ import { useState } from "react";
 
 export default function EventsListPage() {
     // Pegamos os dados do hook que configuramos com paginação e busca
-    const { events, count, loading, search, setSearch, page, setPage, totalPages } = useEvents();
+    const { events, count, loading, search, setSearch, page, setPage, totalPages } = useEventStore();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
     // 1. ESTADO DE CARREGAMENTO
@@ -107,7 +109,7 @@ export default function EventsListPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
-                                {events.map((event) => (
+                                {events.map((event : Event) => (
                                     <tr key={event.uid} className="group hover:bg-indigo-50/30 transition-all">
                                         <td className="p-6">
                                             <div className="flex items-center gap-4">
