@@ -10,18 +10,26 @@ import { usePathname } from 'next/dist/client/components/navigation';
 import PostJobModal from '@/components/Modal/PostJobModal';
 import LogoFreelaCerto from '../MiniComponents/Logo';
 import { useUIStore } from '@/store/useUiStore';
-import { checkModuleAccess } from '@/utils/hasRecruitmentPermission';
+import checkModuleAccess from '@/utils/checkModuleAccess';
+import { Module } from '@/enum/moduleEnum';
+import { getActiveMembership } from '@/utils/userHelpers';
+
 const Header = () => {
     const isScrolled = useUIStore((state) => state.isScrolled);
     const setScrolled = useUIStore((state) => state.setScrolled);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isDockOpen, setIsDockOpen] = useState(false);
-    const { user, isAuthenticated, logout } = useAuthStore();
+    const { user, isAuthenticated, activeCompanyId, logout } = useAuthStore();
     const pathname = usePathname();
     const isDashboardRoute = pathname.startsWith('/dashboard');
     const [isPostJobOpen, setIsPostJobOpen] = useState(false);
-    const isRecruiter = checkModuleAccess(user?.profile?.empresas, 'RECRUITMENT');
 
+
+    const isRecruiter = checkModuleAccess(
+        getActiveMembership()?.role ?? "GUEST",
+        Module.RECRUITMENT
+    );
+    
     useEffect(() => {
         const handleScroll = () => {
             const scrolled = window.scrollY > 20;

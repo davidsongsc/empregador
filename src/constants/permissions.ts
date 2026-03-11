@@ -1,148 +1,34 @@
-export const MODULE_PERMISSIONS = {
+import { Module } from "@/enum/moduleEnum"
 
-  // ==========================================
-  // DASHBOARD GERAL
-  // ==========================================
-  DASHBOARD: [
-    'CANDIDATO',
-    'CANDIDATO_VIP',
-    'TALENTO',
-    'RECRUITER',
-    'RECRUITER_VIP',
-    'RECRUITER_LEAD',
-    'COMPANY_ADMIN',
-    'ACCOUNT_MANAGER',
-    'SUPPORT_N1',
-    'SUPPORT_N2',
-    'SUPPORT_N3',
-    'ADMIN_N1',
-    'ADMIN_N2',
-    'SUPER_ADMIN',
-    'DEVELOPER'
-  ],
-
-  // ==========================================
-  // ÁREA DO CANDIDATO
-  // ==========================================
-  CANDIDATE_AREA: [
-    'CANDIDATO',
-    'CANDIDATO_VIP',
-    'TALENTO',
-    'DEVELOPER',
-    'SUPER_ADMIN'
-  ],
-  
-
-  // ==========================================
-  // RECRUTAMENTO / VAGAS
-  // ==========================================
-  RECRUITMENT: [
-    'RECRUITER',
-    'RECRUITER_VIP',
-    'RECRUITER_LEAD',
-    'COMPANY_ADMIN',
-    'ACCOUNT_MANAGER',
-    'AGENCY_USER',
-    'DEVELOPER',
-    'SUPER_ADMIN'
-  ],  
-  SUPERVISION: [
-    
-    'RECRUITER_VIP',
-    'RECRUITER_LEAD',
-    'COMPANY_ADMIN',
-    'ACCOUNT_MANAGER',
-    'AGENCY_USER',
-    'DEVELOPER',
-    'SUPER_ADMIN'
-  ],
-
-  // ==========================================
-  // GESTÃO DA EMPRESA
-  // ==========================================
-  COMPANY_MANAGEMENT: [
-    'COMPANY_ADMIN',
-    'ACCOUNT_MANAGER',
-    'SUPER_ADMIN',
-    'DEVELOPER'
-  ],
-
-  // ==========================================
-  // SUPORTE / ATENDIMENTO
-  // ==========================================
-  SUPPORT_PANEL: [
-    'SUPPORT_N1',
-    'SUPPORT_N2',
-    'SUPPORT_N3',
-    'ADMIN_N1',
-    'ADMIN_N2',
-    'SUPER_ADMIN',
-    'DEVELOPER'
-  ],
-
-  // ==========================================
-  // MODERAÇÃO / COMPLIANCE
-  // ==========================================
-  MODERATION: [
-    'MODERATOR',
-    'COMPLIANCE',
-    'ADMIN_N1',
-    'ADMIN_N2',
-    'SUPER_ADMIN',
-    'DEVELOPER'
-  ],
-
-  // ==========================================
-  // COMERCIAL / VENDAS
-  // ==========================================
-  SALES: [
-    'SALES_EXECUTIVE',
-    'PARTNER',
-    'ACCOUNT_MANAGER',
-    'SUPER_ADMIN',
-    'DEVELOPER'
-  ],
-
-  // ==========================================
-  // FINANCEIRO
-  // ==========================================
-  FINANCE: [
-    'FINANCE',
-    'COMPANY_ADMIN',
-    'SUPER_ADMIN',
-    'DEVELOPER'
-  ],
-
-  // ==========================================
-  // ADMINISTRAÇÃO DO SISTEMA
-  // ==========================================
-  ADMIN_PANEL: [
-    'ADMIN_N1',
-    'ADMIN_N2',
-    'SUPER_ADMIN',
-    'DEVELOPER'
-  ],
-
-  ATENDIMENT: [
-    'AGENCY_USER',
-    'SUPPORT_N2',
-    'SUPPORT_N3',
-    'ACCOUNT_MANAGER',
-    'SALES_EXECUTIVE', // Opcional: se o comercial puder dar suporte inicial
-    'SUPER_ADMIN',
-    'DEVELOPER'
-  ],
-
-  // ==========================================
-  // OPERACIONAL (Focado na execução e rotinas internas)
-  // ==========================================
-  OPERATIONAL: [
-    'RECRUITER_LEAD',
-    'COMPANY_ADMIN',
-    'ACCOUNT_MANAGER',
-    'MODERATOR',
-    'ADMIN_N1',
-    'SUPER_ADMIN',
-    'DEVELOPER'
-  ],
-};
+export const MODULE_PERMISSIONS: Record<Module, string[]> = {
+  [Module.DASHBOARD]: ['CANDIDATE_VIP',
+    'CLIENT_OPERATIONAL_INTERN', 'CLIENT_OPERATIONAL_JR', 'CLIENT_OPERATIONAL_PL', 'CLIENT_OPERATIONAL_SR',
+    'CLIENT_FINANCE_JR', 'CLIENT_FINANCE_PL', 'CLIENT_FINANCE_SR',
+    'CLIENT_MANAGER', 'CLIENT_ADMIN',
+    'RECRUITER_INTERN', 'RECRUITER_JR', 'RECRUITER_PL', 'RECRUITER_SR',
+    'FIN_JR', 'FIN_PL', 'FIN_SR',
+    'SALES_JR', 'SALES_PL', 'SALES_SR',
+    'SUPPORT_JR', 'SUPPORT_PL', 'SUPPORT_SR',
+    'ADMIN_SAAS_N1', 'ADMIN_SAAS_N2', 'SUPER_ADMIN', 'DEV_SR'],
+  [Module.CANDIDATE_AREA]: ['CANDIDATE_INTERN', 'CANDIDATE_JR', 'CANDIDATE_PL', 'CANDIDATE_SR', 'CANDIDATE_VIP',
+    'SUPER_ADMIN', 'DEV_SR'],
+  [Module.RECRUITMENT]: ['RECRUITER_INTERN', 'RECRUITER_JR', 'RECRUITER_PL', 'RECRUITER_SR', 'RECRUITER_LEAD',
+    'CLIENT_MANAGER', 'CLIENT_ADMIN',
+    'SUPER_ADMIN', 'DEV_SR'],
+  [Module.SUPERVISION]: ['RECRUITER_SR', 'RECRUITER_LEAD',
+    'CLIENT_ADMIN', 'ADMIN_SAAS_N1',
+    'SUPER_ADMIN', 'DEV_SR'],
+  [Module.COMPANY_MANAGEMENT]: ['CLIENT_ADMIN', 'CLIENT_MANAGER',
+    'SUPER_ADMIN', 'DEV_SR'],
+  [Module.SUPPORT_PANEL]: ['SUPPORT_INTERN', 'SUPPORT_JR', 'SUPPORT_PL', 'SUPPORT_SR',
+    'ADMIN_SAAS_N1', 'SUPER_ADMIN', 'DEV_SR','RECRUITER_SR', 'RECRUITER_LEAD'],
+  [Module.FINANCE]: ['FIN_INTERN', 'FIN_JR', 'FIN_PL', 'FIN_SR', 'FIN_MANAGER', // Nossa equipe
+    'CLIENT_FINANCE_JR', 'CLIENT_FINANCE_PL', 'CLIENT_FINANCE_SR', 'CLIENT_ADMIN', // Equipe do cliente
+    'SUPER_ADMIN', 'DEV_SR'],
+  [Module.SALES]: ['SALES_INTERN', 'SALES_JR', 'SALES_PL', 'SALES_SR', 'SALES_DIRECTOR',
+    'SUPER_ADMIN', 'DEV_SR'],
+  [Module.OPERATIONAL]: ['CLIENT_OPERATIONAL_INTERN', 'CLIENT_OPERATIONAL_JR', 'CLIENT_OPERATIONAL_PL', 'CLIENT_OPERATIONAL_SR',
+    'OPS_SAAS_JR', 'OPS_SAAS_PL', 'OPS_SAAS_SR',
+    'SUPER_ADMIN', 'DEV_SR'],
+  [Module.ADMIN_PANEL]: ['ADMIN_SAAS_N1', 'ADMIN_SAAS_N2', 'SUPER_ADMIN', 'DEV_SR']
+}

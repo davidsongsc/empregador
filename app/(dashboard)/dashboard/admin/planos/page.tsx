@@ -104,7 +104,7 @@ function PlanCard({ plan, onChange, onDelete, onToggleStatus }: any) {
   };
 
   return (
-    <div className={`bg-white border border-[var(--delos-border)] p-10 relative group transition-all duration-500 ${isLocked ? 'opacity-80 grayscale-[0.3]' : 'shadow-2xl'}`}>
+    <div className={`bg-white border border-[var(--delos-border)] p-10 relative group transition-all duration-500 ${isLocked ? 'shadow-2xl' : 'opacity-80 grayscale-[0.1] '}`}>
       {/* LINHA DE COR DO TEMA */}
       <div className={`absolute left-0 top-0 bottom-0 w-[4px] transition-colors duration-700 ${isLocked ? themeColors[plan.color_theme] || 'bg-amber-500' : 'bg-rose-500'}`} />
 
@@ -217,9 +217,9 @@ function PlanCard({ plan, onChange, onDelete, onToggleStatus }: any) {
         {/* STATUS FINAL */}
         <button
           onClick={() => onToggleStatus(planId, !isLocked)}
-          className={`w-full py-4 text-[10px] font-black uppercase tracking-[0.4em] italic border-2 transition-all ${isLocked ? 'border-amber-500 text-amber-600 bg-amber-50/50' : 'border-rose-500 text-rose-600 hover:bg-rose-500 hover:text-white'}`}
+          className={`w-full py-4 text-[16px] font-black uppercase tracking-[0.4em] italic border-2 transition-all ${isLocked ? 'border-amber-500 text-delos-white hover:text-white bg-delos-black' : 'border-rose-500 text-rose-600 hover:bg-rose-500 hover:text-white'}`}
         >
-          {isLocked ? 'OPERATIONAL_NODE_LOCKED' : 'OFFLINE_READY_FOR_DEPLOY'}
+          {isLocked ? 'ONLINE' : 'OFFLINE'}
         </button>
       </div>
     </div>

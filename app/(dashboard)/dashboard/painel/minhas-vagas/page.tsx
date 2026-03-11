@@ -11,7 +11,9 @@ import Link from "next/link"
 import PostNewJobModal from "@/components/Modal/PostNewJobModal"
 import { useManageJob } from "@/hooks/useManageJob"
 import { ConfirmationModal } from "@/components/Modal/ConfirmationModal"
-import { checkModuleAccess } from "@/utils/hasRecruitmentPermission"
+import checkModuleAccess from "@/utils/checkModuleAccess"
+import { getActiveMembership } from "@/utils/userHelpers"
+import { Module } from "@/enum/moduleEnum"
 
 const MinhasVagas = () => {
   const { user, activeCompanyId } = useAuthStore()
@@ -22,7 +24,7 @@ const MinhasVagas = () => {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [searchTerm, setSearchTerm] = useState("")
-  const canAccessSupervision = checkModuleAccess(user?.profile?.empresas, 'SUPERVISION');
+  const canAccessSupervision = checkModuleAccess(getActiveMembership()?.role ?? "GUEST", Module.SUPERVISION);
 
   const {
     openDeleteConfirmation, // Substitui o antigo removeJob

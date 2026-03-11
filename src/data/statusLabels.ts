@@ -38,9 +38,9 @@ const STATUS_LABELS = Object.fromEntries(
 
 
 export const FLOW_SEQUENCE = [
-  'applied', 'screening', 'reviewing', 'shortlisted',
-  'interview_scheduled', 'interviewing', 'technical_test',
-  'test_submitted', 'test_review', 'offer_sent', 'hired'
+  'applied', 'screening',
+  'interview_scheduled',
+  'offer_sent'
 ];
 
 export const GROUPED_STATUS = {

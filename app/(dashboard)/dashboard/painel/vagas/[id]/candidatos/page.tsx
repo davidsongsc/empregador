@@ -5,21 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCorporateApplications } from "@/hooks/useCorporateApplications";
 import { updateApplicationStatus } from "@/services/jobService";
-import {
-  User, Phone, ChevronLeft, Loader2, MapPin, Lock, Mail,
-  FileText, History, Search, ArrowRight, Zap, X,
-  CheckCircle2, Ban, MoreHorizontal, Calendar, Info,
-  ChevronRight
-} from "lucide-react";
-import Image from "next/image";
 import { toast } from "@/components/Notification";
 import { GROUPED_STATUS, STATUS_CONFIG } from "@/data/statusLabels";
 import { CandidateFilters } from "@/components/Candidate/Filters";
-import { CandidateDrawer } from "@/components/Candidate/Drawer";
 import { CandidateList } from "@/components/Candidate/List";
 import { FooterHUD } from "@/components/Footer/System";
 import { Application } from "@/interfaces/aplications";
-import { checkModuleAccess } from "@/utils/hasRecruitmentPermission";
 
 const FLOW_SEQUENCE = [
   'applied', 'screening', 'reviewing', 'shortlisted',
@@ -29,18 +20,13 @@ const FLOW_SEQUENCE = [
 
 export default function CandidatosPage() {
   const params = useParams();
-  const router = useRouter();
   const jobId = params.id as string;
-  const { user, } = useAuthStore();
-  const [isChangingStatus, setIsChangingStatus] = useState(false);
-  // Estados de Filtro e UI
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false); // Adicione este estado no topo do componente
-  // Hook Corporativo Original
-  const { candidatos, total, loading, updateStatus } = useCorporateApplications({
+  const [isUpdating, setIsUpdating] = useState(false); 
+    const { candidatos, total, loading, updateStatus } = useCorporateApplications({
     jobId: jobId,
     status: filterStatus === "all" ? undefined : filterStatus,
     page: page,
@@ -103,7 +89,7 @@ export default function CandidatosPage() {
         setSelectedApp({ ...selectedApp, status: newStatus });
       }
 
-      setIsChangingStatus(false); // Fecha o menu após sucesso
+      
     } catch (err) {
       toast.error("Erro na reescrita de dados do Host");
       console.error(err);

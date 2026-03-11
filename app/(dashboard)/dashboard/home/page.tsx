@@ -7,26 +7,29 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { STATUS_CONFIG } from "@/data/statusLabels";
 import PostNewJobModal from "@/components/Modal/PostNewJobModal";
 import { useAuthStore } from "@/store/useAuthStore";
-import { checkModuleAccess } from "@/utils/hasRecruitmentPermission";
-
+import { ROLE_LABELS } from "@/constants/permissionsLabels";
+import checkModuleAccess from "@/utils/checkModuleAccess";
+import { getActiveMembership } from "@/utils/userHelpers";
+import { Module } from "@/enum/moduleEnum";
 export default function DashboardPage() {
   const { stats, loading, error, refresh } = useDashboard();
   const [isPostJobOpen, setIsPostJobOpen] = useState(false);
-  const { activeCompanyId } = useAuthStore();
-  useEffect(() => {
-    if (activeCompanyId) {
-      refresh();
-    }
-  }, [activeCompanyId, refresh]);
-  const { user } = useAuthStore()
 
-  const empresas = user?.profile?.empresas
-
-  const canAccessSupervision = checkModuleAccess(empresas, 'SUPERVISION');
+  const { user } = useAuthStore();
+  const activeMembership = getActiveMembership();
+  const canAccessSupervision = checkModuleAccess(
+    activeMembership?.role,
+    Module.SUPERVISION
+  );
   const operador = user?.profile?.name;
-  const empresaName = user?.profile?.empresas?.find(
-    (empresa) => empresa.id === activeCompanyId
-  )?.name
+
+
+
+  const empresaName = activeMembership?.name;
+  // Aqui pegamos o label formatado ou o slug da role
+  const cargoExibicao = activeMembership?.role
+    ? (ROLE_LABELS[activeMembership.role] || activeMembership.role.replace(/_/g, ' '))
+    : "Colaborador";
   const cards = [
     {
       label: "Vagas Ativas",
@@ -71,21 +74,39 @@ export default function DashboardPage() {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <div className="w-8 h-[2px] bg-amber-600" />
-            <span className="text-[10px] font-black tracking-[0.4em] text-amber-600 uppercase">Visão Geral</span>
+            <span className="text-[10px] font-black tracking-[0.4em] text-amber-600 uppercase">
+              Terminal de Gestão
+            </span>
           </div>
+
           <h1 className="text-4xl font-light text-slate-100 tracking-tighter">
-            {empresaName} | <span className="font-black uppercase">{operador} </span>
+            {empresaName} | <span className="font-black uppercase">{operador}</span>
           </h1>
-          <p className="text-slate-500 text-xs font-medium tracking-wide uppercase">Operações de Unidades e Gestão de Fluxo</p>
+
+          {/* Cargo em destaque no lugar do texto antigo */}
+          <div className="flex items-center gap-3">
+            <p className="text-amber-500 text-xs font-bold tracking-[0.2em] uppercase italic">
+              {cargoExibicao}
+            </p>
+            <span className="text-slate-700">|</span>
+            <p className="text-slate-500 text-[10px] font-medium tracking-widest uppercase">
+              Acesso Autorizado • ID: {activeMembership?.id?.slice(0, 8)}
+            </p>
+          </div>
         </div>
 
         <button
           onClick={() => setIsPostJobOpen(true)}
           disabled={!canAccessSupervision}
-          className={`group relative flex items-center justify-center gap-3  text-black px-8 py-4 overflow-hidden transition-all  ${!canAccessSupervision ? 'bg-slate-800' : 'bg-white hover:bg-amber-600 hover:text-white'}`}
+          className={`group relative flex items-center justify-center gap-3 text-black px-8 py-4 transition-all ${!canAccessSupervision
+            ? 'bg-slate-800 opacity-50 cursor-not-allowed'
+            : 'bg-white hover:bg-amber-600 hover:text-white shadow-[0_0_20px_rgba(255,255,255,0.1)]'
+            }`}
         >
           <Plus className="w-4 h-4 transition-transform group-hover:rotate-90" />
-          <span className={`font-black text-xs uppercase tracking-[0.2em] ${!canAccessSupervision ? 'opacity-50 cursor-not-allowed' : ''}`}>Anunciar Vaga</span>
+          <span className="font-black text-xs uppercase tracking-[0.2em]">
+            {canAccessSupervision ? "Anunciar Vaga" : "Nível insuficiente"}
+          </span>
         </button>
       </section>
 
