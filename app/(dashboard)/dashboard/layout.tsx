@@ -51,6 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
         .animate-scan { animation: scan 4s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
       `}</style>
+      
     </div>
   );
 }

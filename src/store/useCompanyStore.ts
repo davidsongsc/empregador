@@ -11,6 +11,7 @@ interface CompanyState {
   fetchCompanyDetails: (id: string) => Promise<void>;
   updateCompanyStatus: (id: string, isActive: boolean) => Promise<void>;
   rateCompany: (id: string, rate: number) => Promise<void>;
+  saveCompany: (id: string, data: any) => Promise<void>;
 }
 
 export const useCompanyStore = create<CompanyState>((set, get) => ({
@@ -51,7 +52,7 @@ export const useCompanyStore = create<CompanyState>((set, get) => ({
       const updatedCompanies = get().companies.map((c) =>
         c.id === id ? { ...c, is_active: isActive } : c
       );
-      
+
       // Atualiza também a empresa ativa se for a mesma
       const active = get().activeCompany;
       const updatedActive = active?.id === id ? { ...active, is_active: isActive } : active;
@@ -61,12 +62,23 @@ export const useCompanyStore = create<CompanyState>((set, get) => ({
       toast.error("Erro ao atualizar status da empresa.");
     }
   },
-
+  saveCompany: async (id: string, data: any) => {
+    set({ loading: true });
+    try {
+      const updated = await companyService.updateCompany(id, data);
+      set({ activeCompany: updated, loading: false });
+      toast.success("Protocolo de unidade atualizado com sucesso.");
+    } catch (err) {
+      set({ loading: false });
+      toast.error("Falha na sincronização dos dados da unidade.");
+      throw err;
+    }
+  },
   rateCompany: async (id: string, rate: number) => {
     try {
       const response = await companyService.rateCompany(id, rate);
       toast.success("Avaliação enviada!");
-      
+
       // Se a empresa estiver aberta, poderíamos atualizar a média localmente aqui
       // mas geralmente é melhor deixar o backend recalcular no próximo fetch.
     } catch (err) {

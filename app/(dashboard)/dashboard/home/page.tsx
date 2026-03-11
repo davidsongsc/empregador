@@ -67,7 +67,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="sm:py-4 max-w-7xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+    <div className="sm:py-4 max-w8xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
 
       {/* HEADER - Estilo Delos Corporate */}
       <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-slate-800 pb-2">

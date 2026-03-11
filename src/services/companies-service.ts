@@ -23,9 +23,11 @@ export interface Department {
   company: string;
   name: string;
   description: string;
+  parent: string | null;
   leaders_detail: CompanyMemberDetail[]; // Onde o Mario está
   members_count: number;
   created_at: string;
+  updated_at: string;
 }
 
 export const departmentService = {

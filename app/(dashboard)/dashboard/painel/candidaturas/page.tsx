@@ -27,7 +27,7 @@ export default function ApplicationsPage() {
     };
 
     return (
-        <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700 selection:bg-amber-600/30">
+        <div className="p-4 sm:p-8 max-w-8xl mx-auto space-y-8 animate-in fade-in duration-700 selection:bg-amber-600/30">
 
             {/* CABEÇALHO E BUSCA - ESTILO TERMINAL */}
             <header className="space-y-6">

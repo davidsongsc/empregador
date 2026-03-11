@@ -6,28 +6,28 @@ import {
   Database, Activity, Terminal, Crosshair, BarChart2, MoreHorizontal
 } from "lucide-react"
 import { useMyJobsStore } from "@/hooks/useMyJobsStore"
-import { useAuthStore } from "@/store/useAuthStore"
-import Link from "next/link"
 import PostNewJobModal from "@/components/Modal/PostNewJobModal"
 import { useManageJob } from "@/hooks/useManageJob"
 import { ConfirmationModal } from "@/components/Modal/ConfirmationModal"
 import checkModuleAccess from "@/utils/checkModuleAccess"
 import { getActiveMembership } from "@/utils/userHelpers"
 import { Module } from "@/enum/moduleEnum"
+import { checkLevel } from "@/utils/checkLevel"
+import { useRouter } from "next/navigation"
 
 const MinhasVagas = () => {
-  const { user, activeCompanyId } = useAuthStore()
+
   const { data, loading, fetchJobs } = useMyJobsStore()
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [jobEditing, setJobEditing] = useState<any>(null);
-  const [isPostJobOpen, setIsPostJobOpen] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [searchTerm, setSearchTerm] = useState("")
   const canAccessSupervision = checkModuleAccess(getActiveMembership()?.role ?? "GUEST", Module.SUPERVISION);
-
+  const activeCompanyId = getActiveMembership()?.id
+  const router = useRouter();
   const {
-    openDeleteConfirmation, // Substitui o antigo removeJob
+    openDeleteConfirmation,
     confirmRemoval,
     isDeleteModalOpen,
     setIsDeleteModalOpen,
@@ -56,7 +56,11 @@ const MinhasVagas = () => {
   }, [currentFilter, fetchJobs, activeCompanyId])
 
   const totalPages = Math.ceil((data?.count || 0) / pageSize)
-  //if (true) return null;
+
+  
+  const hasLowAccess = checkLevel("low")
+  const hasMidAccess = checkLevel("mid")
+  const hasHighAccess = checkLevel("high")
   return (
     <div className="h-full bg-[#101010] text-slate-300 font-sans flex flex-col overflow-hidden">
 
@@ -199,11 +203,15 @@ const MinhasVagas = () => {
                   {/* Ações Adaptáveis */}
                   {/* A lógica garante que se for undefined, o valor tratado será 0 */}
                   {(vaga.candidatos_count ?? 0) > 0 ? (
-                    <Link href={`/dashboard/painel/vagas/${vaga.uid}/candidatos`} className="flex-1 lg:flex-none">
-                      <button className="w-full flex items-center justify-center gap-2 text-[8px] font-black uppercase tracking-widest text-slate-600 hover:text-white transition-colors bg-white/5 lg:bg-white/5 px-4 py-3 lg:py-1.5 group-hover:bg-amber-600 group-hover:text-white border border-white/5 lg:border-transparent">
-                        <Crosshair size={12} /> Candidatos
-                      </button>
-                    </Link>
+
+                    <button
+                      disabled={!hasLowAccess}
+                      onClick={() => {
+                        router.push(`/dashboard/painel/vagas/${vaga.uid}/candidatos`);
+                      }}
+                      className={`w-full flex items-center justify-center gap-2 text-[8px] font-black uppercase tracking-widest text-slate-600 px-4 py-3 lg:bg-white/5  lg:py-1.5  ${!hasLowAccess ? ' hover:text-slate-200 transition-colors  group-hover:bg-rose-600 group-hover:text-slate-400 opacity-40' : 'hover:text-white transition-colors bg-white/5 group-hover:bg-amber-600 group-hover:text-white'} border border-white/5 lg:border-transparent`}>
+                      <Crosshair size={12} /> Candidatos
+                    </button>
                   ) : (
                     <div className="flex-1 lg:flex-none cursor-not-allowed opacity-30 grayscale pointer-events-none">
                       <button
@@ -237,14 +245,18 @@ const MinhasVagas = () => {
                   <div>
                     <button
                       onClick={() => handleEdit(vaga)}
-                      className="p-2 text-slate-600 hover:text-amber-500 transition-colors"
-                      title="Reconfigurar Instância"
+                      disabled={!hasMidAccess}
+                      className={`p-4 text-slate-600  transition-colors ${!hasMidAccess ? 'opacity-40 cursor-not-allowed hover:text-rose-500' : 'hover:text-amber-500'}`}
+                      title="Editar Item"
                     >
                       <Edit3 size={16} />
                     </button>
                     <button
+                      disabled={!hasHighAccess}
+                      title="Deletar Item"
+
                       onClick={() => openDeleteConfirmation(vaga.uid)} // Passa o UID para o estado interno do hook
-                      className="p-2 text-slate-700 hover:text-red-500 transition-colors"
+                      className={`p-4 text-slate-600 transition-colors ${!hasHighAccess ? 'opacity-40 cursor-not-allowed hover:text-rose-500' : 'hover:text-rose-500'}`}
                     >
                       <Trash2 size={16} />
                     </button>

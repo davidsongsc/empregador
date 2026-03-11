@@ -96,7 +96,7 @@ const LoginUser = () => {
         } else if (empresas.length === 1) {
           const companyId = empresas[0].id;
           useAuthStore.getState().setActiveCompany(companyId);
-          router.push(`/dashboard/painel/companies`);
+          router.push(`/dashboard/home`);
         } else {
           router.push("/vagas");
         }

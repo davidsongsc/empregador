@@ -8,7 +8,7 @@
   --delos-grey: #7d7d7e;
   --delos-indigo: #4F39F6;
   --delos-red: #FF3B30;
-  /* Variações Utilitárias */
+
   --delos-border: rgba(0, 0, 0, 0.08);
   --delos-subtext: rgba(0, 0, 0, 0.45);
 }
@@ -20,7 +20,7 @@
   --delos-grey: #404040;
   --delos-indigo: #6366F1;
   --delos-red: #FF3B30;
-  /* Variações Utilitárias */
+
   --delos-border: rgba(255, 255, 255, 0.08);
   --delos-subtext: rgba(255, 255, 255, 0.45);
 }

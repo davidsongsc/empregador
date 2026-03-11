@@ -11,6 +11,7 @@ import { CandidateFilters } from "@/components/Candidate/Filters";
 import { CandidateList } from "@/components/Candidate/List";
 import { FooterHUD } from "@/components/Footer/System";
 import { Application } from "@/interfaces/aplications";
+import { checkLevel } from "@/utils/checkLevel";
 
 const FLOW_SEQUENCE = [
   'applied', 'screening', 'reviewing', 'shortlisted',
@@ -25,8 +26,8 @@ export default function CandidatosPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false); 
-    const { candidatos, total, loading, updateStatus } = useCorporateApplications({
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { candidatos, total, loading, updateStatus } = useCorporateApplications({
     jobId: jobId,
     status: filterStatus === "all" ? undefined : filterStatus,
     page: page,
@@ -41,8 +42,15 @@ export default function CandidatosPage() {
   }, [candidatos, searchTerm]);
 
 
+  const hasLowAccess = checkLevel("low")
+  const hasMidAccess = checkLevel("mid")
+  const hasHighAccess = checkLevel("high")
   const handleNextStep = async (app: any) => {
-    // 1. Bloqueio imediato se já estiver carregando
+    if (!hasMidAccess) {
+      toast.error(" Vocé nao possui permissão para avancar o candidato de etapa!");
+      return null;
+    };
+
     if (isUpdating) return;
 
     const currentIndex = FLOW_SEQUENCE.indexOf(app.status);
@@ -70,6 +78,10 @@ export default function CandidatosPage() {
   };
 
   const handleStatusChange = async (appId: string, newStatus: string) => {
+    if (!hasHighAccess) {
+      toast.error("Você não possui permissão para alterar o status!");
+      return null;
+    };
     if (isUpdating) return; // Bloqueio preventivo
 
     setIsUpdating(true); // Ativa o lock
@@ -89,7 +101,7 @@ export default function CandidatosPage() {
         setSelectedApp({ ...selectedApp, status: newStatus });
       }
 
-      
+
     } catch (err) {
       toast.error("Erro na reescrita de dados do Host");
       console.error(err);
