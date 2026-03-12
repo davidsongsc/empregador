@@ -7,11 +7,12 @@ import {
     MessageSquare, Mail, Search, Sparkles
 } from 'lucide-react';
 import { usePostJob } from '@/hooks/usePostJob';
-import { useRoles } from '@/hooks/useRoles';
+
 import { createRole } from '@/services/roles';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from '@/components/Notification';
 import { useRouter } from 'next/navigation'; // Correto para App Router
+import { useRoleStore } from '@/store/useRoleStore';
 interface PostJobModalProps {
     isOpen: boolean;
     onClose?: () => void; // Voltamos para a função simples: string;
@@ -21,7 +22,7 @@ const PostJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
     const { user, isAuthenticated } = useAuthStore();
     const [step, setStep] = useState(1);
     const { postJob, loading: posting } = usePostJob();
-    const { roles, loading: loadingRoles } = useRoles();
+    const { roles, lastHash, loading, setInitialRoles, applyDelta, setLoading } = useRoleStore();
     const [display, setDisplay] = useState(isOpen);
     const router = useRouter();
     const [tipoVaga, setTipoVaga] = useState('FREELANCER');
@@ -124,7 +125,7 @@ const PostJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
-                    onClick={onClose} 
+                    onClick={onClose}
                     type="button"
                     className="absolute right-8 top-8 p-3 hover:bg-gray-100 rounded-full z-[110] cursor-pointer"
                 >

@@ -25,15 +25,16 @@ interface PaginationParams {
 // jobService.ts
 export async function getAllJobs(
   params: PaginationParams = {},
-  options: FetchOptions = {} // <--- ADICIONE ESTE ARGUMENTO
+  options: FetchOptions = {}
 ): Promise<JobsResponse> {
   const queryString = buildQuery(params);
 
-  return api(`/vagas/?${queryString}`, {
+  return api(`/vagas/public/roles/?${queryString}`, {
     method: "GET",
     credentials: "include",
+    // Garante que o merge ocorra com um objeto vazio se headers não existir
     headers: {
-      ...options.headers, // <--- MESCLE OS HEADERS AQUI
+      ...(options.headers || {}),
     }
   });
 }

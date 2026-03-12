@@ -2,32 +2,53 @@
 @config "../tailwind.config.ts";
 
 :root {
-  --delos-surface: #FDFDFD;
-  --delos-black: #000000;
-  --delos-amber: #E17100;
-  --delos-grey: #7d7d7e;
-  --delos-indigo: #4F39F6;
-  --delos-red: #FF3B30;
+  /* --- PALETA DELOS (Default / Light) --- */
+  /* Inspirada nos laboratórios e no minimalismo corporativo */
+  --delos-surface: #ffffff;       /* Branco "Clean Room" */
+  --delos-black: #0A0A0A;         /* Preto profundo */
+  --delos-amber: #E17100;         /* O clássico âmbar de aviso da Delos */
+  --delos-grey: #8E8E93;          /* Alumínio escovado */
+  --delos-indigo: #0047FF;        /* Azul de sistema/biometria */
+  --delos-red: #D32F2F;           /* Alerta crítico de anomalia */
+  --delos-texto: #101011;
+  --delos-border: rgba(0, 0, 0, 0.12);
+  --delos-subtext: rgba(0, 0, 0, 0.55);
 
-  --delos-border: rgba(0, 0, 0, 0.08);
-  --delos-subtext: rgba(0, 0, 0, 0.45);
+  /* --- PALETA TROPICAL (Variante Solaris) --- */
+  /* Chuva, Sol e Areia */
+  --tropical-surface: #F5EFE6;    /* Areia clara / Off-white quente */
+  --tropical-sun: #FFB300;        /* Sol do meio-dia */
+  --tropical-ocean: #001b1f;      /* Mar profundo após a chuva */
+  --tropical-leaf: #2D5A27;       /* Verde mata úmida */
+  --tropical-rain: #78909C;       /* Cinza azulado de nuvens carregadas */
+  --tropical-accent: #FF7043;     /* Coral / Pôr do sol */
 }
 
 .dark {
-  --delos-surface: #050505;
-  --delos-black: #FDFDFD;
-  --delos-amber: #D97706;
-  --delos-grey: #404040;
-  --delos-indigo: #6366F1;
-  --delos-red: #FF3B30;
-
-  --delos-border: rgba(255, 255, 255, 0.08);
-  --delos-subtext: rgba(255, 255, 255, 0.45);
+  /* --- DELOS DARK MODE --- */
+  /* Inspirado nas telas de monitoramento e subsolos */
+  --delos-surface: #101010;       /* Vácuo / Escuridão total */
+  --delos-black: #E5E5E7;         /* Texto quase branco */
+  --delos-amber: #FF9500;         /* Âmbar brilhante (Glow) */
+  --delos-grey: #a0a0bd;          /* Painel de controle */
+  --delos-indigo: #757581;        /* Neon Indigo */
+  --delos-red: #FF453A;           /* Alerta em baixa luz */
+  --delos-texto: #E5E5E7;
+  --delos-border: rgba(255, 255, 255, 0.1);
+  --delos-subtext: rgba(255, 255, 255, 0.5);
+  
+  /* --- TROPICAL DARK (Night Jungle) --- */
+  --tropical-surface: #0D1B1E;    /* Noite na floresta */
+  --tropical-sun: #D4A017;        /* Ouro velho */
+  --tropical-ocean: #26C6DA;      /* Bioluminescência marinha */
+  --tropical-leaf: #920f0f;       /* Verde sombra */
+  --tropical-rain: #37474F;       /* Tempestade noturna */
+  --tropical-accent: #FF8A65;     /* Flor tropical no escuro */
 }
 
-/* Scrollbar Delos Style */
+/* Scrollbar Delos Style - Mais fino e minimalista */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  width: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -36,9 +57,72 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--delos-grey);
-  border-radius: 10px;
+  border-radius: 4px;
+}
+
+/* Efeito de Vidro (Glassmorphism) para Delos */
+.delos-glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--delos-border);
 }
 
 button {
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* --- INPUTS ESTILO DELOS (Minimalismo Corporativo) --- */
+.input-delos {
+  background-color: transparent;
+  color: var(--delos-black);
+  /* Borda apenas embaixo ou muito fina para parecer um terminal de diagnóstico */
+  border: 1px solid var(--delos-border);
+  border-radius: 2px; /* Quinas vivas, quase sem arredondamento */
+  padding: 0.5rem 0.75rem;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.input-delos:focus {
+  /* O foco da Delos é o Âmbar clássico de alerta/seleção */
+  border-color: var(--delos-amber);
+  box-shadow: 0 0 0 1px var(--delos-amber); 
+}
+
+.input-delos::placeholder {
+  color: var(--delos-subtext);
+  text-transform: uppercase; /* Estética de log de sistema */
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+/* --- INPUTS ESTILO TROPICAL (Orgânico e Suave) --- */
+.input-tropical {
+  background-color: rgba(255, 255, 255, 0.5); /* Leve transparência para blend com o fundo */
+  color: var(--tropical-ocean);
+  border: 2px solid transparent; /* Borda invisível até o foco */
+  border-radius: 12px; /* Bordas bem arredondadas, como pedras polidas pelo mar */
+  padding: 0.6rem 1rem;
+  outline: none;
+  background-clip: padding-box;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03); /* Sombra suave como o sol */
+  transition: border-color 0.3s ease;
+}
+
+.input-tropical:focus {
+  /* Foco no azul do oceano ou verde folha */
+  border-color: var(--tropical-ocean);
+  background-color: #ffffff;
+}
+
+.input-tropical::placeholder {
+  color: var(--tropical-rain);
+  font-style: italic; /* Toque mais casual e humano */
+}
+
+/* Ajuste para Dark Mode nos Inputs Tropicais */
+.dark .input-tropical {
+  background-color: rgba(0, 0, 0, 0.2);
+  color: var(--tropical-sun);
 }

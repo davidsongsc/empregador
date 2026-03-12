@@ -26,9 +26,9 @@ export const STATUS_CONFIG: Record<string, { label: string; color: string; bg: s
   offer_declined: { label: "Recusado", color: "text-rose-500", bg: "bg-rose-500/10", border: "border-rose-500/20" },
 
   // RESULTADO FINAL
-  hired: { label: "CONTRATADO", color: "text-emerald-500", bg: "bg-emerald-500/20", border: "border-emerald-500/50" },
-  rejected: { label: "Encerrado", color: "text-rose-600", bg: "bg-rose-600/10", border: "border-rose-600/20" },
-  on_hold: { label: "Pausado", color: "text-slate-400", bg: "bg-slate-400/10", border: "border-slate-400/20" },
+  hired: { label: "STAFF", color: "text-emerald-500", bg: "bg-emerald-500/20", border: "border-emerald-500/50" },
+  rejected: { label: "Não Aprovado", color: "text-rose-600", bg: "bg-rose-600/10", border: "border-rose-600/20" },
+  on_hold: { label: "Suspenso", color: "text-slate-400", bg: "bg-slate-400/10", border: "border-slate-400/20" },
 };
 
 // STATUS_LABELS: Mantido para retrocompatibilidade simples se necessário
@@ -46,9 +46,9 @@ export const FLOW_SEQUENCE = [
 export const GROUPED_STATUS = {
   "01_Inscrição": ["applied", "withdrawn"],
   "02_Triagem": ["screening", "reviewing", "shortlisted"],
-  "03_Entrevistas": ["interview_scheduled", "interviewing", "interview_completed"],
-  "04_Avaliações": ["technical_test", "test_submitted", "test_review"],
-  "05_Proposta": ["offer_sent", "offer_negotiation", "offer_accepted", "offer_declined"],
+  "03_Entrevistas": ["interview_scheduled"],
+ // "04_Avaliações": ["technical_test", "test_submitted", "test_review"],
+//  "05_Proposta": ["offer_sent", "offer_negotiation", "offer_accepted", "offer_declined"],
   "06_Final": ["hired", "rejected", "on_hold"]
 };
 export default STATUS_LABELS;

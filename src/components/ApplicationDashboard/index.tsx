@@ -48,7 +48,7 @@ const ApplicationDashboard = ({ applications, totalCount }: { applications: any[
             {/* Container da Lista */}
             <div className="space-y-2 relative z-10">
                 <div className="flex items-center justify-between px-5 py-2 border-b border-[var(--delos-border)] mb-4 opacity-30">
-                    <span className="text-[8px] font-black uppercase tracking-[0.3em]">Unidade_Candidata</span>
+                    <span className="text-[8px] font-black uppercase tracking-[0.3em]">Curriculos enviados</span>
                     <span className="text-[8px] font-black uppercase tracking-[0.3em]">Status_Operacional</span>
                 </div>
 

@@ -18,7 +18,7 @@ export interface Application {
 export async function getMyApplications(): Promise<Application[]> {
     try {
         // Como usamos ViewSet, a rota padrão é /candidaturas/
-        const response = await api("/vagas/candidaturas/", {
+        const response = await api("/vagas/my-applications/", {
             method: "GET",
         });
 

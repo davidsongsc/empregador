@@ -32,16 +32,31 @@ export interface Department {
 
 export const departmentService = {
   // O Django filtra no backend pelo Header X-Company-ID que sua api envia
-  getDepartments: () => api("/company/departments/"),
 
-  createDepartment: (data: Partial<Department>) =>
-    api("/company/departments/", { method: "POST", body: JSON.stringify(data) }),
+  getDepartments: async (companyId: string): Promise<Department[]> => {
+    // Agora a URL obrigatoriamente segue o padrão aninhado
+    const res = await api(`/company/companies/${companyId}/departments/`);
+    return res.results || res;
+  },
+  createDepartment: async (companyId: string, data: Partial<Department>) => {
+    return await api(`/company/companies/${companyId}/departments/`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
 
-  updateDepartment: (id: string, data: Partial<Department>) =>
-    api(`/company/departments/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  updateDepartment: async (companyId: string, deptId: string, data: Partial<Department>) => {
+    return await api(`/company/companies/${companyId}/departments/${deptId}/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
 
-  deleteDepartment: (id: string) =>
-    api(`/company/departments/${id}/`, { method: "DELETE" }),
+  deleteDepartment: async (companyId: string, deptId: string) => {
+    return await api(`/company/companies/${companyId}/departments/${deptId}/`, {
+      method: "DELETE",
+    });
+  }
 };
 export const companyService = {
   // --- CORE COMPANIES (GLOBAL & ADMIN) ---
@@ -90,43 +105,4 @@ export const companyService = {
    * Busca departamentos. 
    * Se o companyId não for passado, o backend filtrará via Header X-Company-ID
    */
-  getDepartments: async (companyId?: string): Promise<Department[]> => {
-    const url = companyId ? `/company/departments/?company=${companyId}` : "/company/departments/";
-    const res = await api(url);
-
-    // 1. Se o Django enviou com paginação padrão (results: [])
-    if (res.results && Array.isArray(res.results)) {
-      return res.results;
-    }
-
-    // 2. TRATAMENTO PARA O ESPALHAMENTO DA SUA API {...data}
-    // Removemos a chave 'ok' para sobrar apenas os índices "0", "1", etc.
-    const { ok, ...items } = res;
-
-    // Transformamos o objeto {0: {...}, 1: {...}} em um Array real [...]
-    const arrayData = Object.values(items).filter(
-      (i: any) => i && typeof i === 'object' && ('id' in i || 'name' in i)
-    ) as Department[];
-
-    return arrayData;
-  },
-  createDepartment: async (data: Partial<Department>) => {
-    return await api("/departments/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  },
-
-  updateDepartment: async (id: string, data: Partial<Department>) => {
-    return await api(`/departments/${id}/`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    });
-  },
-
-  deleteDepartment: async (id: string) => {
-    return await api(`/departments/${id}/`, {
-      method: "DELETE",
-    });
-  }
 };

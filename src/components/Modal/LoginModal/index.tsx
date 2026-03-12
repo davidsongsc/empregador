@@ -110,7 +110,7 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
 
                 <button
                     onClick={onClose}
-                    className="absolute right-4 top-4 text-delos-grey hover:text-delos-amber transition-colors z-20"
+                    className="absolute right-4 top-4 text-delos-black hover:text-delos-amber transition-colors z-20"
                 >
                     <X className="w-5 h-5" />
                 </button>
@@ -126,17 +126,17 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                         <div>
                             <div className="flex items-center gap-2 mb-2">
                                 <Activity className="text-delos-amber w-3 h-3 animate-pulse" />
-                                <span className="text-[8px] uppercase tracking-[0.4em] text-delos-grey">Security_Protocol_Active</span>
+                                <span className="text-[8px] uppercase tracking-[0.4em] text-delos-black">Area de segurança</span>
                             </div>
                             <h1 className="text-2xl font-black text-delos-black italic uppercase tracking-tighter">
-                                Login_<span className="text-delos-amber">Host</span>
+                                acessar_<span className="text-delos-amber">conta</span>
                             </h1>
                         </div>
 
                         <form className="space-y-5" onSubmit={handleSubmit}>
                             {/* WhatsApp */}
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black text-delos-grey uppercase tracking-[0.2em]">Identification_Number</label>
+                                <label className="text-[9px] font-black text-delos-black uppercase tracking-[0.2em]">Telefone</label>
                                 <div className="flex gap-2">
                                     <div className="relative">
                                         <select
@@ -150,16 +150,16 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                                                 </option>
                                             ))}
                                         </select>
-                                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-delos-grey pointer-events-none" />
+                                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-delos-black pointer-events-none" />
                                     </div>
                                     <div className="relative flex-1">
-                                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-grey" />
+                                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-black" />
                                         <input
                                             type="tel"
-                                            placeholder="NUMBER_ID"
+                                            placeholder="Whatsapp"
                                             value={whatsapp}
                                             onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ""))}
-                                            className="w-full bg-black/5 border border-white/10 rounded-none py-3 pl-10 pr-4 outline-none focus:border-delos-amber text-sm font-bold text-delos-black placeholder:text-delos-grey/30"
+                                            className="w-full bg-black/5 border border-white/10 rounded-none py-3 pl-10 pr-4 outline-none focus:border-delos-amber text-sm font-bold text-delos-black placeholder:text-delos-black "
                                         />
                                     </div>
                                 </div>
@@ -167,19 +167,20 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
 
                             {/* Password */}
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black text-delos-grey uppercase tracking-[0.2em]">Access_Key</label>
+                                <label className="text-[9px] font-black text-delos-black uppercase tracking-[0.2em]">Senha</label>
                                 <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-grey" />
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-black" />
                                     <input
+                                        placeholder="Digite sua Senha" 
                                         type={showPassword ? "text" : "password"}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full bg-black/5 border border-white/10 rounded-none py-3 pl-10 pr-10 outline-none focus:border-delos-amber text-sm font-bold text-delos-black placeholder:text-delos-grey/30"
+                                        className="w-full bg-black/5 border border-white/10 rounded-none py-3 pl-10 pr-10 outline-none focus:border-delos-amber text-sm font-bold text-delos-black placeholder:text-delos-black"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-delos-grey hover:text-delos-amber"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-delos-black hover:text-delos-amber"
                                     >
                                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
@@ -198,23 +199,23 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                                 disabled={!isValid || loading}
                                 className={`w-full py-4 rounded-none font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 active:scale-[0.98]
                                     ${!isValid || loading
-                                        ? "bg-delos-grey/10 text-delos-grey/40 cursor-not-allowed border border-white/5"
-                                        : "bg-delos-black text-white hover:bg-delos-amber hover:shadow-[0_0_20px_rgba(217,119,6,0.3)]"}`}
+                                        ? "bg-delos-black text-delos-black/40 cursor-not-allowed border border-white/5"
+                                        : "bg-delos-grey text-white hover:bg-delos-amber hover:shadow-[0_0_20px_rgba(217,119,6,0.3)]"}`}
                             >
-                                {loading ? <Activity className="w-4 h-4 animate-spin" /> : "Authorize_Session"}
+                                {loading ? <Activity className="w-4 h-4 animate-spin" /> : "Entrar"}
                                 <ArrowRight className="w-4 h-4" />
                             </button>
                         </form>
 
                         <div className="pt-4 border-t border-white/5 text-center">
-                            <p className="text-[9px] text-delos-grey font-bold uppercase tracking-widest">
+                            <p className="text-[9px] text-delos-black font-bold uppercase tracking-widest">
                                 External_Node? <Link href="/cadastro" className="text-delos-amber hover:underline">Register_New_Host</Link>
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
-                          <ThemePanel />
+            <ThemePanel />
 
         </div>
     );

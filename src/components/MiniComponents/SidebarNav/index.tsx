@@ -46,79 +46,82 @@ const SidebarNav = () => {
 
   const menuGroupsTotais = [
     {
-      title: "Sistema",
+      /* ESSENCIAIS E OPERAÇÃO DIÁRIA */
+      title: "Core Operations",
       visible: true,
       items: [
-        { label: "Home", href: "/dashboard/home", icon: LayoutDashboard, disabled: !hasLowAccess },
-        { label: "Vagas", href: "/dashboard/painel/minhas-vagas", icon: FileText, disabled: !hasLowAccess },
+        { label: "Overview", href: "/dashboard/home", icon: LayoutDashboard, disabled: !hasLowAccess },
+        { label: "Nexus Portal", href: "/vagas", icon: Globe, disabled: !hasLowAccess },
         { label: "Escala de Serviço", href: "/dashboard/escala-de-servico", icon: CalendarDays, disabled: !hasMidAccess },
-        { label: "Ferramentas", href: "/dashboard/ferramentas", icon: Settings, disabled: !hasMidAccess },
-        { label: "Portal", href: "/vagas", icon: Globe, disabled: !hasLowAccess },
-        { label: "Filtros", href: "/dashboard/filtros", icon: Filter, disabled: !hasMidAccess },
-        { label: "Suporte Moderador", href: "/dashboard/suporte/moderador", icon: ShieldCheck, disabled: !hasMidAccess },
-        { label: "Relatorios", href: "/dashboard/painel/relatorios", icon: BarChart3, disabled: !hasMidAccess },
-        { label: "Empresa", href: "/dashboard/painel/geral", icon: Workflow, disabled: !hasHighAccess },
-        { label: "Departamentos", href: "/dashboard/painel/departamentos", icon: Landmark, disabled: !hasHighAccess },
+        { label: "Filtros de Sistema", href: "/dashboard/filtros", icon: Filter, disabled: !hasMidAccess },
       ]
     },
     {
-      title: "Recrutamento",
-      visible: access.recruitment,
+      /* TUDO QUE ENVOLVE PESSOAS E CONTRATAÇÃO */
+      title: "Human Resources & Talent",
+      visible: access.recruitment || access.atendiment,
       items: [
-
+        { label: "Vagas Ativas", href: "/dashboard/painel/minhas-vagas", icon: FileText, disabled: !hasLowAccess },
         { label: "Candidaturas", href: "/dashboard/painel/candidaturas", icon: Users, disabled: !hasMidAccess },
-        { label: "Candidatos", href: "/dashboard/painel/candidatos", icon: UserCheck, disabled: !hasMidAccess },
+        { label: "Banco de Talentos", href: "/dashboard/painel/candidatos", icon: UserCheck, disabled: !hasMidAccess },
         { label: "Cronograma", href: "/dashboard/painel/eventos", icon: CalendarDays, disabled: !hasHighAccess },
-        
+        { label: "Suporte Central", href: "/dashboard/atendimento/tickets", icon: Headset, disabled: !hasLowAccess },
+        { label: "Nexus AI (Bot)", href: "/dashboard/painel/whatsapp", icon: PhoneCallIcon, disabled: true },
       ]
     },
     {
-      title: "Supervisão",
-      visible: access.supervision,
+      /* ANÁLISE DE DADOS, BI E PERFORMANCE */
+      title: "Intelligence & Analytics",
+      visible: access.supervision || access.operational,
       items: [
         { label: "Análise de Unidades", href: "/dashboard/supervisao/unidades", icon: Eye, disabled: !hasHighAccess },
-        { label: "Performance", href: "/dashboard/supervisao/performance", icon: TrendingUp, disabled: !hasHighAccess },
+        { label: "Performance Metrics", href: "/dashboard/supervisao/performance", icon: TrendingUp, disabled: !hasHighAccess },
+        { label: "Relatórios BI", href: "/dashboard/painel/relatorios", icon: BarChart3, disabled: !hasMidAccess },
       ]
     },
     {
-      title: "Comercial & Financeiro",
+      /* ÁREA FINANCEIRA E DE VENDAS */
+      title: "Capital & Revenue",
       visible: access.sales || access.finance,
       items: [
-        { label: "Pipeline Vendas", href: "/dashboard/comercial/vendas", icon: TrendingUp, visible: access.sales, disabled: !hasMidAccess },
+        { label: "Pipeline de Vendas", href: "/dashboard/comercial/vendas", icon: TrendingUp, visible: access.sales, disabled: !hasMidAccess },
         { label: "Fluxo de Caixa", href: "/dashboard/financeiro/caixa", icon: Wallet, visible: access.finance, disabled: !hasLowAccess },
         { label: "Faturamento", href: "/dashboard/financeiro/faturamento", icon: Landmark, visible: access.finance, disabled: !hasHighAccess },
       ].filter(item => item.visible !== false)
     },
     {
-      title: "Operações & Compliance",
-      visible: access.operational || access.moderation,
+      /* SEGURANÇA, MODERAÇÃO E COMPLIANCE */
+      title: "Compliance & Security",
+      visible: access.moderation || access.operational,
       items: [
-        { label: "Moderação Content", href: "/dashboard/moderacao", icon: ShieldCheck, visible: access.moderation, disabled: !hasLowAccess },
+        { label: "Suporte Moderador", href: "/dashboard/suporte/moderador", icon: ShieldCheck, disabled: !hasMidAccess },
+        { label: "Moderação de Conteúdo", href: "/dashboard/moderacao", icon: ShieldCheck, visible: access.moderation, disabled: !hasLowAccess },
         { label: "Segurança de Dados", href: "/dashboard/painel/seguranca", icon: CloudBackup, visible: access.operational, disabled: !hasHighAccess },
-        { label: "Relatórios BI", href: "/dashboard/painel/relatorios", icon: BarChart3, visible: access.operational, disabled: !hasHighAccess },
       ].filter(item => item.visible !== false)
     },
     {
-      title: "Atendimento",
-      visible: access.atendiment,
+      /* GESTÃO DA ESTRUTURA E CONFIGURAÇÕES */
+      title: "Corporate Management",
+      visible: access.admin || hasHighAccess,
       items: [
-        { label: "Suporte Central", href: "/dashboard/atendimento/tickets", icon: Headset, disabled: !hasLowAccess },
-        { label: "Nexus AI (Bot)", href: "/dashboard/painel/whatsapp", icon: PhoneCallIcon, disabled: true }, // Sempre desativado conforme seu original
+        { label: "Estrutura da Empresa", href: "/dashboard/painel/geral", icon: Workflow, disabled: !hasHighAccess },
+        { label: "Departamentos", href: "/dashboard/painel/departamentos", icon: Landmark, disabled: !hasHighAccess },
+        { label: "Multinacionais", href: "/dashboard/admin/company", icon: Lock, disabled: !hasLowAccess },
+        { label: "Ferramentas", href: "/dashboard/ferramentas", icon: Settings, disabled: !hasMidAccess },
       ]
     },
     {
-      title: "Corporativo",
+      /* CONTROLE TOTAL - ACESSO ROOT */
+      title: "System Administration",
       visible: access.admin,
       items: [
-        { label: "Gestão Empresa", href: companyId ? `/dashboard/painel/companies/` : "/dashboard/home", icon: Settings, disabled: !hasHighAccess },
+        { label: "Gestão Corporativa", href: companyId ? `/dashboard/painel/companies/` : "/dashboard/home", icon: Settings, disabled: !hasHighAccess },
         { label: "Controle de Acessos", href: "/dashboard/painel/usuarios", icon: Users, disabled: !hasHighAccess },
-        { label: "Admin Root", href: "/dashboard/admin", icon: Plug, disabled: !hasHighAccess },
         { label: "Config. Planos", href: "/dashboard/admin/planos", icon: Notebook, disabled: !hasMidAccess },
-        { label: "Multinacionais", href: "/dashboard/admin/company", icon: Lock, disabled: !hasLowAccess },
+        { label: "Admin Root (Plug)", href: "/dashboard/admin", icon: Plug, disabled: !hasHighAccess },
       ]
     }
-  ]
-
+  ];
   const menuGroups = menuGroupsTotais.filter(group => group.visible)
 
   return (

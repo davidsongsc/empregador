@@ -19,25 +19,7 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
       router.replace(`${pathname}?showLogin=true&from=${pathname}`);
     }
   }, [user, isLoading, router, pathname]);
-
-  // Enquanto verifica ou se não estiver logado, você pode optar por 
-  // esconder o conteúdo sensível (children)
-  if (isLoading || !user) {
-    return (
-      <div className="min-h-screen bg-delos-surface flex items-center justify-center font-mono">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-2 border-delos-amber border-t-transparent animate-spin rounded-full" />
-          <span className="text-[10px] text-delos-grey tracking-[0.3em] uppercase">
-            Verificando_Protocolos...
-          </span>
-        </div>
-        <Suspense fallback={null}>
-           <LoginTrigger />
-        </Suspense>
-      </div>
-    );
-  }
-
+  
   return (
     <>
       {children}

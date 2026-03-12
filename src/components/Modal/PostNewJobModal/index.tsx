@@ -8,11 +8,12 @@ import {
     Activity
 } from 'lucide-react';
 import { usePostJob } from '@/hooks/usePostJob';
-import { useRoles } from '@/hooks/useRoles';
+
 import { createRole } from '@/services/roles';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from '@/components/Notification';
 import { updateJob } from '@/services/jobs';
+import { useRoleStore } from '@/store/useRoleStore';
 
 interface PostJobModalProps {
     isOpen: boolean;
@@ -24,8 +25,8 @@ const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
     const { user } = useAuthStore();
     const [step, setStep] = useState(1);
     const { postJob, loading: posting } = usePostJob();
-    const { roles, loading: loadingRoles } = useRoles();
-    const [tipoVaga, setTipoVaga] = useState('FREELANCER');
+    const { roles, lastHash, loading, setInitialRoles, applyDelta, setLoading } = useRoleStore();
+     const [tipoVaga, setTipoVaga] = useState('FREELANCER');
     const [roleSearch, setRoleSearch] = useState('');
     const [selectedRoleUid, setSelectedRoleUid] = useState('');
     const [isCreatingRole, setIsCreatingRole] = useState(false);
@@ -55,8 +56,8 @@ const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
             setDescricao(jobToEdit.descricao || '');
             setTipoVaga(jobToEdit.tipo_vaga || 'FREELANCER');
             setContatoOpt(jobToEdit.metodo_contato || 'plataforma');
-            setIsActive(jobToEdit.is_active );
-            
+            setIsActive(jobToEdit.is_active);
+
             // Sanitização de arrays (Benefícios e Requisitos)
             // Se o backend enviar objetos [{description: '...'}], extraímos apenas a string
             const reqs = jobToEdit.requisitos?.map((r: any) => typeof r === 'string' ? r : r.description) || [];

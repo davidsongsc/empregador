@@ -62,10 +62,10 @@ const MinhasVagas = () => {
   const hasMidAccess = checkLevel("mid")
   const hasHighAccess = checkLevel("high")
   return (
-    <div className="h-full bg-[#101010] text-slate-300 font-sans flex flex-col overflow-hidden">
+    <div className="h-full bg-delos-surface text-slate-300 font-sans flex flex-col overflow-hidden">
 
       {/* HEADER ADAPTÁVEL */}
-      <header className="border-b border-white/[0.03] bg-[#141414] shrink-0">
+      <header className="border-b border-white/[0.03] bg-delos-surface shrink-0">
         <div className="w-full px-4 sm:px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4 sm:gap-6">
             <div className="flex flex-col">
@@ -83,10 +83,10 @@ const MinhasVagas = () => {
 
             </div>
 
-            <div className="h-8 w-[1px] bg-white/5 hidden md:block" />
+            <div className="h-8 w-[1px] bg-delos-black hidden md:block" />
             <div className="hidden md:flex items-center gap-2 ">
-              <Activity size={12} className="text-emerald-500 animate-pulse opacity-70" />
-              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest flex-1">
+              <Activity size={18} className="text-emerald-500 animate-pulse opacity-70" />
+              <span className="text-[16px] font-mono text-delos-grey uppercase tracking-widest flex-1">
                 {data?.count || 0} Ativas
               </span>
 
@@ -97,7 +97,7 @@ const MinhasVagas = () => {
             onClick={() => handleCreate()}
             type="button"
 
-            className={`group bg-white text-black px-3 sm:px-5 py-2 transition-all hover:bg-amber-600 hover:text-white flex items-center gap-2 shadow-lg active:scale-95 rounded-sm ${!canAccessSupervision ? 'pointer-events-none opacity-50 bg-slate-800 cursor-not-allowed text-slate-400' : ''}`}
+            className={`group bg-delos-black text-delos-white px-3 sm:px-5 py-2 transition-all hover:bg-amber-600 hover:text-white flex items-center gap-2 shadow-lg active:scale-95 rounded-sm ${!canAccessSupervision ? 'pointer-events-none opacity-50 bg-slate-800 cursor-not-allowed text-slate-400' : ''}`}
             disabled={!canAccessSupervision}
           >
             <Plus size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
@@ -110,18 +110,18 @@ const MinhasVagas = () => {
 
         {/* BARRA DE FERRAMENTAS RESPONSIVA */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4 shrink-0">
-          <div className="relative flex-1 bg-[#181818] border border-white/[0.03]">
+          <div className="relative flex-1 bg-delos-black border border-white/[0.03]">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700" size={14} />
             <input
               type="text"
               placeholder="BUSCAR ID_UNIDADE..."
-              className="w-full pl-10 pr-4 py-2.5 bg-transparent outline-none font-bold text-[9px] tracking-widest uppercase text-white placeholder:text-slate-700"
+              className="w-full pl-10 pr-4 py-2.5 bg-transparent outline-none font-bold text-[9px] tracking-widest uppercase text-delos-texto placeholder:text-slate-700"
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
           <div className="flex bg-[#181818] border border-white/[0.03] p-1 justify-center">
-            {[10, 25, 50].map((size) => (
+            {[10, 25, 50, 100].map((size) => (
               <button
                 key={size}
                 onClick={() => { setPageSize(size); setPage(1); }}

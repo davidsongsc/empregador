@@ -1,80 +1,62 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { getAllJobs, getJobFeed } from "@/services/jobService";
+import { useEffect, useMemo, useCallback } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useJobStore } from "@/store/useJobStore";
 
+/**
+ * HOOK: useJobs
+ * Orquestra a sincronização Delta entre o componente e a Store persistente.
+ */
 export function useJobs(page: number, pageSize: number = 12, selectedCategory?: string | null) {
-  const { user } = useAuthStore();
-  const { cache, setCache, applyDeltaPatches } = useJobStore();
+  // 1. Seletores de Estado (Zustand)
+  // Usamos seletores específicos para evitar re-renders desnecessários
+  const user = useAuthStore((state) => state.user);
+  const fetchJobs = useJobStore((state) => state.fetchJobs);
+  const loading = useJobStore((state) => state.loading);
+  const error = useJobStore((state) => state.error);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  // 2. Geração da Chave Única de Cache (DNA do Protocolo Delta)
   const cacheKey = useMemo(() => {
     return `jobs-p${page}-s${pageSize}-c${selectedCategory || "all"}-u${user?.id || "guest"}`;
   }, [page, pageSize, selectedCategory, user?.id]);
 
-  const cachedData = cache[cacheKey];
+  // 3. Seleção Reativa dos Dados
+  // Se a chave no cache mudar, o Zustand notifica o componente automaticamente
+  const cachedEntry = useJobStore(
+    useCallback((state) => state.cache[cacheKey], [cacheKey])
+  );
 
-  const loadJobs = useCallback(async (isSilent = false) => {
-    if (!cachedData && !isSilent) setLoading(true);
-
+  // 4. Efeito de Sincronização
+  useEffect(() => {
     const params = {
       page,
-      page_size: Math.min(pageSize, 100),
-      ...(selectedCategory && { role__name: selectedCategory })
+      page_size: Math.min(pageSize, 100), // Proteção contra payloads gigantes
+      selectedCategory,
     };
 
-    try {
-      const options = {
-        headers: { "If-None-Match": cachedData?.etag || "" }
-      };
+    // Dispara a busca/sincronismo delta
+    fetchJobs(params, user);
+    
+  }, [cacheKey, fetchJobs, user]); 
 
-      // Agora o Service aceita os dois argumentos
-      const response: any = user
-        ? await getJobFeed(params, options)
-        : await getAllJobs(params, options);
-
-      if (response.isDelta) {
-        applyDeltaPatches(response.patches);
-        setCache(cacheKey, {
-          ...cachedData,
-          etag: response.newEtag,
-          updatedAt: Date.now()
-        });
-      } else if (response.results) {
-        setCache(cacheKey, {
-          results: response.results,
-          count: response.count,
-          metadata: response.metadata,
-          etag: response.etag,
-          updatedAt: Date.now()
-        });
-      }
-    } catch (err: any) {
-      // IMPORTANTE: O erro 304 (Not Modified) confirma que o cache é válido
-      if (err.status === 304 || err.message?.includes("304")) {
-        console.log("Nexus_Hub::Integridade_Confirmada");
-      } else {
-        setError("FALHA_NA_SINCRONIZACAO_DELTA");
-        console.error(err);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [cacheKey, cachedData, page, pageSize, selectedCategory, user, setCache, applyDeltaPatches]);
-  useEffect(() => {
-    loadJobs();
-  }, [cacheKey]);
-
+  // 5. Interface de Retorno (API do Hook)
   return {
-    jobs: cachedData?.results || [],
-    count: cachedData?.count || 0,
-    metadata: cachedData?.metadata || { categorias: [], total_global: 0 },
+    // Retorna os resultados do cache ou um array vazio enquanto carrega
+    jobs: cachedEntry?.results || [],
+    
+    // Metadados para paginação e filtros
+    count: cachedEntry?.count || 0,
+    metadata: cachedEntry?.metadata || { categorias: [], total_global: 0 },
+    
+    // Estados de controle
     loading,
     error,
-    refresh: () => loadJobs(true),
+    
+    // Função para forçar atualização manual (Pull to Refresh)
+    refresh: () => {
+      const params = { page, page_size: pageSize, selectedCategory };
+      fetchJobs(params, user, true); // isSilent = true para não piscar loading
+    },
   };
 }
