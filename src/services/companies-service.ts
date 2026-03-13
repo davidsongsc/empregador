@@ -51,7 +51,6 @@ export const departmentService = {
       body: JSON.stringify(data),
     });
   },
-
   deleteDepartment: async (companyId: string, deptId: string) => {
     return await api(`/company/companies/${companyId}/departments/${deptId}/`, {
       method: "DELETE",

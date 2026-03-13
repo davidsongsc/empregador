@@ -8,7 +8,7 @@ export const memberService = {
    */
   getMembers: async (companyId: string): Promise<CompanyMemberDetail[]> => {
     const res = await api(`/company/companies/${companyId}/members/`);
-    
+
     // Tratamento para paginação do DRF ou retorno direto
     return res.results || res;
   },
@@ -18,9 +18,14 @@ export const memberService = {
    * Rota: POST /company/companies/{companyId}/members/
    */
   addMember: async (companyId: string, data: { profile: string; role: string }) => {
+    const cleanRole = data.role.replace(/['"]+/g, '');
+
     return await api(`/company/companies/${companyId}/members/`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        profile: data.profile,
+        role: cleanRole
+      }),
     });
   },
 
@@ -29,12 +34,18 @@ export const memberService = {
    * Rota: PATCH /company/companies/{companyId}/members/{memberId}/
    */
   updateMemberRole: async (companyId: string, memberId: number, role: string) => {
+    // 1. Limpeza radical de qualquer aspa que venha do estado
+    const sanitizedRole = role.replace(/['"]+/g, '').trim();
+
+    // 2. LOG DE DIAGNÓSTICO (Remova após testar)
+    console.log("PAYLOAD_DELTA:", sanitizedRole);
+
     return await api(`/company/companies/${companyId}/members/${memberId}/`, {
       method: "PATCH",
-      body: JSON.stringify({ role }),
+      // Certifique-se de que 'sanitizedRole' é uma string pura sem aspas extras
+      body: JSON.stringify({ role: sanitizedRole }),
     });
   },
-
   /**
    * Remove um membro da empresa.
    * Rota: DELETE /company/companies/{companyId}/members/{memberId}/

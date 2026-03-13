@@ -7,7 +7,7 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { STATUS_CONFIG } from "@/data/statusLabels";
 import PostNewJobModal from "@/components/Modal/PostNewJobModal";
 import { useAuthStore } from "@/store/useAuthStore";
-import { ROLE_LABELS } from "@/constants/permissionsLabels";
+import { ROLE_LABELS } from "@/constants/roles";
 import checkModuleAccess from "@/utils/checkModuleAccess";
 import { getActiveMembership } from "@/utils/userHelpers";
 import { Module } from "@/enum/moduleEnum";
