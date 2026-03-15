@@ -15,6 +15,7 @@ import ApplicationDashboard from '@/components/ApplicationDashboard';
 import { toast } from '@/components/Notification';
 import PerfilLoading from '@/components/PerfilLoading';
 import { EditProfileModal } from '@/components/Modal/ProfileEditModal';
+import WorkExperience from '@/components/MiniComponents/WorkExperience';
 
 const App = () => {
    const { logout, isAuthenticated } = useAuthStore();
@@ -224,26 +225,7 @@ const App = () => {
 
           {/* GRIDS DE HISTÓRICO */}
           <div className="grid md:grid-cols-2 gap-8">
-            {/* Experiência */}
-            <div className="bg-white dark:bg-[#080808] p-8 rounded-sm border border-black/5 dark:border-white/5 group transition-all">
-              <div className="flex justify-between items-center mb-8">
-                <div className="w-10 h-10 bg-black/5 dark:bg-white/5 flex items-center justify-center text-[var(--delos-black)] group-hover:bg-[var(--delos-indigo)] group-hover:text-white transition-all border border-black/5 dark:border-white/10">
-                  <Briefcase className="w-4 h-4" />
-                </div>
-                <button className="text-[8px] font-mono font-black text-[var(--delos-indigo)] uppercase tracking-[0.3em] hover:underline">
-                  Add_Entry+
-                </button>
-              </div>
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] mb-6 italic">Work_History</h3>
-              <div className="space-y-6">
-                {profile?.experiences?.length ? profile.experiences.map((exp: any) => (
-                  <div key={exp.id} className="relative pl-6 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[1px] before:bg-indigo-500/20">
-                    <p className="font-black text-xs uppercase tracking-tight">{exp.cargo}</p>
-                    <p className="text-[10px] opacity-40 font-mono uppercase mt-1">{exp.empresa} // {exp.data_entrada?.split('-')[0]}</p>
-                  </div>
-                )) : <p className="text-[10px] font-mono opacity-30 italic">No records found in database.</p>}
-              </div>
-            </div>
+            <WorkExperience experiences={profile?.experiences} />
 
             {/* Educação */}
             <div className="bg-white dark:bg-[#080808] p-8 rounded-sm border border-black/5 dark:border-white/5 group transition-all">

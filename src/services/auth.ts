@@ -1,89 +1,98 @@
 import { api } from "@/lib/api";
+import { get as idbGet, set as idbSet, del as idbDel, keys as idbKeys } from "idb-keyval";
 
-export async function registerUser(
-    whatsappNumber: string,
-    password: string
-) {
-    try {
-        return await api("/api/users/", {
-            method: "POST",
-            body: JSON.stringify({
-                whatsapp_number: whatsappNumber,
-                password,
-            }),
-        });
-    } catch (err: any) {
-        console.log(
-            "Erro bruto recebido em registerUser:", err);
-        if (err?.errors?.whatsapp_number) {
-            throw new Error(err.errors.errors.whatsapp_number[0]);
-        }
+import { toast } from "@/components/Notification";
 
-        throw new Error(err.errors.errors.whatsapp_number[0] || err.message || "Erro ao criar conta.");
+/**
+ * PROTOCOLO_DELTA_AUTH_CONFIG
+ * TTL: 24 Horas (86.400.000 ms)
+ */
+const AUTH_STALE_TIME = 24 * 60 * 60 * 1000;
+const DELTA_HEADERS = {
+    "X-Protocol-Mode": "DELTA_SYNC",
+    "X-Sync-Policy": "LONG_TERM_CACHE",
+};
+
+/**
+ * Verifica a sessão atual com suporte ao Protocolo Delta.
+ * @param lastUpdated Timestamp da última atualização local.
+ */
+export async function checkSession(lastUpdated?: number) {
+  // Se houver timestamp, enviamos como query param
+  const url = lastUpdated ? `/auth/session/?last_updated=${lastUpdated}` : "/auth/session/";
+  
+  // O wrapper 'api' deve usar credentials: "include" para enviar o cookie 'access'
+  return await api(url, { method: "GET" });
+}
+
+export async function getMyProfile(forceRefresh = false) {
+    const now = Date.now();
+    const cachedProfile = await idbGet("auth_profile_data");
+    const lastSync = await idbGet("auth_profile_ts");
+
+    if (cachedProfile && lastSync && (now - lastSync < AUTH_STALE_TIME) && !forceRefresh) {
+        return cachedProfile;
     }
-}
 
-// Adicionamos o parâmetro 'remember' (opcional, com padrão false)
-
-export async function logout() {
-    // O logout precisa limpar os cookies no servidor
-    return api("/auth/logout/", {
-        method: "POST",
+    const profileData = await api("/profiles/me/", {
+        method: "GET",
+        headers: { ...DELTA_HEADERS },
         credentials: "include",
     });
-}
-export async function checkSession() {
-    // Esta função é chamada pelo useAuthStore.refresh()
-    // O 'await' aqui é o que garante que o user será preenchido antes do redirecionamento
-    return api("/auth/me/", {
-        method: "GET",
-        credentials: "include", // ESSENCIAL: Envia o cookie 'access' para o Django validar
-    });
+
+    await Promise.all([
+        idbSet("auth_profile_data", profileData),
+        idbSet("auth_profile_ts", now)
+    ]);
+
+    return profileData;
 }
 
-export async function forgotPassword(identifier: string) {
-    // Ajuste o endpoint conforme sua URL no Django
-    return await api("/auth/password-reset/", {
-        method: "POST",
-        body: JSON.stringify({ whatsapp_number: identifier }),
-    }, true); // Rota pública
-}
-
-/**
- * Busca o perfil do usuário logado usando o endpoint customizado /me/
- */
-export async function getMyProfile() {
-    return api("/profiles/me/", {
-        method: "GET",
-        credentials: "include",
-    });
-}
-
-/**
- * Atualiza os dados do perfil e endereço.
- * Aceita um objeto parcial (PATCH) contendo name, last_name, ocupation, bio, endereco, etc.
- */
 export async function updateMyProfile(profileData: any) {
-    return api("/profiles/me/", {
+    // PATCH sempre usa Protocolo Delta para informar mudança imediata
+    const res = await api("/profiles/me/", {
         method: "PATCH",
+        headers: {
+            ...DELTA_HEADERS,
+            "X-Delta-Target": "PROFILE_UPDATE"
+        },
         credentials: "include",
         body: JSON.stringify(profileData),
     });
+
+    // Invalidação imediata do cache para forçar refresh no próximo check
+    await idbDel("auth_profile_ts");
+    await idbDel("auth_user_ts");
+
+    return res;
 }
 
-/**
- * Função específica para upload de foto (multipart/form-data)
- * Nota: Como é um FormData, a nossa função 'api' não deve dar stringify no body
- */
-export async function uploadProfilePhoto(photoFile: File) {
-    const formData = new FormData();
-    formData.append("foto", photoFile);
+export async function logout() {
+    try {
+        await api("/auth/logout/", {
+            method: "POST",
+            credentials: "include",
+        });
+    } finally {
+        // LIMPEZA_TOTAL_DELTA: Remove todos os rastros de cache
+        await Promise.all([
+            idbDel("auth_user_data"),
+            idbDel("auth_user_ts"),
+            idbDel("auth_profile_data"),
+            idbDel("auth_profile_ts"),
+            idbDel("cached_members"), // Limpa membros também por segurança
+            idbDel("active_company")
+        ]);
+    }
+}
 
-    return api("/profiles/me/", {
-        method: "PATCH",
-        credentials: "include",
-        body: formData, // Aqui passamos o FormData puro
-        // Importante: Certifique-se que sua lib 'api' não force 
-        // 'Content-Type: application/json' quando for FormData
+// ROTA PÚBLICA: Não precisa de Delta Sync (sempre fresh)
+export async function registerUser(whatsappNumber: string, password: string) {
+    return await api("/api/users/", {
+        method: "POST",
+        body: JSON.stringify({
+            whatsapp_number: whatsappNumber,
+            password,
+        }),
     });
 }

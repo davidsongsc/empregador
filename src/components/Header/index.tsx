@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Briefcase, User, Search, PlusCircle, X, Menu, LogOut, LayoutDashboard, Binary } from 'lucide-react';
+import { Briefcase, User, Search, PlusCircle, X, Menu, LogOut, LayoutDashboard, Binary, LogIn } from 'lucide-react';
 import Image from 'next/image';
 
 import { useAuthStore } from '@/store/useAuthStore';
@@ -13,6 +13,8 @@ import { useUIStore } from '@/store/useUiStore';
 import checkModuleAccess from '@/utils/checkModuleAccess';
 import { Module } from '@/enum/moduleEnum';
 import { getActiveMembership } from '@/utils/userHelpers';
+import LoginModal from '../Modal/LoginModal';
+import { Button } from '../MiniComponents/Button';
 
 const Header = () => {
     const isScrolled = useUIStore((state) => state.isScrolled);
@@ -28,7 +30,7 @@ const Header = () => {
         getActiveMembership()?.role ?? "GUEST",
         Module.RECRUITMENT
     );
-    
+
     useEffect(() => {
         const handleScroll = () => {
             const scrolled = window.scrollY > 20;
@@ -52,11 +54,10 @@ const Header = () => {
         <>
             {/* DESKTOP HEADER */}
             <header className={`fixed top-0 w-full z-50 hidden md:block px-6 transition-all duration-700 ${isScrolled ? 'pt-2' : 'pt-6'}`}>
-                <div className={`max-w-7xl mx-auto flex items-center justify-between px-8 py-4 ${glassEffect} ${
-                    isScrolled 
-                    ? 'bg-[var(--delos-surface)]/90 shadow-[0_10px_30px_rgba(0,0,0,0.1)]' 
+                <div className={`max-w-7xl mx-auto flex items-center justify-between px-8 py-4 ${glassEffect} ${isScrolled
+                    ? 'bg-[var(--delos-surface)]/90 shadow-[0_10px_30px_rgba(0,0,0,0.1)]'
                     : 'bg-[var(--delos-surface)]/40'
-                }`}>
+                    }`}>
 
                     {/* LOGO */}
                     <LogoFreelaCerto />
@@ -64,18 +65,19 @@ const Header = () => {
                     {/* NAVIGATION - Clinical Minimalist */}
                     <nav className="hidden lg:flex items-center gap-1 bg-[var(--delos-black)]/[0.03] p-1 border border-[var(--delos-border)]">
                         {[
-                            { name: 'Inicio', href: '/' },
+                            { name: 'Vagas', href: '/' },
                             { name: 'Comercial', href: '/comercial/marketing' },
-                            { name: 'Empresas', href: '/empresas' }
+                            { name: 'Empresas', href: '/empresas' },
+                            { name: 'Blog', href: '/blog' },
+                            { name: 'Contato', href: '/contato' },
                         ].map((item) => (
                             <Link
                                 key={item.name}
                                 href={item.href}
-                                className={`${navItemBase} ${
-                                    pathname === item.href 
-                                    ? 'bg-[var(--delos-black)] text-[var(--delos-surface)] shadow-lg' 
+                                className={`${navItemBase} ${pathname === item.href
+                                    ? 'bg-[var(--delos-black)] text-[var(--delos-surface)] shadow-lg'
                                     : 'text-[var(--delos-grey)] hover:text-[var(--delos-black)] hover:bg-[var(--delos-black)]/5'
-                                }`}
+                                    }`}
                             >
                                 {item.name}
                             </Link>
@@ -83,7 +85,7 @@ const Header = () => {
                     </nav>
 
                     <div className="flex-1 flex justify-end items-center gap-6">
-                        {/* SEARCH - Industrial Look */}
+                        {/* SEARCH - Industrial Look 
                         <div className="relative hidden xl:block group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--delos-grey)] group-focus-within:text-[var(--delos-amber)] transition-colors" />
                             <input
@@ -92,7 +94,7 @@ const Header = () => {
                                 className="w-48 bg-transparent border-b border-[var(--delos-border)] py-2 pl-10 pr-4 text-[9px] font-black uppercase tracking-widest outline-none focus:border-[var(--delos-amber)] transition-all duration-500 text-[var(--delos-black)] placeholder:text-[var(--delos-grey)]/50"
                             />
                         </div>
-
+*/}
                         {isAuthenticated ? (
                             <div className="flex items-center gap-2">
                                 {isRecruiter && (
@@ -127,17 +129,20 @@ const Header = () => {
                                 </button>
                             </div>
                         ) : (
-                            <Link href="/login" className="text-[9px] font-black text-[var(--delos-black)] px-4 uppercase tracking-[0.3em] hover:text-[var(--delos-amber)] transition-colors">
+                            <button
+                                onClick={() => setIsPostJobOpen(true)}
+                                className="bg-[var(--delos-black)] text-[var(--delos-surface)] px-8 py-4 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[var(--delos-amber)] transition-all active:scale-95 shadow-2xl"
+                            >
                                 Login
-                            </Link>
+                            </button>
                         )}
-
                         <button
                             onClick={() => setIsPostJobOpen(true)}
                             className="bg-[var(--delos-black)] text-[var(--delos-surface)] px-8 py-4 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[var(--delos-amber)] transition-all active:scale-95 shadow-2xl"
                         >
-                            Nova_Vaga
+                            Publicar
                         </button>
+
                     </div>
                 </div>
             </header>
@@ -203,9 +208,8 @@ const Header = () => {
 
                 <button
                     onClick={() => setIsDockOpen(!isDockOpen)}
-                    className={`w-14 h-14 flex items-center justify-center shadow-2xl transition-all duration-700 active:scale-90 ${
-                        isDockOpen ? 'bg-[var(--delos-black)] text-[var(--delos-surface)] -rotate-90' : 'bg-[var(--delos-amber)] text-white rotate-0'
-                    }`}
+                    className={`w-14 h-14 flex items-center justify-center shadow-2xl transition-all duration-700 active:scale-90 ${isDockOpen ? 'bg-[var(--delos-black)] text-[var(--delos-surface)] -rotate-90' : 'bg-[var(--delos-amber)] text-white rotate-0'
+                        }`}
                 >
                     {isDockOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
                 </button>
@@ -214,11 +218,22 @@ const Header = () => {
             {isDockOpen && (
                 <div className="fixed inset-0 bg-[var(--delos-surface)]/60 backdrop-blur-md z-40 md:hidden transition-all duration-500" onClick={closeDock} />
             )}
+            {isAuthenticated ? (
+                <PostJobModal
 
-            <PostJobModal
-                isOpen={isPostJobOpen}
-                onClose={() => setIsPostJobOpen(false)}
-            />
+                    isOpen={isPostJobOpen}
+                    onClose={() => setIsPostJobOpen(false)}
+                />
+            ) :
+                (
+                    <LoginModal
+                        isOpen={isPostJobOpen}
+                        onClose={() => setIsPostJobOpen(false)}
+                    />
+                )}
+
+
+
         </>
     );
 };

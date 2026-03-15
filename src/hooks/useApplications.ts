@@ -1,42 +1,37 @@
-import { useState, useCallback, useEffect } from "react";
+// hooks/useApplication.ts
+import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { getApplications } from "@/services/applicationResult";
-import { ApplicationResult } from "@/interfaces/applicationResult";
+import { useApplicationStore } from "@/store/useApplicationStore";
+import { useAuthStore } from "@/store/useAuthStore";
 
-export function useApplications() {
+export function useApplication() {
   const searchParams = useSearchParams();
-  const [applications, setApplications] = useState<ApplicationResult[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { activeCompanyId } = useAuthStore();
   
-  // Captura os filtros da URL automaticamente
+  // Pegamos apenas o que precisamos do Store Centralizado
+  const { data, loading, fetchApplications } = useApplicationStore();
+  
   const statusFilter = searchParams.get("status") || undefined;
   const searchFilter = searchParams.get("search") || undefined;
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await getApplications({ 
-        status: statusFilter, 
-        search: searchFilter 
-      });
-      setApplications(data.results || []);
-    } catch (err) {
-      console.error("Erro ao carregar candidaturas:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter, searchFilter]);
+  const lastCallKey = useRef("");
 
   useEffect(() => {
-    load();
-  }, [load]);
+    const filters = { status: statusFilter, search: searchFilter, activeCompanyId };
+    const currentKey = JSON.stringify(filters);
 
-  // Retornamos os filtros aqui para que a Page possa usá-los
+    // Trava de segurança no cliente (evita disparos do Strict Mode)
+    if (lastCallKey.current !== currentKey) {
+      lastCallKey.current = currentKey;
+      fetchApplications(filters);
+    }
+  }, [statusFilter, searchFilter, activeCompanyId, fetchApplications]);
+
   return { 
-    applications, 
+    applications: data, 
     loading, 
     statusFilter, 
-    searchFilter, 
-    refresh: load 
+    searchFilter,
+    refresh: () => fetchApplications({ status: statusFilter, search: searchFilter }, true)
   };
 }

@@ -2,50 +2,64 @@
 @config "../tailwind.config.ts";
 
 :root {
-  /* --- PALETA DELOS (Default / Light) --- */
-  /* Inspirada nos laboratórios e no minimalismo corporativo */
-  --delos-surface: #ffffff;       /* Branco "Clean Room" */
-  --delos-black: #0A0A0A;         /* Preto profundo */
-  --delos-amber: #E17100;         /* O clássico âmbar de aviso da Delos */
-  --delos-grey: #8E8E93;          /* Alumínio escovado */
-  --delos-indigo: #0047FF;        /* Azul de sistema/biometria */
-  --delos-red: #D32F2F;           /* Alerta crítico de anomalia */
+  /* --- DELOS LIGHT (Clean Room / Industrial) --- */
+  --delos-surface: #ffffff;        
+  --delos-black: #0A0A0A;
+  --delos-container: #151515;    
+  --delos-item: #eeeeee;      
+  --delos-amber: #E17100;          
+  --delos-grey: #8E8E93;           
+  --delos-indigo: #0047FF;         
+  --delos-red: #D32F2F;            
   --delos-texto: #101011;
   --delos-border: rgba(0, 0, 0, 0.12);
   --delos-subtext: rgba(0, 0, 0, 0.55);
 
-  /* --- PALETA TROPICAL (Variante Solaris) --- */
-  /* Chuva, Sol e Areia */
-  --tropical-surface: #F5EFE6;    /* Areia clara / Off-white quente */
-  --tropical-sun: #FFB300;        /* Sol do meio-dia */
-  --tropical-ocean: #001b1f;      /* Mar profundo após a chuva */
-  --tropical-leaf: #2D5A27;       /* Verde mata úmida */
-  --tropical-rain: #78909C;       /* Cinza azulado de nuvens carregadas */
-  --tropical-accent: #FF7043;     /* Coral / Pôr do sol */
+  /* NOVAS ADIÇÕES LIGHT (Sem alterar nomes antigos) */
+  --delos-amber-soft: #FFF4E5;    /* Fundo de alertas leves */
+  --delos-grey-light: #F2F2F7;    /* Divisores sutis / Background de inputs */
+  --delos-indigo-soft: #E5EFFF;   /* Destaque de seleção biométrica */
+  --delos-success: #28A745;       /* Status: Terminal Operacional */
+  --delos-muted: #C7C7CC;         /* Placeholder e desabilitados */
+  
+  /* --- TROPICAL PALETTE (Mantida) --- */
+  --tropical-surface: #F5EFE6;
+  --tropical-sun: #FFB300;
+  --tropical-ocean: #001b1f;
+  --tropical-leaf: #2D5A27;
+  --tropical-rain: #78909C;
+  --tropical-accent: #FF7043;
 }
 
 .dark {
-  /* --- DELOS DARK MODE --- */
-  /* Inspirado nas telas de monitoramento e subsolos */
-  --delos-surface: #101010;       /* Vácuo / Escuridão total */
-  --delos-black: #E5E5E7;         /* Texto quase branco */
-  --delos-amber: #FF9500;         /* Âmbar brilhante (Glow) */
-  --delos-grey: #a0a0bd;          /* Painel de controle */
-  --delos-indigo: #757581;        /* Neon Indigo */
-  --delos-red: #FF453A;           /* Alerta em baixa luz */
+  /* --- DELOS DARK (Deep Matrix / Subsolo) --- */
+  --delos-surface: #101010;        
+  --delos-black: #E5E5E7;          
+  --delos-amber: #FF9500;       
+  --delos-container: #eeeeee; 
+  --delos-item: #151515;  
+  --delos-grey: #a0a0bd;           
+  --delos-indigo: #757581;         
+  --delos-red: #FF453A;            
   --delos-texto: #E5E5E7;
   --delos-border: rgba(255, 255, 255, 0.1);
   --delos-subtext: rgba(255, 255, 255, 0.5);
-  
-  /* --- TROPICAL DARK (Night Jungle) --- */
-  --tropical-surface: #0D1B1E;    /* Noite na floresta */
-  --tropical-sun: #D4A017;        /* Ouro velho */
-  --tropical-ocean: #26C6DA;      /* Bioluminescência marinha */
-  --tropical-leaf: #920f0f;       /* Verde sombra */
-  --tropical-rain: #37474F;       /* Tempestade noturna */
-  --tropical-accent: #FF8A65;     /* Flor tropical no escuro */
-}
 
+  /* NOVAS ADIÇÕES DARK (Sem alterar nomes antigos) */
+  --delos-surface-elevated: #1C1C1E; /* Cards que "flutuam" sobre o fundo */
+  --delos-amber-glow: rgba(255, 149, 0, 0.15); /* Shadow para efeito neon */
+  --delos-success: #32D74B;          /* Status: Ativo em baixa luz */
+  --delos-grey-dark: #2C2C2E;        /* Inputs e Containers internos */
+  --delos-indigo-bright: #5E5CE6;    /* Link/Ação em Dark Mode */
+
+  /* --- TROPICAL DARK (Mantida) --- */
+  --tropical-surface: #0D1B1E;
+  --tropical-sun: #D4A017;
+  --tropical-ocean: #26C6DA;
+  --tropical-leaf: #920f0f;
+  --tropical-rain: #37474F;
+  --tropical-accent: #FF8A65;
+}
 /* Scrollbar Delos Style - Mais fino e minimalista */
 .custom-scrollbar::-webkit-scrollbar {
   width: 3px;

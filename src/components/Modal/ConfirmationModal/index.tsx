@@ -54,14 +54,14 @@ export function ConfirmationModal({
               onClick={onClose}
               className="flex-1 px-4 py-3 bg-transparent border border-white/10 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all"
             >
-              Abort_Operation
+              Aborta_Operação
             </button>
             <button 
               onClick={onConfirm}
               disabled={loading}
               className="flex-1 px-4 py-3 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-red-500 transition-all shadow-[0_0_20px_rgba(220,38,38,0.2)] disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? "TERMINATING..." : "CONFIRM_DELETE"}
+              {loading ? "Deletando..." : "CONFIRMA_EXCLUSAO"}
             </button>
           </div>
         </div>

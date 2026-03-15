@@ -18,14 +18,13 @@ function TriggerContent() {
   const [countdown, setCountdown] = useState(0);
   const [attempts, setAttempts] = useState(0);
 
-  // 1. Inicialização: Recupera dados do localStorage ao montar
+  // 1. Inicialização: Recupera dados do localStorage
   useEffect(() => {
     const savedData = localStorage.getItem(STORAGE_KEY);
     if (savedData) {
       const { lastAttempt, attemptCount, lockedUntil } = JSON.parse(savedData);
       const now = Date.now();
 
-      // Verifica se já passou 60min para resetar o multiplicador
       if (now - lastAttempt > RESET_TIMEOUT) {
         localStorage.removeItem(STORAGE_KEY);
         return;
@@ -33,7 +32,6 @@ function TriggerContent() {
 
       setAttempts(attemptCount);
 
-      // Verifica se ainda deve estar no countdown após o F5
       if (lockedUntil > now) {
         setCountdown(Math.ceil((lockedUntil - now) / 1000));
       }
@@ -47,7 +45,7 @@ function TriggerContent() {
     return () => clearInterval(timer);
   }, [countdown]);
 
-  // 3. Controle de abertura do Modal
+  // 3. Controle de abertura inicial (Via URL)
   useEffect(() => {
     const isLoginRequested = searchParams.get("showLogin") === "true";
     if (isLoginRequested && !user && countdown === 0) {
@@ -55,7 +53,17 @@ function TriggerContent() {
     }
   }, [searchParams, user, countdown]);
 
-  // 4. Função ao fechar (O "Castigo")
+  // 4. AUTO-OPEN: O "Pulo do Gato"
+  // Quando o countdown zera e existem tentativas, o sistema entende que o bloqueio acabou
+  useEffect(() => {
+    if (countdown === 0 && attempts > 0 && !user && !isOpen) {
+      // Pequeno delay para a UI respirar após a tela preta sumir
+      const timeout = setTimeout(() => setIsOpen(true), 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [countdown, attempts, user, isOpen]);
+
+  // 5. Função ao fechar (Aplica o Castigo)
   const handleClose = useCallback(() => {
     setIsOpen(false);
     
@@ -68,17 +76,16 @@ function TriggerContent() {
       setAttempts(nextAttempt);
       setCountdown(nextDelay);
 
-      // Salva o estado crítico no LocalStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         lastAttempt: now,
         attemptCount: nextAttempt,
         lockedUntil: lockedUntil
       }));
 
-      // Limpa a URL
+      // Limpa a URL para o Middleware não entrar em loop
       const params = new URLSearchParams(searchParams.toString());
       params.delete("showLogin");
-      router.replace(`${pathname}?${params.toString()}`);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
   }, [user, attempts, searchParams, router, pathname]);
 
@@ -106,8 +113,8 @@ function TriggerContent() {
             <div className="flex flex-col items-center gap-2 pt-4">
               <div className="w-48 h-1 bg-white/5 overflow-hidden">
                 <div 
-                   className="h-full bg-delos-amber transition-all duration-1000" 
-                   style={{ width: `${(countdown / Math.pow(2, attempts - 1)) * 100} %` }}
+                   className="h-full bg-delos-amber transition-all duration-1000 ease-linear" 
+                   style={{ width: `${(countdown / Math.pow(2, attempts - 1)) * 100}%` }}
                 />
               </div>
               <span className="text-[8px] text-delos-grey uppercase tracking-[0.5em]">

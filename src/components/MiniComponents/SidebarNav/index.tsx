@@ -63,7 +63,7 @@ const SidebarNav = () => {
       items: [
         { label: "Vagas Ativas", href: "/dashboard/painel/minhas-vagas", icon: FileText, disabled: !hasLowAccess },
         { label: "Candidaturas", href: "/dashboard/painel/candidaturas", icon: Users, disabled: !hasMidAccess },
-        { label: "Banco de Talentos", href: "/dashboard/banco-talentos", icon: UserCheck, disabled: !hasMidAccess },
+        { label: "Equipe", href: "/dashboard/equipe", icon: UserCheck, disabled: !hasMidAccess },
         { label: "Cronograma", href: "/dashboard/painel/eventos", icon: CalendarDays, disabled: !hasHighAccess },
         { label: "Suporte Central", href: "/dashboard/atendimento/tickets", icon: Headset, disabled: !hasLowAccess },
         { label: "Nexus AI (Bot)", href: "/dashboard/painel/whatsapp", icon: PhoneCallIcon, disabled: true },

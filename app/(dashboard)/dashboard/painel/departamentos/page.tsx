@@ -27,9 +27,13 @@ export default function DepartmentsPage() {
     members: [] as number[]
   });
 
-  useEffect(() => {
-    if (activeCompany?.id) fetchDepartments(activeCompany.id);
-  }, [activeCompany?.id, fetchDepartments]);
+useEffect(() => {
+  if (activeCompany?.id) {
+    // Quando você muda a empresa no seletor, este useEffect dispara 
+    // e recarrega os departamentos da nova empresa.
+    fetchDepartments(activeCompany?.id);
+  }
+}, [activeCompany, fetchDepartments]);
 
   const handleSave = async () => {
     if (!activeCompany?.id) return;

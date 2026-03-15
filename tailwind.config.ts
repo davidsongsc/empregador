@@ -14,15 +14,40 @@ const config: Config = {
       colors: {
         delos: {
           surface: "var(--delos-surface)",
+          // Adição: superfície elevada para cards no dark mode
+          "surface-elevated": "var(--delos-surface-elevated)",
           black: "var(--delos-black)",
           amber: "var(--delos-amber)",
+          container: "var(--delos-container)",
+          item: "var(--delos-item)",
+          // Adições: Variações de Âmbar para UI moderna
+          "amber-soft": "var(--delos-amber-soft)",
+          "amber-glow": "var(--delos-amber-glow)",
           grey: "var(--delos-grey)",
+          // Adições: Variações de Cinza
+          "grey-light": "var(--delos-grey-light)",
+          "grey-dark": "var(--delos-grey-dark)",
+          muted: "var(--delos-muted)",
           indigo: "var(--delos-indigo)",
+          // Adições: Variações de Indigo
+          "indigo-soft": "var(--delos-indigo-soft)",
+          "indigo-bright": "var(--delos-indigo-bright)",
           red: "var(--delos-red)",
-
+          // Adição: Status de Sucesso (Terminal OK)
+          success: "var(--delos-success)",
+          texto: "var(--delos-texto)",
           border: "var(--delos-border)",
           subtext: "var(--delos-subtext)",
         },
+        // Adicionando a paleta Tropical como opção secundária
+        tropical: {
+          surface: "var(--tropical-surface)",
+          sun: "var(--tropical-sun)",
+          ocean: "var(--tropical-ocean)",
+          leaf: "var(--tropical-leaf)",
+          rain: "var(--tropical-rain)",
+          accent: "var(--tropical-accent)",
+        }
       },
       animation: {
         'pulse-slow': 'pulse-custom 10s ease-in-out infinite',

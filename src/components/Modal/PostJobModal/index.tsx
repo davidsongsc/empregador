@@ -165,7 +165,7 @@ const PostJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
                                             placeholder="Ex: Vendedor, Desenvolvedor..."
                                             className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-12 pr-6 font-bold text-gray-900 outline-none focus:ring-4 focus:ring-indigo-50 transition-all"
                                         />
-                                        {loadingRoles && <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-300" />}
+                                        {loading && <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-300" />}
                                     </div>
 
                                     {roleSearch && !selectedRoleUid && (

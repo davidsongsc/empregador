@@ -1,58 +1,68 @@
 import { api } from "@/lib/api";
 import { CompanyMemberDetail } from "./companies-service";
 
+/**
+ * PROTOCOLO_DELTA_HEADERS
+ * Sinalização para o Mainframe Django otimizar a entrega de pacotes.
+ */
+const DELTA_HEADERS = {
+  "X-Protocol-Mode": "DELTA_SYNC",
+  "X-Sync-Policy": "CACHE_FIRST",
+  "Content-Type": "application/json",
+};
+
 export const memberService = {
   /**
-   * Lista membros de uma empresa específica.
-   * Rota: GET /company/companies/{companyId}/members/
+   * Recupera uma camada específica de membros (Pagination Layer).
    */
-  getMembers: async (companyId: string): Promise<CompanyMemberDetail[]> => {
-    const res = await api(`/company/companies/${companyId}/members/`);
-
-    // Tratamento para paginação do DRF ou retorno direto
-    return res.results || res;
+  getMembers: async (companyId: string, page: number = 1): Promise<any> => {
+    // A query string ?page= garante que o Django Rest Framework ative o PaginationSerializer
+    return await api(`/company/companies/${companyId}/members/?page=${page}`, {
+      method: "GET",
+      headers: { ...DELTA_HEADERS },
+    });
   },
 
   /**
-   * Adiciona um perfil como membro da empresa.
-   * Rota: POST /company/companies/{companyId}/members/
+   * Injeção de novo sujeito na matriz operacional.
    */
   addMember: async (companyId: string, data: { profile: string; role: string }) => {
-    const cleanRole = data.role.replace(/['"]+/g, '');
+    // Sanitização preventiva de aspas residuais (Protocolo 303)
+    const cleanRole = data.role.replace(/['"]+/g, "").trim();
 
     return await api(`/company/companies/${companyId}/members/`, {
       method: "POST",
+      headers: { ...DELTA_HEADERS },
       body: JSON.stringify({
         profile: data.profile,
-        role: cleanRole
+        role: cleanRole,
       }),
     });
   },
 
   /**
-   * Atualiza a Role de um membro (Técnica Delta/Protocolo 303).
-   * Rota: PATCH /company/companies/{companyId}/members/{memberId}/
+   * Atualização de privilégios via Delta Patch.
    */
   updateMemberRole: async (companyId: string, memberId: number, role: string) => {
-    // 1. Limpeza radical de qualquer aspa que venha do estado
-    const sanitizedRole = role.replace(/['"]+/g, '').trim();
-
-    // 2. LOG DE DIAGNÓSTICO (Remova após testar)
-    console.log("PAYLOAD_DELTA:", sanitizedRole);
+    const sanitizedRole = role.replace(/['"]+/g, "").trim();
 
     return await api(`/company/companies/${companyId}/members/${memberId}/`, {
       method: "PATCH",
-      // Certifique-se de que 'sanitizedRole' é uma string pura sem aspas extras
+      headers: {
+        ...DELTA_HEADERS,
+        "X-Delta-Target": "ROLE_UPDATE",
+      },
       body: JSON.stringify({ role: sanitizedRole }),
     });
   },
+
   /**
-   * Remove um membro da empresa.
-   * Rota: DELETE /company/companies/{companyId}/members/{memberId}/
+   * Encerramento definitivo de protocolo de acesso.
    */
   removeMember: async (companyId: string, memberId: number) => {
     return await api(`/company/companies/${companyId}/members/${memberId}/`, {
       method: "DELETE",
+      headers: { ...DELTA_HEADERS },
     });
   },
 };

@@ -14,19 +14,48 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from '@/components/Notification';
 import { updateJob } from '@/services/jobs';
 import { useRoleStore } from '@/store/useRoleStore';
+import { useJobStore } from '@/store/useJobStore';
 
 interface PostJobModalProps {
     isOpen: boolean;
     onClose: () => void;
-    jobToEdit?: any;
+    jobUid?: string;
+    activeCompanyId?: string
 }
 
-const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
+const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobModalProps) => {
+    const { fetchJobById, loading, error } = useJobStore();
+    const [vaga, setVaga] = useState<any>(null);
+    const { roles, loading: rolesLoading, setInitialRoles, applyDelta, setLoading } = useRoleStore();
+    console.log(jobUid);
+    console.log(activeCompanyId);
+    useEffect(() => {
+        const carregarVaga = async () => {
+            try {
+                // Verificação explícita antes de chamar a função
+                if (jobUid && activeCompanyId) {
+                    const dados = await fetchJobById(jobUid, activeCompanyId);
+                    setVaga(dados);
+                }
+            } catch (error) {
+                console.error("Erro ao carregar detalhes da vaga:", error);
+            }
+        };
+
+        // Só dispara se ambos existirem
+        if (activeCompanyId && jobUid) {
+            carregarVaga();
+        }
+    }, [activeCompanyId, jobUid, fetchJobById]);
+    
+    console.log(vaga)
     const { user } = useAuthStore();
     const [step, setStep] = useState(1);
     const { postJob, loading: posting } = usePostJob();
-    const { roles, lastHash, loading, setInitialRoles, applyDelta, setLoading } = useRoleStore();
-     const [tipoVaga, setTipoVaga] = useState('FREELANCER');
+
+
+
+    const [tipoVaga, setTipoVaga] = useState('FREELANCER');
     const [roleSearch, setRoleSearch] = useState('');
     const [selectedRoleUid, setSelectedRoleUid] = useState('');
     const [isCreatingRole, setIsCreatingRole] = useState(false);
@@ -45,27 +74,27 @@ const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
     const [isActive, setIsActive] = useState(true);
     useEffect(() => { if (!isOpen) setStep(1); }, [isOpen]);
     useEffect(() => {
-        if (isOpen && jobToEdit) {
+        if (isOpen && vaga) {
             // MODO EDIÇÃO: Mapeia os dados da API para o formulário
-            setSelectedRoleUid(jobToEdit.role_details?.uid || '');
-            setRoleSearch(jobToEdit.role_details?.name || '');
-            setTituloPersonalizado(jobToEdit.titulo_personalizado || '');
-            setSalario(jobToEdit.salario?.toString() || '');
-            setLocal(jobToEdit.endereco?.cidade || jobToEdit.local || '');
-            setTurno(jobToEdit.turno || '');
-            setDescricao(jobToEdit.descricao || '');
-            setTipoVaga(jobToEdit.tipo_vaga || 'FREELANCER');
-            setContatoOpt(jobToEdit.metodo_contato || 'plataforma');
-            setIsActive(jobToEdit.is_active);
+            setSelectedRoleUid(vaga.role_details?.uid || '');
+            setRoleSearch(vaga.role_details?.name || '');
+            setTituloPersonalizado(vaga.titulo_personalizado || '');
+            setSalario(vaga.salario?.toString() || '');
+            setLocal(vaga.endereco?.cidade || vaga.local || '');
+            setTurno(vaga.turno || '');
+            setDescricao(vaga.descricao || '');
+            setTipoVaga(vaga.tipo_vaga || 'FREELANCER');
+            setContatoOpt(vaga.metodo_contato || 'plataforma');
+            setIsActive(vaga.is_active);
 
             // Sanitização de arrays (Benefícios e Requisitos)
             // Se o backend enviar objetos [{description: '...'}], extraímos apenas a string
-            const reqs = jobToEdit.requisitos?.map((r: any) => typeof r === 'string' ? r : r.description) || [];
-            const bens = jobToEdit.beneficios?.map((b: any) => typeof b === 'string' ? b : b.description) || [];
+            const reqs = vaga.requisitos?.map((r: any) => typeof r === 'string' ? r : r.description) || [];
+            const bens = vaga.beneficios?.map((b: any) => typeof b === 'string' ? b : b.description) || [];
 
             setRequisitos(reqs);
             setBeneficios(bens);
-        } else if (isOpen && !jobToEdit) {
+        } else if (isOpen && !vaga) {
             // MODO CRIAÇÃO: Reset de todos os campos para o padrão Delos
             setRoleSearch('');
             setSelectedRoleUid('');
@@ -76,16 +105,17 @@ const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
 
             // ... resetar os demais estados
         }
-    }, [isOpen, jobToEdit]);
+    }, [isOpen, vaga]);
 
-    const modalTitle = jobToEdit ? "Editar_Vaga" : "Criar_Vaga";
-    const buttonLabel = jobToEdit ? "Proximo" : "Avançar";
+    const modalTitle = vaga ? "Editar_Vaga" : "Criar_Vaga";
+    const buttonLabel = vaga ? "Proximo" : "Avançar";
 
     const filteredRoles = useMemo(() => {
         if (!roleSearch || selectedRoleUid) return [];
         return roles.filter(r => r.name.toLowerCase().includes(roleSearch.toLowerCase())).slice(0, 5);
     }, [roles, roleSearch, selectedRoleUid]);
-
+    console.log(filteredRoles)
+    console.log(roles)
     const handleSelectRole = (role: any) => {
         setSelectedRoleUid(role.uid);
         setRoleSearch(role.name);
@@ -136,9 +166,9 @@ const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
         };
 
         try {
-            if (jobToEdit?.uid) {
+            if (vaga?.uid) {
                 // Chamada de PATCH para Edição
-                await updateJob(jobToEdit.uid, payload);
+                await updateJob(vaga.uid, payload);
                 toast.success("Unit_Reconfigured");
             } else {
                 // Chamada de POST para Criação
