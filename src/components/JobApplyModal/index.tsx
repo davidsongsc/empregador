@@ -1,59 +1,122 @@
 "use client"
-import { 
-  CheckCircle2, ChevronLeft, X, Briefcase, Info, FileText, 
-  HelpCircle, Sparkles, Loader2, ChevronRight, Binary, 
-  Plus, Trash2, Calendar, Zap, Fingerprint, Database 
+import {
+  CheckCircle2, ChevronLeft, X, Briefcase, Info, FileText,
+  HelpCircle, Sparkles, Loader2, ChevronRight, Binary,
+  Plus, Trash2, Calendar, Zap, Fingerprint, Database
 } from "lucide-react"
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { applicationService } from "@/services/applicationService"
 import { toast } from "@/components/Notification"
 import { motion, AnimatePresence } from "framer-motion"
-
+import { useJobQuestionStore } from "@/store/useJobQuestionStore"
+import { useExperienceStore } from "@/store/useExperienceStore"
+import { useBenefitStore } from "@/store/useBenefitStore";
+import { useJobStore } from "@/store/useJobStore"
 type Props = {
+  user: any;
   open: boolean
   onClose: () => void
   job: any
 }
 
-const JobApplyModal = ({ open, onClose, job }: Props) => {
+const JobApplyModal = ({ user, open, onClose, job }: Props) => {
   const [stepIndex, setStepIndex] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
-  const [experiences, setExperiences] = useState<any[]>([
-    { empresa: '', cargo: '', data_entrada: '', atualmente_trabalhando: false }
-  ])
-  
+  const validateUser = !!user?.profile?.id;
+
+  const { removeJobFromCache } = useJobStore(); // Importe a ação
+  const { benefitsByJob, fetchBenefits, loading: loadingBenefits } = useBenefitStore();
+  const { experiences: remoteExperiences, fetchExperiences, loading: loadingExp } = useExperienceStore()
+  const { questions, loadingQuestions, fetchQuestions } = useJobQuestionStore()
+
+  // ESTADOS LOCAIS
+  const [experiences, setExperiences] = useState<any[]>([])
   const [answers, setAnswers] = useState<Record<string, string>>({})
 
-  const questionGroups = useMemo(() => {
-    if (!job?.perguntas) return []
-    const groups = []
-    for (let i = 0; i < job.perguntas.length; i += 4) {
-      groups.push(job.perguntas.slice(i, i + 4))
+  // 1. SINCRONIZAÇÃO DE DADOS (PERGUNTAS E EXPERIÊNCIAS)
+  useEffect(() => {
+    if (open && job?.id) {
+      setAnswers({});
+      setStepIndex(0);
+
+      fetchQuestions(job.id);
+      fetchBenefits(job.id);
+
+      const profileId = user?.profile?.id;
+      if (profileId) fetchExperiences(profileId, true);
     }
-    return groups
-  }, [job])
+  }, [open, job?.id, user?.profile?.id, fetchQuestions, fetchExperiences, fetchBenefits]);
+
+  // 2. POPULAR ESTADO LOCAL COM DADOS DO STORE
+  useEffect(() => {
+    if (open && !loadingExp) {
+      // O Store agora pode retornar o array direto ou dentro de .items
+      const dataToMap = Array.isArray(remoteExperiences) ? remoteExperiences : (remoteExperiences as any)?.items || [];
+
+      if (dataToMap.length > 0) {
+        setExperiences(dataToMap.map((exp: any) => ({
+          id: exp.id,
+          empresa: exp.empresa || "",
+          cargo: exp.cargo || "",
+          data_entrada: exp.data_entrada || "",
+          atualmente_trabalhando: exp.atualmente_trabalhando || false,
+          descricao: exp.descricao || ""
+        })));
+      } else {
+        setExperiences([{ empresa: '', cargo: '', data_entrada: '', atualmente_trabalhando: false }]);
+      }
+    }
+  }, [remoteExperiences, open, loadingExp]);
+  // 68 | Adicionamos o ?. no job e uma verificação curta no início
+  const currentBenefits = useMemo(() => {
+    if (!job?.id) return [];
+    return benefitsByJob[job.id] || [];
+  }, [benefitsByJob, job?.id]); // Use job?.id como dependência específica  // 3. LOGICA DE STEPS E PERGUNTAS (INALTERADA)
+  const questionGroups = useMemo(() => {
+    if (!questions || questions.length === 0) return [];
+    const groups = [];
+    for (let i = 0; i < questions.length; i += 4) {
+      groups.push(questions.slice(i, i + 4));
+    }
+    return groups;
+  }, [questions]);
 
   const steps = useMemo(() => {
-    const list = []
-    list.push({ id: "vaga", label: "Protocolo", icon: <Binary size={14}/> })
-    list.push({ id: "experiencias", label: "DNA_Trajectory", icon: <Database size={14}/> })
+    const list = [];
+    list.push({ id: "vaga", label: "Informações da Vaga", icon: <Binary size={14} /> });
+    list.push({ id: "experiencias", label: "Suas Experiências", icon: <Database size={14} /> });
+
     questionGroups.forEach((group, index) => {
-      list.push({ id: `perguntas-${index}`, label: `Análise_${index + 1}`, data: group, icon: <Fingerprint size={14}/> })
-    })
-    list.push({ id: "impulsionar", label: "Optimization", icon: <Zap size={14}/> })
-    return list
-  }, [questionGroups])
+      list.push({
+        id: `perguntas-${index}`,
+        label: `Análise_${index + 1}`,
+        data: group,
+        icon: <Fingerprint size={14} />
+      });
+    });
 
-  if (!open || !job) return null
-  const currentStep = steps[stepIndex]
+    list.push({ id: "impulsionar", label: "Impulsionamento", icon: <Zap size={14} /> });
+    return list;
+  }, [questionGroups]);
 
+  if (!open || !job) return null;
+  const currentStep = steps[stepIndex];
+
+  // HANDLERS
   const handleAddExperience = () => {
-    setExperiences([...experiences, { empresa: '', cargo: '', data_entrada: '', atualmente_trabalhando: false }])
+    // Adiciona um novo objeto vazio no início do array
+    setExperiences([{
+      empresa: '',
+      cargo: '',
+      data_entrada: '',
+      data_saida: '', // Adicionado campo de saída
+      atualmente_trabalhando: false
+    }, ...experiences])
   }
 
   const handleRemoveExperience = (index: number) => {
-    setExperiences(experiences.filter((_, i) => i !== index))
+    const newExp = experiences.filter((_, i) => i !== index);
+    setExperiences(newExp.length > 0 ? newExp : [{ empresa: '', cargo: '', data_entrada: '', data_saida: '', atualmente_trabalhando: false }]);
   }
 
   const updateExperience = (index: number, field: string, value: any) => {
@@ -63,61 +126,70 @@ const JobApplyModal = ({ open, onClose, job }: Props) => {
   }
 
   const handleSubmit = async () => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      const formattedAnswers = Object.entries(answers).map(([uid, text]) => ({
-        question_uid: uid,
+      const formattedAnswers = Object.entries(answers).map(([id, text]) => ({
+        question_uid: id,
         answer: text
-      }))
-      await applicationService.applyToJob(job.uid, formattedAnswers, experiences as any)
-      toast.success("Sincronização de perfil concluída.");
-      onClose()
-    } catch (err: any) {
-      toast.error(err.message || "Falha na transmissão de dados");
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+      }));
 
-  const inputClassName = "w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:border-[var(--delos-amber)] rounded-sm py-3 px-4 font-bold outline-none transition-all text-sm";
+      const targetJobId = job.id || job.uid;
+
+      await applicationService.applyToJob(
+        targetJobId,
+        formattedAnswers
+      );
+
+      // PROTOCOLO_DELTA: Sincronização Pessimista do Cache
+      // Removemos a vaga do cache local porque sabemos que o backend 
+      // não a enviará mais na próxima requisição autenticada.
+      removeJobFromCache(targetJobId);
+
+      toast.success("Candidatura transmitida com sucesso.");
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  const inputClassName = "w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:border-[var(--delos-amber)] rounded-sm py-3 px-4 font-bold outline-none transition-all text-sm text-[var(--delos-black)]";
   const labelClassName = "text-[8px] font-mono font-black uppercase tracking-[0.3em] opacity-40 mb-1.5 block text-left";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-md p-0 md:p-4">
-      <motion.div 
+      <motion.div
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         style={{ backgroundColor: 'var(--delos-surface)', color: 'var(--delos-black)' }}
         className="w-full h-[95vh] md:h-auto md:max-w-4xl md:rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden border-t md:border border-white/10 relative"
       >
-        
-        {/* Delos Calibration Grid */}
+        {/* ... (Grades e Header inalterados) ... */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[length:40px_40px] [background-image:linear-gradient(to_right,var(--delos-black)_1px,transparent_1px),linear-gradient(to_bottom,var(--delos-black)_1px,transparent_1px)]" />
 
-        {/* Header */}
         <div className="px-6 md:px-10 py-6 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 relative z-10">
           <div className="flex items-center gap-5">
-            <div style={{ backgroundColor: 'var(--delos-black)', color: 'var(--delos-surface)' }} className="w-12 h-12 rounded-sm flex items-center justify-center shadow-xl group">
+            <div style={{ backgroundColor: 'var(--delos-black)', color: 'var(--delos-surface)' }} className="w-12 h-12 rounded-sm flex items-center justify-center shadow-xl">
               <Binary className="w-6 h-6 animate-pulse" />
             </div>
             <div className="text-left">
               <h3 className="text-lg md:text-xl font-black uppercase italic tracking-tighter leading-none mb-1">
-                {job.cargo_exibicao}
+                {job.cargo_nome || job.cargo_nome || "JOB_UNIT"}
               </h3>
               <div className="flex items-center gap-2 text-[8px] font-mono font-black uppercase tracking-widest text-[var(--delos-indigo)]">
                 <span>{job.empresa_nome}</span>
                 <div className="w-1 h-1 bg-[var(--delos-grey)] opacity-30 rounded-full" />
-                <span className="opacity-40 italic">Phase::{currentStep.label}</span>
+                <span className="opacity-40 italic">Etapa::{currentStep?.label}</span>
               </div>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-red-500 hover:text-white transition-all rounded-sm opacity-50 hover:opacity-100"><X className="w-6 h-6" /></button>
         </div>
 
-        {/* Multi-Step Timeline */}
+        {/* Steps Timeline */}
         <div className="flex w-full bg-black/5 dark:bg-white/5 h-12 border-b border-black/5 dark:border-white/5 overflow-x-auto no-scrollbar">
           {steps.map((s, i) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 transition-all duration-500 border-r border-black/5 dark:border-white/5 ${i === stepIndex ? "bg-[var(--delos-amber)]/10 text-[var(--delos-amber)]" : "opacity-30"}`}
             >
               {s.icon}
@@ -126,85 +198,178 @@ const JobApplyModal = ({ open, onClose, job }: Props) => {
           ))}
         </div>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 md:p-12 custom-scrollbar min-h-[400px] max-h-[60vh] relative z-10">
-          
           <AnimatePresence mode="wait">
-            {/* ETAPA: VAGA */}
             {currentStep.id === "vaga" && (
-              <motion.div key="vaga" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 text-left">
-                <div className="flex items-center gap-3">
-                  <div className="w-1 h-4 bg-[var(--delos-indigo)]" />
-                  <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] opacity-40">Operational_Requirements</span>
+              <motion.div key="vaga" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8 text-left">
+
+                {/* Descrição da Vaga */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1 h-4 bg-[var(--delos-indigo)]" />
+                    <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] opacity-40">Sobre a Vaga</span>
+                  </div>
+                  <div className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 p-8 rounded-sm italic leading-relaxed text-lg tracking-tighter opacity-80 border-l-4 border-l-[var(--delos-indigo)]">
+                    "{job.descricao}"
+                  </div>
                 </div>
-                <div className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 p-8 rounded-sm italic leading-relaxed text-lg tracking-tighter opacity-80 border-l-4 border-l-[var(--delos-indigo)]">
-                  "{job.descricao}"
+
+                {/* Listagem de Benefícios (Protocolo de Vantagens) */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1 h-4 bg-[var(--delos-amber)]" />
+                    <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] opacity-40">Benefícios</span>
+                    {loadingBenefits && <Loader2 size={10} className="animate-spin opacity-40" />}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {currentBenefits.length > 0 ? (
+                      currentBenefits.map((benefit: any) => (
+                        <div
+                          key={benefit.id}
+                          className="flex items-center gap-4 p-4 bg-white/5 border border-black/5 dark:border-white/5 rounded-sm group hover:border-[var(--delos-amber)]/30 transition-all"
+                        >
+                          <div className="w-8 h-8 rounded-sm bg-[var(--delos-amber)]/10 text-[var(--delos-amber)] flex items-center justify-center flex-shrink-0">
+                            {/* Aqui você pode mapear ícones dinâmicos se tiver o campo 'icon' no banco */}
+                            <Zap size={14} className="group-hover:scale-110 transition-transform" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                              {benefit.description}
+                            </span>
+                            <span className="text-[7px] font-mono opacity-30 uppercase mt-1">Verified_Benefit</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : !loadingBenefits && (
+                      <div className="col-span-full py-4 px-6 border border-dashed border-black/10 dark:border-white/10 rounded-sm opacity-40 text-[9px] font-mono uppercase tracking-widest text-center">
+                        No_Incentives_Declared_For_This_Unit
+                      </div>
+                    )}
+                  </div>
                 </div>
+
               </motion.div>
             )}
 
-            {/* ETAPA: EXPERIÊNCIAS */}
             {currentStep.id === "experiencias" && (
               <motion.div key="exp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                 <div className="flex justify-between items-center border-b border-black/5 dark:border-white/5 pb-4">
                   <div className="text-left">
-                    <h4 className="text-sm font-black uppercase italic tracking-widest">DNA_Career_History</h4>
-                    <p className="text-[8px] font-mono opacity-40 uppercase tracking-[0.2em]">Sincronizando registros de experiências anteriores</p>
+                    <h2 className="text-sm xl:text-2xl font-black uppercase italic tracking-widest">Experiências</h2>
+                    {loadingExp ? (
+                      <span className="text-[8px] xl:text-[14px] font-mono text-[var(--delos-amber)] animate-pulse uppercase">Carregando...</span>
+                    ) : (
+                      <p className="text-[8px] xl:text-[14px] font-mono opacity-40 uppercase tracking-[0.2em]">Registros Profissionais do Candidato</p>
+                    )}
                   </div>
                   <button onClick={handleAddExperience} className="px-4 py-2 border border-[var(--delos-black)] hover:bg-[var(--delos-black)] hover:text-[var(--delos-surface)] transition-all text-[9px] font-black uppercase tracking-widest flex items-center gap-2 rounded-sm">
-                    <Plus size={12} /> ADD_REGISTRY
+                    <Plus size={12} /> Nova Experiência
                   </button>
                 </div>
 
                 <div className="space-y-4">
-                  {experiences.map((exp, idx) => (
-                    <div key={idx} className="p-6 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm relative group/card">
-                      <button onClick={() => handleRemoveExperience(idx)} className="absolute top-2 right-2 p-2 text-red-500/40 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div className="text-left">
-                          <label className={labelClassName}>Empresa_Unit</label>
-                          <input type="text" value={exp.empresa} onChange={(e) => updateExperience(idx, 'empresa', e.target.value)} className={inputClassName} placeholder="Ex: Delos_Corp" />
-                        </div>
-                        <div className="text-left">
-                          <label className={labelClassName}>Functional_Role</label>
-                          <input type="text" value={exp.cargo} onChange={(e) => updateExperience(idx, 'cargo', e.target.value)} className={inputClassName} />
-                        </div>
-                        <div className="text-left">
-                          <label className={labelClassName}>Sync_Date</label>
-                          <input type="date" value={exp.data_entrada} onChange={(e) => updateExperience(idx, 'data_entrada', e.target.value)} className={inputClassName} />
-                        </div>
-                        <div className="flex items-end pb-2">
-                          <label className="flex items-center gap-3 cursor-pointer group/check">
-                            <input type="checkbox" checked={exp.atualmente_trabalhando} onChange={(e) => updateExperience(idx, 'atualmente_trabalhando', e.target.checked)} className="w-4 h-4 rounded-none border-[var(--delos-grey)] text-[var(--delos-indigo)] focus:ring-0 bg-transparent" />
-                            <span className="text-[9px] font-mono font-black uppercase tracking-widest opacity-60">Status::Active_Role</span>
-                          </label>
+                  {experiences.map((exp, idx) => {
+                    const isExisting = !!exp.id; // Verifica se o registro já existe no banco
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`p-6 border rounded-sm relative transition-all duration-500 ${isExisting
+                          ? "bg-black/5 border-black/10 opacity-80" // Estilo para existentes
+                          : "bg-[var(--delos-amber)]/5 border-[var(--delos-amber)]/30 shadow-[0_0_15px_rgba(255,191,0,0.1)]" // Estilo para novos
+                          }`}
+                      >
+                        {/* Indicador de Novo Registro */}
+                        {!isExisting && (
+                          <div className="absolute -top-2 -left-2 bg-[var(--delos-amber)] text-black text-[7px] font-mono font-bold px-2 py-0.5 uppercase tracking-tighter">
+                            Adicionar nova data
+                          </div>
+                        )}
+
+                        <button onClick={() => handleRemoveExperience(idx)} className="absolute top-2 right-2 p-2 text-red-500/40 hover:text-red-500 transition-all">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+
+                        <div className="grid md:grid-cols-2 gap-6">
+                          <div className="text-left">
+                            <label className={labelClassName}>Empresa</label>
+                            <input type="text" value={exp.empresa} onChange={(e) => updateExperience(idx, 'empresa', e.target.value)} className={inputClassName} placeholder="Ex: Delos_Corp" />
+                          </div>
+                          <div className="text-left">
+                            <label className={labelClassName}>Função/Cargo</label>
+                            <input type="text" value={exp.cargo} onChange={(e) => updateExperience(idx, 'cargo', e.target.value)} className={inputClassName} />
+                          </div>
+
+                          {/* Datas de Entrada e Saída */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="text-left">
+                              <label className={labelClassName}>Entrou em</label>
+                              <input type="date" value={exp.data_entrada} onChange={(e) => updateExperience(idx, 'data_entrada', e.target.value)} className={inputClassName} />
+                            </div>
+                            <div className="text-left">
+                              <label className={labelClassName}>Saida em</label>
+                              <input
+                                type="date"
+                                disabled={exp.atualmente_trabalhando}
+                                // O segredo está no "?? ''" ou "|| ''" ao final
+                                value={exp.atualmente_trabalhando ? "" : (exp.data_saida ?? "")}
+                                onChange={(e) => updateExperience(idx, 'data_saida', e.target.value)}
+                                className={`${inputClassName} ${exp.atualmente_trabalhando ? "opacity-20 cursor-not-allowed" : ""}`}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex items-end pb-2">
+                            <label className="flex items-center gap-3 cursor-pointer group/check">
+                              <input
+                                type="checkbox"
+                                checked={exp.atualmente_trabalhando}
+                                onChange={(e) => {
+                                  updateExperience(idx, 'atualmente_trabalhando', e.target.checked);
+                                  if (e.target.checked) updateExperience(idx, 'data_saida', null);
+                                }}
+                                className="w-4 h-4 rounded-none border-[var(--delos-grey)] text-[var(--delos-indigo)] focus:ring-0 bg-transparent"
+                              />
+                              <span className={`text-[9px] font-mono font-black uppercase tracking-widest ${exp.atualmente_trabalhando ? "text-[var(--delos-indigo)]" : "opacity-60"}`}>
+                                Status::Active_Role
+                              </span>
+                            </label>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </motion.div>
             )}
 
-            {/* PERGUNTAS */}
+            {/* ETAPA: PERGUNTAS DINÂMICAS */}
             {currentStep.id.startsWith("perguntas") && (
-              <motion.div key="questions" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+              <motion.div key={currentStep.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                 <div className="flex items-center gap-3 border-b border-black/5 dark:border-white/5 pb-4">
                   <Fingerprint className="text-[var(--delos-indigo)]" size={18} />
                   <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em]">Cognitive_Diagnostics</span>
+                  {loadingQuestions && <Loader2 size={14} className="animate-spin opacity-40" />}
                 </div>
                 <div className="grid gap-8 text-left">
+                  {/* IMPORTANTE: Usamos q.id aqui porque seu JSON traz 'id' 
+      */}
                   {(currentStep as any).data.map((q: any, index: number) => (
-                    <div key={q.uid || index} className="space-y-3">
+                    <div key={q.id} className="space-y-3">
                       <label className="text-[10px] font-black opacity-60 uppercase tracking-widest block italic">
                         {index + 1}. {q.question}
                       </label>
                       <textarea
                         rows={3}
-                        value={answers[q.uid] || ""}
-                        onChange={(e) => setAnswers(prev => ({ ...prev, [q.uid]: e.target.value }))}
+                        // Ligamos o valor ao ID único da pergunta no estado 'answers'
+                        value={answers[q.id] || ""}
+                        onChange={(e) => setAnswers(prev => ({
+                          ...prev,
+                          [q.id]: e.target.value
+                        }))}
                         className={`${inputClassName} resize-none py-4`}
-                        placeholder="Waiting for neural input..."
+                        placeholder="Aguardando entrada de dados..."
                       />
                     </div>
                   ))}
@@ -212,22 +377,21 @@ const JobApplyModal = ({ open, onClose, job }: Props) => {
               </motion.div>
             )}
 
-            {/* OTIMIZAÇÃO */}
             {currentStep.id === "impulsionar" && (
               <motion.div key="turbo" initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="h-full flex items-center">
                 <div className="bg-[var(--delos-black)] rounded-sm p-8 md:p-12 text-[var(--delos-surface)] shadow-2xl relative overflow-hidden w-full group border border-white/10">
                   <div className="absolute inset-0 opacity-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none" />
                   <Sparkles className="absolute -right-6 -top-6 w-48 h-48 opacity-10 rotate-12 group-hover:rotate-0 transition-transform duration-1000 text-[var(--delos-amber)]" />
                   <div className="relative z-10 text-center max-w-md mx-auto space-y-6">
-                    <h4 className="text-3xl font-black italic uppercase tracking-tighter">Optimize_Sync?</h4>
+                    <h4 className="text-3xl font-black italic uppercase tracking-tighter">Quer receber propostas?</h4>
                     <p className="text-xs opacity-50 uppercase tracking-widest leading-relaxed">
                       Unidades com prioridade de triagem têm <span className="text-[var(--delos-amber)]">300% mais detecção</span> pelas redes neurais corporativas.
                     </p>
                     <label className="flex items-center justify-center gap-5 bg-white/5 p-6 rounded-sm cursor-pointer hover:bg-white/10 transition-all border border-white/10 group/check">
                       <input type="checkbox" className="w-5 h-5 rounded-none border-white/20 bg-transparent text-[var(--delos-amber)] focus:ring-0" />
                       <div className="text-left">
-                        <span className="block text-[10px] font-black uppercase tracking-[0.2em]">Enable_Turbo_Protocol</span>
-                        <span className="text-[8px] font-mono text-[var(--delos-amber)] uppercase opacity-70">Priority_Fee::R$ 5,99</span>
+                        <span className="block text-[14px] font-black uppercase tracking-[0.2em]">Ative o Turbo</span>
+                        <span className="text-[10px] font-mono text-[var(--delos-amber)] uppercase opacity-70">Valor::R$ 2,99</span>
                       </div>
                     </label>
                   </div>
@@ -239,31 +403,46 @@ const JobApplyModal = ({ open, onClose, job }: Props) => {
 
         {/* Footer Actions */}
         <div className="p-6 md:p-10 border-t border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 flex items-center justify-between gap-6 relative z-10">
+
+          {/* Botão de Voltar (REVERSE_PHASE) */}
           <button
             type="button"
             onClick={() => setStepIndex(i => i - 1)}
+            // Desabilita se for o primeiro passo ou se estiver em processo de submissão
             disabled={stepIndex === 0 || isSubmitting}
-            className="flex items-center gap-2 text-[9px] font-mono font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-all disabled:invisible"
+            className="flex-1 md:flex-none px-8 py-5 rounded-sm font-black text-[10px] uppercase tracking-[0.3em] transition-all active:scale-[0.98] flex items-center justify-center gap-4 disabled:opacity-0 disabled:pointer-events-none border border-black/10 dark:border-white/10 text-[var(--delos-black)]"
           >
-            <ChevronLeft className="w-4 h-4" /> REVERSE_PHASE
+            <ChevronLeft className="w-4 h-4" />
+            <span>Voltar</span>
           </button>
 
+          {/* Botão de Avançar/Sync (EXECUTE_SYNC) */}
           <button
             type="button"
-            disabled={isSubmitting}
+            // BLOQUEIO CRÍTICO: Se validateUser for false, o botão não clica
+            disabled={isSubmitting || !validateUser || (currentStep.id.startsWith("perguntas") && loadingQuestions)}
             onClick={() => {
               if (stepIndex < steps.length - 1) setStepIndex(i => i + 1)
               else handleSubmit()
             }}
-            style={{ backgroundColor: 'var(--delos-black)', color: 'var(--delos-surface)' }}
-            className="flex-1 md:flex-none px-12 py-5 rounded-sm font-black text-[10px] uppercase tracking-[0.4em] shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-4 disabled:opacity-30"
+            style={{
+              backgroundColor: validateUser ? 'var(--delos-black)' : 'var(--delos-grey)',
+              color: 'var(--delos-surface)'
+            }}
+            className="flex-1 md:flex-none px-12 py-5 rounded-sm font-black text-[10px] uppercase tracking-[0.4em] shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-4 disabled:opacity-30 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                {stepIndex === steps.length - 1 ? "EXECUTE_FINAL_SYNC" : "NEXT_UPGRADE_PHASE"}
-                <ChevronRight className="w-4 h-4" />
+                {!validateUser ? (
+                  "Candidato Desconhecido" // Feedback visual do porquê está bloqueado
+                ) : (
+                  <>
+                    {stepIndex === steps.length - 1 ? "Candidatar-se" : "Proximo"}
+                    <ChevronRight className="w-4 h-4" />
+                  </>
+                )}
               </>
             )}
           </button>

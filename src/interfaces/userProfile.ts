@@ -4,7 +4,7 @@ export type UserProfile = {
   last_name?: string;
   full_name?: string;
   ocupation?: string;
-  email?: string;
+  email_contato?: string;
   role?: string;
   bio?: string;
   foto?: string | null;

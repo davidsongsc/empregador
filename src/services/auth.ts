@@ -17,12 +17,12 @@ const DELTA_HEADERS = {
  * Verifica a sessão atual com suporte ao Protocolo Delta.
  * @param lastUpdated Timestamp da última atualização local.
  */
-export async function checkSession(lastUpdated?: number) {
-  // Se houver timestamp, enviamos como query param
-  const url = lastUpdated ? `/auth/session/?last_updated=${lastUpdated}` : "/auth/session/";
-  
-  // O wrapper 'api' deve usar credentials: "include" para enviar o cookie 'access'
-  return await api(url, { method: "GET" });
+export async function checkSession() {
+    // Se houver timestamp, enviamos como query param
+    const url = '/api/v1/auth/me';
+
+    // O wrapper 'api' deve usar credentials: "include" para enviar o cookie 'access'
+    return await api(url, { method: "GET" });
 }
 
 export async function getMyProfile(forceRefresh = false) {
@@ -34,7 +34,7 @@ export async function getMyProfile(forceRefresh = false) {
         return cachedProfile;
     }
 
-    const profileData = await api("/profiles/me/", {
+    const profileData = await api("/api/v1/perfis/me/", {
         method: "GET",
         headers: { ...DELTA_HEADERS },
         credentials: "include",
@@ -50,7 +50,7 @@ export async function getMyProfile(forceRefresh = false) {
 
 export async function updateMyProfile(profileData: any) {
     // PATCH sempre usa Protocolo Delta para informar mudança imediata
-    const res = await api("/profiles/me/", {
+    const res = await api("/api/v1/perfis/me/", {
         method: "PATCH",
         headers: {
             ...DELTA_HEADERS,
@@ -69,7 +69,7 @@ export async function updateMyProfile(profileData: any) {
 
 export async function logout() {
     try {
-        await api("/auth/logout/", {
+        await api("/api/v1/auth/logout/", {
             method: "POST",
             credentials: "include",
         });
@@ -87,12 +87,14 @@ export async function logout() {
 }
 
 // ROTA PÚBLICA: Não precisa de Delta Sync (sempre fresh)
-export async function registerUser(whatsappNumber: string, password: string) {
-    return await api("/api/users/", {
+export async function registerUser(email: string, whatsappNumber: string, password: string) {
+    return await api("/api/v1/usuarios/", {
         method: "POST",
         body: JSON.stringify({
+            email: email,
             whatsapp_number: whatsappNumber,
-            password,
+            password
+
         }),
     });
 }

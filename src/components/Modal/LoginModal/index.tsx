@@ -10,7 +10,9 @@ import {
     ArrowRight,
     ChevronDown,
     Activity,
-    X
+    X,
+    Mail,
+    CheckCircle
 } from "lucide-react";
 import { toast } from "@/components/Notification";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -32,7 +34,10 @@ interface LoginModalProps {
 
 const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
     const router = useRouter();
+    const { setUser } = useAuthStore();
     const searchParams = useSearchParams();
+    const [email, setEmail] = useState("");
+    const [rememberMe, setRememberMe] = useState(false);
 
     const [showPassword, setShowPassword] = useState(false);
     const [countryCode, setCountryCode] = useState("55");
@@ -40,51 +45,74 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [rememberMe] = useState(false);
     const [isValid, setIsValid] = useState(false);
 
     useEffect(() => {
-        const cleanWhatsapp = whatsapp.replace(/\D/g, "");
-        setIsValid(cleanWhatsapp.length >= 10 && password.length >= 8);
-    }, [whatsapp, password]);
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const isEmailValid = emailRegex.test(email);
+        const isPasswordValid = password.length >= 8;
+
+        setIsValid(isEmailValid && isPasswordValid);
+    }, [email, password]);
 
     useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "unset";
+        const savedEmail = localStorage.getItem("saved_email");
+        const savedCountry = localStorage.getItem("saved_country");
+        if (savedEmail) {
+            setEmail(savedEmail);
+            setRememberMe(true);
         }
-        return () => { document.body.style.overflow = "unset"; };
-    }, [isOpen]);
+        if (savedCountry) setCountryCode(savedCountry);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!isValid || loading) return;
-
         setLoading(true);
         setError(null);
 
         try {
-            const cleanWhatsapp = whatsapp.replace(/\D/g, "");
-            const fullNumber = `${countryCode}${cleanWhatsapp}`;
+            const res = await login(email, password, rememberMe);
 
-            const res = await login(fullNumber, password, rememberMe);
+            if (res && (res.user || res.ok)) {
+                // --- LÓGICA DE PERSISTÊNCIA ---
+                if (rememberMe) {
+                    localStorage.setItem("saved_email", email);
+                    localStorage.setItem("saved_country", countryCode);
+                } else {
+                    localStorage.removeItem("saved_email");
+                    localStorage.removeItem("saved_country");
+                }
 
-            if (res && (res.user || res.profile || res.ok)) {
+                // ... Lógica de redirecionamento (empresas, etc)
                 const userData = res.user || res.data?.user || res;
-                useAuthStore.getState().setUser(userData);
+                setUser(userData);
 
                 toast.success("Sincronização realizada.");
-                const destination = searchParams.get("from") || "/dashboard/home";
-
-                onClose();
-                router.push(destination);
+                router.push("/dashboard/home"); // Exemplo simplificado
             } else {
-                setError(res?.message || "ACESSO_NEGADO: Credenciais inválidas.");
+                setError("ACESSO_NEGADO: Credenciais inválidas.");
             }
         } catch (err: any) {
-            setError("SERVER_OFFLINE: Erro de conexão.");
-            toast.error("Ocorreu um erro ao fazer login.");
+            // --- LÓGICA DE CAPTURA DE ERRO DO FASTAPI ---
+            let backendError = "CRITICAL_ERROR: Falha ao criar conta.";
+
+            if (err.response?.data?.detail) {
+                const detail = err.response.data.detail;
+
+                // Se for o array de erros do FastAPI (validação)
+                if (Array.isArray(detail)) {
+                    backendError = `VALIDATION_ERROR: ${detail[0].msg}`;
+                    toast.error(backendError);
+                } else {
+                    // Se for uma mensagem simples (HTTPException)
+                    backendError = detail;
+                }
+            } else {
+                backendError = err.message || backendError;
+            }
+
+            setError(backendError);
+            toast.error(backendError); // Agora a notificação mostra o erro real
         } finally {
             setLoading(false);
         }
@@ -133,63 +161,76 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                             </h1>
                         </div>
 
-                        <form className="space-y-5" onSubmit={handleSubmit}>
+                        <form className="space-y-6" onSubmit={handleSubmit}>
                             {/* WhatsApp */}
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black text-delos-black uppercase tracking-[0.2em]">Telefone</label>
+                                <label className="text-[9px] font-black text-delos-grey uppercase tracking-[0.2em]">
+                                    Identification_Number (WhatsApp)
+                                </label>
                                 <div className="flex gap-2">
-                                    <div className="relative">
-                                        <select
-                                            value={countryCode}
-                                            onChange={(e) => setCountryCode(e.target.value)}
-                                            className="appearance-none bg-black/5 border border-white/10 rounded-none py-3 pl-3 pr-8 outline-none font-bold text-sm text-delos-black focus:border-delos-amber transition-all"
-                                        >
-                                            {COUNTRIES.map((c) => (
-                                                <option key={c.code} value={c.code} className="bg-delos-surface text-delos-black">
-                                                    {c.flag} +{c.code}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-delos-black pointer-events-none" />
-                                    </div>
+                              
                                     <div className="relative flex-1">
-                                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-black" />
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-grey" />
                                         <input
-                                            type="tel"
-                                            placeholder="Whatsapp"
-                                            value={whatsapp}
-                                            onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ""))}
-                                            className="w-full bg-black/5 border border-white/10 rounded-none py-3 pl-10 pr-4 outline-none focus:border-delos-amber text-sm font-bold text-delos-black placeholder:text-delos-black "
+                                            type="email"
+                                            placeholder="Email"
+                                            value={email}
+                                            required
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            className="w-full bg-delos-surface border border-white/10 rounded-xl py-4 pl-12 pr-4 outline-none focus:border-delos-amber text-delos-black transition-all font-bold tracking-widest"
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Password */}
+                            {/* Senha */}
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black text-delos-black uppercase tracking-[0.2em]">Senha</label>
+                                <label className="text-[9px] font-black text-delos-grey uppercase tracking-[0.2em]">
+                                    Access_Key (Senha)
+                                </label>
                                 <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-black" />
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-grey" />
                                     <input
-                                        placeholder="Digite sua Senha" 
                                         type={showPassword ? "text" : "password"}
                                         value={password}
+                                        required
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full bg-black/5 border border-white/10 rounded-none py-3 pl-10 pr-10 outline-none focus:border-delos-amber text-sm font-bold text-delos-black placeholder:text-delos-black"
+                                        className="w-full bg-delos-surface border border-white/10 rounded-xl py-4 pl-12 pr-12 outline-none focus:border-delos-amber text-delos-black transition-all font-bold tracking-widest"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-delos-black hover:text-delos-amber"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-delos-grey hover:text-delos-amber"
                                     >
                                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
                                 </div>
                             </div>
 
+                            <div className="flex items-center justify-between px-1">
+                                <label className="flex items-center gap-2 cursor-pointer group">
+                                    <input
+                                        type="checkbox"
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                        className="peer sr-only"
+                                    />
+                                    <div className="w-4 h-4 border border-white/10 rounded bg-delos-surface peer-checked:bg-delos-amber peer-checked:border-delos-amber transition-all flex items-center justify-center">
+                                        <CheckCircle className={`w-3 h-3 text-white ${rememberMe ? 'block' : 'hidden'}`} />
+                                    </div>
+                                    <span className="text-[9px] font-black text-delos-grey uppercase tracking-widest group-hover:text-delos-black transition-colors">
+                                        Lembrar_Sessão
+                                    </span>
+                                </label>
+
+                                <Link href="/recuperar-senha" className="text-[9px] font-black text-delos-grey hover:text-delos-amber transition-colors uppercase tracking-widest">
+                                    Recuperar_Acesso?
+                                </Link>
+                            </div>
+
                             {error && (
-                                <div className="text-[9px] text-delos-red font-black uppercase p-2 bg-delos-red/5 border border-delos-red/20 flex items-center gap-2">
-                                    <span className="w-1 h-1 bg-delos-red rounded-full animate-ping" />
+                                <div className="text-[10px] text-red-600 font-black uppercase tracking-widest bg-red-50 p-3 rounded-lg border border-red-100 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-ping" />
                                     {error}
                                 </div>
                             )}
@@ -197,13 +238,26 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                             <button
                                 type="submit"
                                 disabled={!isValid || loading}
-                                className={`w-full py-4 rounded-none font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 active:scale-[0.98]
-                                    ${!isValid || loading
-                                        ? "bg-delos-black text-delos-black/40 cursor-not-allowed border border-white/5"
-                                        : "bg-delos-grey text-white hover:bg-delos-amber hover:shadow-[0_0_20px_rgba(217,119,6,0.3)]"}`}
+                                className={`
+    w-full py-5 rounded-xl font-black uppercase tracking-[0.3em] transition-all 
+    flex items-center justify-center gap-3 group active:scale-[0.98]
+    ${!isValid || loading
+                                        ? "bg-delos-amber opacity-30 grayscale cursor-not-allowed border border-white/5"
+                                        : "bg-delos-black text-white hover:bg-delos-amber hover:shadow-[0_0_20px_rgba(217,119,6,0.3)]"
+                                    }
+  `}
                             >
-                                {loading ? <Activity className="w-4 h-4 animate-spin" /> : "Entrar"}
-                                <ArrowRight className="w-4 h-4" />
+                                {loading ? (
+                                    <span className="flex items-center gap-2">
+                                        <Activity className="w-4 h-4 animate-spin" />
+                                        PROCESSANDO...
+                                    </span>
+                                ) : (
+                                    <>
+                                        Entrar
+                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
+                                    </>
+                                )}
                             </button>
                         </form>
 

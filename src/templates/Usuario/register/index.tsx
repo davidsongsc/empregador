@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@/components/Notification";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
-  Briefcase,
+  Mail,
   Phone,
   ShieldCheck,
   Loader2,
@@ -20,6 +20,7 @@ import { registerUser } from "@/services/auth";
 const RegisterPage = () => {
   const router = useRouter();
   const { setUser } = useAuthStore();
+  const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -46,22 +47,35 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
-      const res = await registerUser(whatsapp, password);
+      const res = await registerUser(email, whatsapp, password);
 
-      if (res?.id) {
-        setUser(res);
+      if (res?.user?.id) {
+        setUser(res?.user);
         toast.success("Host registrado com sucesso!", "Sincronizando...");
         router.push("/perfil");
         router.refresh();
       }
     } catch (err: any) {
-      const backendError =
-        err.errors?.whatsapp_number?.[0] ||
-        err.errors?.errors?.whatsapp_number?.[0] ||
-        err.message ||
-        "CRITICAL_ERROR: Falha ao criar conta.";
+      // --- LÓGICA DE CAPTURA DE ERRO DO FASTAPI ---
+      let backendError = "CRITICAL_ERROR: Falha ao criar conta.";
+
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+
+        // Se for o array de erros do FastAPI (validação)
+        if (Array.isArray(detail)) {
+          backendError = `VALIDATION_ERROR: ${detail[0].msg}`;
+          toast.error(backendError);
+        } else {
+          // Se for uma mensagem simples (HTTPException)
+          backendError = detail;
+        }
+      } else {
+        backendError = err.message || backendError;
+      }
+
       setError(backendError);
-      toast.error(backendError);
+      toast.error(backendError); // Agora a notificação mostra o erro real
     } finally {
       setLoading(false);
     }
@@ -69,7 +83,7 @@ const RegisterPage = () => {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-delos-surface font-mono">
-      
+
       {/* LADO ESQUERDO: DELOS_NARRATIVE */}
       <div className="hidden lg:flex flex-col justify-between bg-delos-black p-12 text-white relative overflow-hidden border-r border-white/5">
         <div className="absolute -top-20 -right-20 w-96 h-96 bg-delos-amber rounded-full opacity-10 blur-[120px]"></div>
@@ -79,7 +93,7 @@ const RegisterPage = () => {
             <Terminal className="text-white w-6 h-6" />
           </div>
           <span className="text-2xl font-black tracking-tighter italic">
-            DELOS_<span className="text-delos-amber">MATRIX</span>
+            FREELA_<span className="text-delos-amber">CERTO</span>
           </span>
         </Link>
 
@@ -124,21 +138,36 @@ const RegisterPage = () => {
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Email */}
+            <div className="space-y-2">
+              <label className="text-[9px] font-black text-delos-grey uppercase tracking-[0.2em] px-1">
+                Email
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-grey" />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`w-full bg-delos-surface border border-white/10 rounded-xl py-4 pl-14 pr-6 font-bold outline-none transition-all text-delos-black tracking-widest ${error && !whatsapp ? "border-red-500/50" : "focus:border-delos-amber"
+                    }`} />
+              </div>
+            </div>
             {/* WhatsApp */}
             <div className="space-y-2">
               <label className="text-[9px] font-black text-delos-grey uppercase tracking-[0.2em] px-1">
-                Identification_Number (WhatsApp)
+                Whatsapp (Number)
               </label>
               <div className="relative">
                 <Phone className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-grey" />
                 <input
                   type="tel"
-                  placeholder="5511999999999"
+                  placeholder="Numero"
                   value={whatsapp}
                   onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ""))}
-                  className={`w-full bg-delos-surface border border-white/10 rounded-xl py-4 pl-14 pr-6 font-bold outline-none transition-all text-delos-black tracking-widest ${
-                    error && !whatsapp ? "border-red-500/50" : "focus:border-delos-amber"
-                  }`}
+                  className={`w-full bg-delos-surface border border-white/10 rounded-xl py-4 pl-14 pr-6 font-bold outline-none transition-all text-delos-black tracking-widest ${error && !whatsapp ? "border-red-500/50" : "focus:border-delos-amber"
+                    }`}
                 />
               </div>
             </div>
@@ -166,7 +195,7 @@ const RegisterPage = () => {
                   Confirm_Access_Key
                 </label>
                 <div className="relative">
-                   <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-grey" />
+                  <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-grey" />
                   <input
                     type="password"
                     value={confirmPassword}

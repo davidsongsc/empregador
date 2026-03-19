@@ -35,12 +35,12 @@ interface PaginationParams {
  */
 // jobService.ts
 export async function getAllJobs(
-  params: JobSearchParams = {},
+  params: any,
   options: FetchOptions = {}
 ): Promise<JobsResponse> {
-  const queryString = buildQuery(params);
 
-  return api(`/vagas/public/roles/?${queryString}`, {
+
+  return api(`/api/v1/jobs/category/${params}`, {
     method: "GET",
     credentials: "include",
     headers: { ...(options.headers || {}) }
@@ -54,9 +54,8 @@ export async function getJobFeed(
   params: JobSearchParams = {},
   options: FetchOptions = {}
 ): Promise<JobsResponse> {
-  const queryString = buildQuery(params);
 
-  return api(`/vagas/feed/?${queryString}`, {
+  return api(`/api/v1/jobs/category/${params}`, {
     method: "GET",
     credentials: "include",
     headers: { ...(options.headers || {}) }
@@ -145,7 +144,7 @@ export async function updateApplicationStatus(applicationId: string, newStatus: 
 }
 export async function getJobCategories(page: number = 1): Promise<any> {
   // Passamos o page na query string
-  return api(`/vagas/public/roles/categories/?page=${page}`, {
+  return api(`/api/v1/categories/categories?page=${page}`, {
     method: "GET",
     credentials: "include",
   });
@@ -185,6 +184,30 @@ export async function patchJobDelta(uid: string, companyId: string, data: Partia
     headers: {
       "Content-Type": "application/json",
       "X-Company-Id": cleanCompanyId,
+    },
+    credentials: "include",
+  });
+}
+
+
+/**
+ * Busca perguntas personalizadas de uma vaga específica.
+ * @param jobId O UID da vaga (UUID)
+ * @param params Objeto contendo pagina e tamanho (conforme sua API Server Response)
+ */
+export async function getJobQuestions(jobId: string, params: { pagina?: number; tamanho?: number } = {}) {
+  // Garante que o ID esteja limpo caso venha com aspas de algum storage/cache
+  const cleanJobId = jobId.toString().replace(/["'“”]/g, '').trim();
+
+  const { pagina = 1, tamanho = 10 } = params;
+
+  // Montagem da query string seguindo o padrão: ?job_id=UUID&pagina=1&tamanho=10
+  const queryString = `?job_id=${cleanJobId}&pagina=${pagina}&tamanho=${tamanho}`;
+
+  return api(`/api/v1/jobs/questions/${queryString}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
     },
     credentials: "include",
   });

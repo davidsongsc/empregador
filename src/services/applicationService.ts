@@ -1,53 +1,130 @@
-import { apiAxios } from "@/services/apiAxios";
+import { api } from "@/lib/api";
+import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
+
+/**
+ * PROTOCOLO_DELTA_APP_CONFIG
+ * TTL: 1 Hora (3.600.000 ms) para candidaturas
+ */
+const APP_STALE_TIME = 1 * 60 * 60 * 1000;
+const DELTA_HEADERS = {
+  "X-Protocol-Mode": "DELTA_SYNC",
+  "X-Sync-Policy": "LONG_TERM_CACHE",
+};
+
 export const applicationService = {
   /**
-   * Envia uma nova candidatura
-   * @param jobUid UID da vaga
-   * @param answers Array de objetos { question_uid, answer }
-   * @param resume Arquivo PDF do currículo
+   * Envia uma nova candidatura (Protocolo de Sincronização Cognitiva)
    */
-  applyToJob: async (jobUid: string, answers: any[], resume?: File) => {
-    const formData = new FormData();
-    
-    // 1. Dados obrigatórios
-    formData.append("job", jobUid);
-    
-    // 2. Currículo (se houver)
-    if (resume) {
-      formData.append("resume", resume);
-    }
+  applyToJob: async (jobId: string, answers: any[]) => {
+    const cleanJobId = jobId.toString().replace(/["'“”]/g, '').trim();
 
-    // 3. Respostas
-    // O Serializer espera uma lista de objetos. Enviamos como string JSON 
-    // para que o multipart/form-data aceite a estrutura aninhada.
-    formData.append("respostas", JSON.stringify(answers));
+    // O Backend espera 'job_id' e 'respostas'
+    const payload = {
+      job_id: cleanJobId,
+      respostas: answers
+    };
 
     try {
-      // Usamos a rota padrão do ViewSet: /api/vagas/applications/
-      return await apiAxios.post("/vagas/candidaturas/", formData, {
+      // Verifique se o seu wrapper 'api' aceita o objeto direto no body
+      // Se ele for um fetch comum, precisa do JSON.stringify:
+      const res = await api("/api/v1/applications/", {
+        method: "POST",
+        credentials: "include",
         headers: {
-          "Content-Type": "multipart/form-data",
+          "Content-Type": "application/json",
+          "Accept": "application/json",
         },
+        body: JSON.stringify(payload),
       });
+
+      await Promise.all([
+        idbDel("apps_list_ts"),
+        idbDel("enrolled_jobs_ts")
+      ]);
+
+      return res;
     } catch (err: any) {
-      throw err;
+      // Tratamento para não vir objeto do Pydantic no Notification
+      const detail = err.response?.data?.detail;
+      const msg = Array.isArray(detail) ? detail[0]?.msg : (detail || err.message);
+      throw new Error(msg);
     }
   },
 
   /**
-   * Busca candidatos de uma vaga específica (Visão do Recrutador)
+   * Busca as candidaturas do usuário com cache persistente (IndexedDB)
    */
-  getJobApplications: async (jobId: string) => {
-    // Usamos o filtro que você definiu no filterset_fields da ViewSet
-    return await apiAxios.get(`/vagas/candidaturas/?job=${jobId}`);
+  getMyApplications: async (forceRefresh = false) => {
+    const now = Date.now();
+    const [cachedApps, lastSync] = await Promise.all([
+      idbGet("apps_list_data"),
+      idbGet("apps_list_ts")
+    ]);
+
+    if (!forceRefresh && cachedApps && lastSync && (now - lastSync < APP_STALE_TIME)) {
+      return cachedApps;
+    }
+
+    const data = await api("/api/v1/applications/", {
+      method: "GET",
+      headers: { ...DELTA_HEADERS },
+      credentials: "include",
+    });
+
+    await Promise.all([
+      idbSet("apps_list_data", data),
+      idbSet("apps_list_ts", now)
+    ]);
+
+    return data;
   },
 
   /**
-   * Atualiza o status de uma candidatura (Mudar fase do funil)
+   * Atualiza o status (Delta Update para Recrutadores)
    */
-  updateApplicationStatus: async (applicationId: string, status: string) => {
-    return await apiAxios.patch(`/vagas/candidaturas/${applicationId}/`, {
-      status
+  updateApplicationStatus: async (applicationId: string, newStatus: string) => {
+    const cleanAppId = applicationId.toString().replace(/["'“”]/g, '').trim();
+
+    const res = await api(`/api/v1/applications/${cleanAppId}/`, {
+      method: "PATCH",
+      headers: {
+        ...DELTA_HEADERS,
+        "Content-Type": "application/json", // PATCH precisa de JSON explicito
+        "X-Delta-Target": "APP_STATUS_UPDATE"
+      },
+      credentials: "include",
+      body: JSON.stringify({ status: newStatus }),
     });
+
+    await idbDel("apps_list_ts");
+    return res;
+  },
+
+  /**
+   * Busca as vagas onde o usuário está inscrito
+   */
+  getEnrolledJobs: async (forceRefresh = false) => {
+    const now = Date.now();
+    const [cachedJobs, lastSync] = await Promise.all([
+      idbGet("enrolled_jobs_data"),
+      idbGet("enrolled_jobs_ts")
+    ]);
+
+    if (!forceRefresh && cachedJobs && lastSync && (now - lastSync < APP_STALE_TIME)) {
+      return cachedJobs;
+    }
+
+    const data = await api("/api/v1/applications/minhas-vagas/", {
+      method: "GET",
+      headers: { ...DELTA_HEADERS },
+      credentials: "include",
+    });
+
+    await Promise.all([
+      idbSet("enrolled_jobs_data", data),
+      idbSet("enrolled_jobs_ts", now)
+    ]);
+
+    return data;
   }
 };

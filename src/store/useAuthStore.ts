@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { UserData } from '@/interfaces/userData';
 import { logout as apiLogout, checkSession } from '@/services/auth';
 import { getCookie, setCookie, deleteCookie } from "@/lib/cookies";
+import { toast } from '@/components/Notification';
 
 interface AuthState {
   user: UserData | null;
@@ -103,24 +104,27 @@ export const useAuthStore = create<AuthState>()(
 
       // useAuthStore.ts
       refresh: async () => {
-        const { lastUpdated, loading, isHydrated } = get();
+        const state = get();
 
-        // 1. Bloqueio de Segurança: Não busca se já está carregando 
-        // ou se foi atualizado há menos de 1 minuto (Throttling)
-        const ONE_MINUTE = 60 * 1000;
-        if (loading || (isHydrated && Date.now() - lastUpdated < ONE_MINUTE)) {
+        // 1. BLOQUEIO DE SEGURANÇA: Se já estiver carregando ou não estiver hidratado, aborte.
+        if (state.loading || !state.isHydrated) return;
+
+        // 2. PROTOCOLO DELTA: Evite refresh se a última atualização foi há menos de 10 segundos
+        // Isso evita loops causados por re-renders rápidos do React
+        const now = Date.now();
+        if (now - state.lastUpdated < 10000) {
+          set({ loading: false });
           return;
         }
 
         set({ loading: true });
         try {
-          // 2. Protocolo Delta: Envia o timestamp para a VPS
-          const data = await checkSession(lastUpdated);
+          const data = await checkSession();
 
           if (data?.no_changes) {
             // Importante: Atualizamos o timestamp mesmo no no_changes 
             // para reiniciar o contador de 1 minuto
-            set({ lastUpdated: Date.now(), loading: false });
+            set({ loading: false });
             return;
           }
 
@@ -129,12 +133,22 @@ export const useAuthStore = create<AuthState>()(
             get().setUser(userData);
           }
         } catch (err: any) {
-          if (err.response?.status === 401) {
-            // Se a VPS diz que a sessão expirou, apenas desloga no front 
-            // SEM dar o redirect forçado que está no método logout()
-            set({ user: null, isAuthenticated: false, loading: false });
+          let backendError = "Erro ao processar solicitação.";
+
+          // Se o FastAPI retornar erro de validação (422)
+          if (err.response?.data?.detail && Array.isArray(err.response.data.detail)) {
+            const errorDetail = err.response.data.detail[0];
+            const campo = errorDetail.loc[1]; // ex: "email"
+            const mensagem = errorDetail.msg;  // ex: "value is not a valid email address"
+
+            backendError = `Erro no campo ${campo}: ${mensagem}`;
           }
-          console.error("[Delta X] Sync silenciado.");
+          // Se for um erro manual que você deu raise (400)
+          else if (err.response?.data?.detail) {
+            backendError = err.response.data.detail;
+          }
+
+          toast.error(backendError);
         } finally {
           set({ loading: false });
         }
