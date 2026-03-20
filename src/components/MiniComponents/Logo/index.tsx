@@ -15,7 +15,7 @@ const LogoFreelaCerto = () => {
                         Freela
                     </span>
                     <span className={`px-4 py-1.5 ml-1 transition-all duration-700 ${!isScrolled ? 'bg-amber-600 text-white shadow-lg shadow-amber-200/50' : 'bg-gray-100 text-gray-400'}`}>
-                        Certo
+                        Facil
                     </span>
                 </div>
             </Link>

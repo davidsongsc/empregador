@@ -1,48 +1,73 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, FileText, ChevronRight, GraduationCap,
-  LogOut, MapPin, Camera, Mail, Activity, Terminal
+  LogOut, MapPin, Camera, Mail, Activity, Terminal, Loader2
 } from 'lucide-react';
-
-// Hooks de Dados
+import { useRouter } from 'next/navigation';
+import { ExperienceManagerModal } from '@/components/Modal/ExperienceManagerModal';
 import { useProfile } from '@/hooks/useProfile';
 import { useAddressStore } from '@/store/useAddressStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useMyApplications } from '@/hooks/useMyApplications';
+import { useApplicationStore } from '@/store/useApplicationStore';
 
-// Componentes
 import ApplicationDashboard from '@/components/ApplicationDashboard';
 import PerfilLoading from '@/components/PerfilLoading';
 import { EditProfileModal } from '@/components/Modal/ProfileEditModal';
 import WorkExperience from '@/components/MiniComponents/WorkExperience';
+import { toast } from '@/components/Notification';
 
 const App = () => {
-  // 1. Consumo de Estados Globais (Stores)
+  const router = useRouter();
   const { logout, isAuthenticated } = useAuthStore();
   const { profile, loading: profileLoading } = useProfile();
-  const { applications, loading: appsLoading, totalCount } = useMyApplications();
+  const {
+    data: applications,
+    loading: appsLoading,
+    total,
+    fetchApplications
+  } = useApplicationStore();
   const { addresses, fetchAddresses } = useAddressStore();
-
-  // 2. Estados de UI
+  const [isExpModalOpen, setIsExpModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 3. Lógica de Exibição de Endereço
-  // Buscamos o endereço marcado como padrão ou o primeiro da lista
-  const currentAddress = addresses.find(a => a.is_default) || addresses[0] || null;
+  const currentApps = useMemo(() => {
+    return Array.isArray(applications) ? applications : (applications as any)?.items || [];
+  }, [applications]);
 
-  // 4. Efeito de Inicialização (Boot da Unidade)
+  const currentAddress = useMemo(() => {
+    return addresses.find(a => a.is_default) || addresses[0] || null;
+  }, [addresses]);
+
   useEffect(() => {
-    if (profile?.usuario_id) {
-      fetchAddresses(profile.usuario_id);
+    if (!profileLoading && !isAuthenticated) {
+      router.push('/login');
     }
-  }, [profile?.usuario_id, fetchAddresses]);
+  }, [isAuthenticated, profileLoading, router]);
 
-  // 5. Guardas de Renderização
-  if (appsLoading || profileLoading) return <PerfilLoading />;
+  useEffect(() => {
+    if (isAuthenticated && profile?.usuario_id) {
+      fetchAddresses(profile.usuario_id);
+      fetchApplications();
+    }
+  }, [profile?.usuario_id, isAuthenticated, fetchAddresses, fetchApplications]);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        toast.info("Uploading_Neural_Snapshot...");
+        // Logica de upload aqui
+      } catch (err) {
+        toast.error("Upload_Failure");
+      }
+    }
+  };
+
+  if (profileLoading) return <PerfilLoading />;
   if (!isAuthenticated) return null;
 
   return (
@@ -50,20 +75,16 @@ const App = () => {
       style={{ backgroundColor: 'var(--delos-surface)', color: 'var(--delos-black)' }}
       className="min-h-screen pt-32 pb-20 px-4 transition-colors duration-500 font-sans relative overflow-hidden"
     >
-      {/* Scanline Global - Estética Delos */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-50 bg-[length:100%_2px,3px_100%]" />
 
       <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-10 relative z-10">
-
-        {/* --- SIDEBAR: MONITORAMENTO DA UNIDADE --- */}
         <aside className="lg:col-span-4 space-y-8">
           <div
             style={{ borderColor: 'rgba(var(--delos-grey), 0.1)' }}
             className="bg-white dark:bg-[#080808] border rounded-sm p-8 shadow-2xl relative overflow-hidden group transition-all"
           >
-            {/* Tag de ID Técnico */}
             <div className="absolute top-0 left-0 p-2 bg-[var(--delos-black)] text-[var(--delos-surface)] text-[7px] font-mono tracking-[0.3em] uppercase">
-              Host_Unit::DRV_{profile?.id?.slice(0, 5) || "NUL"}
+              Host_Unit::DRV_{profile?.id?.slice(0, 5) || "Nome"}
             </div>
 
             <div className="absolute top-6 right-6 z-20">
@@ -75,7 +96,6 @@ const App = () => {
               </button>
             </div>
 
-            {/* Avatar com Efeito de Scan */}
             <div className="relative w-44 h-44 mx-auto mb-10 mt-4">
               <div className="absolute -inset-4 border border-indigo-600/20 rounded-full animate-[spin_10s_linear_infinite] border-dashed" />
               <div className="w-full h-full bg-[#111] rounded-full border-[1px] border-[var(--delos-black)] shadow-2xl overflow-hidden flex items-center justify-center relative">
@@ -94,10 +114,15 @@ const App = () => {
               >
                 <Camera className="w-4 h-4" />
               </button>
-              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" />
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+              />
             </div>
 
-            {/* Info de Identidade */}
             <div className="text-center space-y-4">
               <h2 className="text-4xl font-black tracking-tighter uppercase italic leading-none">
                 {profile?.name ? `${profile.name} ${profile.last_name}` : 'Subject_Unknown'}
@@ -113,8 +138,8 @@ const App = () => {
               <div className="py-4 border-y border-[var(--delos-grey)]/10 space-y-2">
                 <div className="flex items-center justify-center gap-2 opacity-60 text-[10px] font-mono uppercase tracking-widest">
                   <MapPin className="w-3 h-3" />
-                  {currentAddress 
-                    ? `${currentAddress.bairro}, ${currentAddress.cidade}` 
+                  {currentAddress
+                    ? `${currentAddress.bairro}, ${currentAddress.cidade}`
                     : 'Location_Not_Synced'}
                 </div>
                 <div className="flex items-center justify-center gap-2 opacity-40 text-[10px] font-mono lowercase">
@@ -128,12 +153,11 @@ const App = () => {
                 style={{ backgroundColor: 'var(--delos-black)', color: 'var(--delos-surface)' }}
                 className="w-full py-5 rounded-sm font-black text-[10px] uppercase tracking-[0.4em] hover:bg-[var(--delos-indigo)] transition-all active:scale-95 shadow-2xl"
               >
-                Override_Profile_Data
+                Atualizar Dados
               </button>
             </div>
           </div>
 
-          {/* Widget de Inteligência Cognitiva */}
           <div
             style={{ backgroundColor: 'var(--delos-black)', color: 'var(--delos-surface)' }}
             className="p-8 rounded-sm relative overflow-hidden border border-white/5 shadow-2xl"
@@ -157,11 +181,9 @@ const App = () => {
           </div>
         </aside>
 
-        {/* --- CONTEÚDO PRINCIPAL: DASHBOARD OPERACIONAL --- */}
         <main className="lg:col-span-8 space-y-8">
-          <ApplicationDashboard applications={applications} totalCount={totalCount} />
+          <ApplicationDashboard applications={currentApps} totalCount={total} />
 
-          {/* Biografia Tática */}
           <section className="bg-white dark:bg-[#080808] p-10 rounded-sm border border-black/5 dark:border-white/5 shadow-sm relative transition-all">
             <FileText className="absolute top-0 right-0 p-3 opacity-10" size={40} />
             <h3 className="text-[9px] font-mono font-black uppercase tracking-[0.5em] opacity-30 mb-8 flex items-center gap-2">
@@ -172,9 +194,11 @@ const App = () => {
             </p>
           </section>
 
-          {/* Grids de Histórico (Experiência e Educação) */}
           <div className="grid md:grid-cols-2 gap-8">
-            <WorkExperience experiences={profile?.experiences} />
+            <div className="relative group">
+            
+              <WorkExperience onAddEntry={() => setIsExpModalOpen(true)} />
+            </div>
 
             <div className="bg-white dark:bg-[#080808] p-8 rounded-sm border border-black/5 dark:border-white/5 group transition-all">
               <div className="flex justify-between items-center mb-8">
@@ -205,14 +229,19 @@ const App = () => {
         }
       `}</style>
 
-      {/* MODAL SMART: 
-          Ele gerencia seus próprios rascunhos de dados puxando dos stores.
-      */}
       <EditProfileModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
       />
-    </div>
+
+      {/* Novo Terminal de Gestão de Experiências */}
+      <ExperienceManagerModal
+        isOpen={isExpModalOpen}
+        onClose={() => setIsExpModalOpen(false)}
+        profileId={profile?.id} // Usando o ID do perfil sincronizado
+      />
+  
+    </div >
   );
 };
 

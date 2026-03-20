@@ -97,8 +97,6 @@ export const useAuthStore = create<AuthState>()(
             lastUpdated: Date.now()
           });
 
-          // Redirecionamento físico para limpar estados de memória
-          window.location.href = "/";
         }
       },
 

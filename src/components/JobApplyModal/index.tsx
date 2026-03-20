@@ -12,6 +12,7 @@ import { useJobQuestionStore } from "@/store/useJobQuestionStore"
 import { useExperienceStore } from "@/store/useExperienceStore"
 import { useBenefitStore } from "@/store/useBenefitStore";
 import { useJobStore } from "@/store/useJobStore"
+import { useApplicationStore } from "@/store/useApplicationStore"
 type Props = {
   user: any;
   open: boolean
@@ -23,7 +24,7 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
   const [stepIndex, setStepIndex] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const validateUser = !!user?.profile?.id;
-
+  const [shouldEditExperience, setShouldEditExperience] = useState(false);
   const { removeJobFromCache } = useJobStore(); // Importe a ação
   const { benefitsByJob, fetchBenefits, loading: loadingBenefits } = useBenefitStore();
   const { experiences: remoteExperiences, fetchExperiences, loading: loadingExp } = useExperienceStore()
@@ -32,7 +33,7 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
   // ESTADOS LOCAIS
   const [experiences, setExperiences] = useState<any[]>([])
   const [answers, setAnswers] = useState<Record<string, string>>({})
-
+  const { fetchApplications } = useApplicationStore();
   // 1. SINCRONIZAÇÃO DE DADOS (PERGUNTAS E EXPERIÊNCIAS)
   useEffect(() => {
     if (open && job?.id) {
@@ -50,20 +51,39 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
   // 2. POPULAR ESTADO LOCAL COM DADOS DO STORE
   useEffect(() => {
     if (open && !loadingExp) {
-      // O Store agora pode retornar o array direto ou dentro de .items
-      const dataToMap = Array.isArray(remoteExperiences) ? remoteExperiences : (remoteExperiences as any)?.items || [];
+      // 1. Extração robusta do array (suporta .items ou array direto)
+      const dataToMap = Array.isArray(remoteExperiences)
+        ? remoteExperiences
+        : (remoteExperiences as any)?.items || [];
 
-      if (dataToMap.length > 0) {
+      const hasData = dataToMap.length > 0;
+
+      // 2. Lógica de Decisão do Checkbox:
+      // Se o usuário não tem NENHUMA experiência, forçamos 'true' para ele cadastrar.
+      // Se ele já tem, deixamos 'false' por padrão para agilizar o fluxo (UX otimizada).
+      setShouldEditExperience(!hasData);
+
+      // 3. Mapeamento para o Estado de UX (Editable List)
+      if (hasData) {
         setExperiences(dataToMap.map((exp: any) => ({
           id: exp.id,
           empresa: exp.empresa || "",
           cargo: exp.cargo || "",
           data_entrada: exp.data_entrada || "",
+          data_saida: exp.data_saida || "",
           atualmente_trabalhando: exp.atualmente_trabalhando || false,
           descricao: exp.descricao || ""
         })));
       } else {
-        setExperiences([{ empresa: '', cargo: '', data_entrada: '', atualmente_trabalhando: false }]);
+        // Slot vazio para novo cadastro caso a base esteja limpa
+        setExperiences([{
+          empresa: '',
+          cargo: '',
+          data_entrada: '',
+          data_saida: '',
+          atualmente_trabalhando: false,
+          descricao: ''
+        }]);
       }
     }
   }, [remoteExperiences, open, loadingExp]);
@@ -84,35 +104,33 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
   const steps = useMemo(() => {
     const list = [];
     list.push({ id: "vaga", label: "Informações da Vaga", icon: <Binary size={14} /> });
-    list.push({ id: "experiencias", label: "Suas Experiências", icon: <Database size={14} /> });
+
+    // Só insere o step de experiências se o checkbox estiver ativo
+    if (shouldEditExperience) {
+      list.push({ id: "experiencias", label: "Suas Experiências", icon: <Database size={14} /> });
+    }
 
     questionGroups.forEach((group, index) => {
-      list.push({
-        id: `perguntas-${index}`,
-        label: `Análise_${index + 1}`,
-        data: group,
-        icon: <Fingerprint size={14} />
-      });
+      list.push({ id: `perguntas-${index}`, label: `Análise_${index + 1}`, data: group, icon: <Fingerprint size={14} /> });
     });
 
     list.push({ id: "impulsionar", label: "Impulsionamento", icon: <Zap size={14} /> });
     return list;
-  }, [questionGroups]);
+  }, [questionGroups, shouldEditExperience]); // Adicione a dependência aqui!
 
   if (!open || !job) return null;
-  const currentStep = steps[stepIndex];
-
+  const currentStep = steps[stepIndex] || steps[0] || { id: 'loading' };
   // HANDLERS
   const handleAddExperience = () => {
-    // Adiciona um novo objeto vazio no início do array
     setExperiences([{
+      // id: undefined -> Isso sinaliza para o handleSubmit que deve ser um POST
       empresa: '',
       cargo: '',
       data_entrada: '',
-      data_saida: '', // Adicionado campo de saída
-      atualmente_trabalhando: false
-    }, ...experiences])
-  }
+      atualmente_trabalhando: false,
+      descricao: ''
+    }, ...experiences]);
+  };
 
   const handleRemoveExperience = (index: number) => {
     const newExp = experiences.filter((_, i) => i !== index);
@@ -128,27 +146,56 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      if (shouldEditExperience) {
+        const experienceTasks = experiences.map(exp => {
+          if (!exp.empresa || !exp.cargo) return null;
+
+          // --- PROTOCOLO_DE_SANEAMENTO ---
+          // Removemos strings vazias das datas para evitar o erro 422 do FastAPI
+          const sanitizedExp = {
+            ...exp,
+            data_entrada: exp.data_entrada || null,
+            // Se estiver trabalhando atualmente, a saída DEVE ser null
+            // Caso contrário, se a string for vazia, enviamos null
+            data_saida: exp.atualmente_trabalhando ? null : (exp.data_saida || null)
+          };
+
+          if (exp.id) {
+            return useExperienceStore.getState().updateExperience(exp.id, sanitizedExp);
+          } else {
+            return useExperienceStore.getState().addExperience({
+              ...sanitizedExp,
+              profile_id: user.profile.id
+            });
+          }
+        }).filter(task => task !== null);
+
+        if (experienceTasks.length > 0) {
+          await Promise.all(experienceTasks);
+        }
+      }
+
+      // --- 2. TRANSMISSÃO DA CANDIDATURA (Sempre ocorre) ---
       const formattedAnswers = Object.entries(answers).map(([id, text]) => ({
         question_uid: id,
-        answer: text
+        answer: text,
       }));
 
       const targetJobId = job.id || job.uid;
 
-      await applicationService.applyToJob(
-        targetJobId,
-        formattedAnswers
-      );
+      await applicationService.applyToJob(targetJobId, formattedAnswers);
 
-      // PROTOCOLO_DELTA: Sincronização Pessimista do Cache
-      // Removemos a vaga do cache local porque sabemos que o backend 
-      // não a enviará mais na próxima requisição autenticada.
+      // --- 3. PROTOCOLO_DELTA: CLEANUP & SYNC ---
       removeJobFromCache(targetJobId);
 
-      toast.success("Candidatura transmitida com sucesso.");
+      // Atualiza o store de candidaturas para o Dashboard refletir a nova vaga
+      await fetchApplications({}, true, true);
+
+      toast.success("Sincronização completa: Perfil e Candidatura.");
       onClose();
     } catch (err: any) {
-      toast.error(err.message);
+      const errorMsg = err.response?.data?.detail || "ERRO_NA_OPERACAO";
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -247,6 +294,9 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
                       </div>
                     )}
                   </div>
+
+                  {/* Controle de Fluxo: Editar Experiências */}
+
                 </div>
 
               </motion.div>
@@ -415,7 +465,32 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
             <ChevronLeft className="w-4 h-4" />
             <span>Voltar</span>
           </button>
-
+          <div className=" border-t border-black/5 dark:border-white/5">
+            <label className="flex items-start gap-4 p-6 bg-delos-indigo/5 border border-delos-indigo/20 rounded-sm cursor-pointer group hover:bg-delos-indigo/10 transition-all">
+              <input
+                type="checkbox"
+                checked={shouldEditExperience}
+                onChange={(e) => {
+                  const hasExp = remoteExperiences?.length > 0 || (remoteExperiences as any)?.items?.length > 0;
+                  // Se não tiver experiência, não deixa desmarcar
+                  if (!hasExp) {
+                    toast.info("DNA_CAREER_EMPTY: Você precisa cadastrar ao menos uma experiência.");
+                    return;
+                  }
+                  setShouldEditExperience(e.target.checked);
+                }}
+                className="w-5 h-5 mt-1 rounded-none border-delos-indigo/30 bg-transparent text-delos-indigo focus:ring-0"
+              />
+              <div className="space-y-1">
+                <span className="block text-[12px] font-black uppercase tracking-widest text-delos-indigo">
+                  Experiências
+                </span>
+                <p className="text-[9px] font-mono opacity-50 uppercase leading-tight">
+                  Para adicionar ou editar experiências.
+                </p>
+              </div>
+            </label>
+          </div>
           {/* Botão de Avançar/Sync (EXECUTE_SYNC) */}
           <button
             type="button"

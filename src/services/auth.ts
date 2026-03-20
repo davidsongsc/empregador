@@ -34,7 +34,7 @@ export async function getMyProfile(forceRefresh = false) {
         return cachedProfile;
     }
 
-    const profileData = await api("/api/v1/perfis/me/", {
+    const profileData = await api("/api/v1/perfis/me", {
         method: "GET",
         headers: { ...DELTA_HEADERS },
         credentials: "include",

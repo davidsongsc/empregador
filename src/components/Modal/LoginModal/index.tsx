@@ -88,7 +88,7 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                 setUser(userData);
 
                 toast.success("Sincronização realizada.");
-                router.push("/dashboard/home"); // Exemplo simplificado
+                router.push("/"); // Exemplo simplificado
             } else {
                 setError("ACESSO_NEGADO: Credenciais inválidas.");
             }

@@ -1,21 +1,29 @@
 import { ApplicationsResponse } from "@/interfaces/applicationResult";
 import { api } from "@/lib/api";
 
-
-export async function getApplications(params: { 
+// Tipagem rigorosa para evitar erros de "property does not exist"
+export interface GetApplicationsParams {
   status?: string; 
-  job?: string; 
+  job_id?: string; // Alinhado com o seu backend que usa job_id como filtro
   search?: string;
-  page?: number;
-}): Promise<ApplicationsResponse> {
+  pagina?: number; // Alinhado com o Query(1, ge=1) do FastAPI
+  tamanho?: number;
+}
+
+export async function getApplications(params: GetApplicationsParams): Promise<ApplicationsResponse> {
   const query = new URLSearchParams();
   
-  if (params.status) query.append("status", params.status);
-  if (params.job) query.append("job", params.job);
+  // Mapeamento de filtros para o Protocolo do Backend
+  if (params.status) query.append("status", params.status.toUpperCase()); // Garante o Uppercase
+  if (params.job_id) query.append("job_id", params.job_id);
   if (params.search) query.append("search", params.search);
-  if (params.page) query.append("page", params.page.toString());
+  
+  // Paginação: O Backend espera 'pagina' e 'tamanho'
+  query.append("pagina", (params.pagina || 1).toString());
+  query.append("tamanho", (params.tamanho || 10).toString());
 
-  return api(`/vagas/candidaturas/?${query.toString()}`, {
+  // Rota corrigida conforme o seu @router.get("/")
+  return api(`/api/v1/applications/?${query.toString()}`, {
     method: "GET",
     credentials: "include",
   });
