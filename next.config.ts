@@ -11,16 +11,8 @@ const withPWA = withPWAInit({
   },
 });
 
-const nextConfig = { // Remova o tipo ': NextConfig' aqui temporariamente para testar
+const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.1.50", "localhost:3000"],
-
-  // 1. SOLUÇÃO PARA O ERRO DE BUILD
-  // Se o Next.js reclamar que não existe no tipo, usamos o objeto vazio
-  // para sinalizar que aceitamos o conflito Webpack/Turbopack
-  experimental: {
-    // @ts-ignore - Ignora o erro de tipagem no build
-    turbopack: {}, 
-  },
 
   async rewrites() {
     return [
@@ -39,6 +31,6 @@ const nextConfig = { // Remova o tipo ': NextConfig' aqui temporariamente para t
       },
     ],
   },
-} as any; // Cast para any resolve o problema do 'known properties'
+};
 
-export default withPWA(nextConfig as NextConfig);
+export default withPWA(nextConfig);
