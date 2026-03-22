@@ -26,7 +26,7 @@ export default function EditCompanyPage() {
     useEffect(() => {
         if (companyId) {
             fetchCompanyDetails(companyId);
-            fetchDepartments(); // Sincroniza os nós de estrutura
+            fetchDepartments(activeCompany?.id); // Sincroniza os nós de estrutura
         }
     }, [companyId, fetchCompanyDetails, fetchDepartments]);
 

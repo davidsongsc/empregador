@@ -15,6 +15,7 @@ import { Module } from "@/enum/moduleEnum"
 import { checkLevel } from "@/utils/checkLevel"
 import { useRouter } from "next/navigation"
 import ContainerMain from "@/components/Layout/ContainerMain"
+import { Job } from "@/interfaces/iJob"
 
 const MinhasVagas = () => {
 
@@ -200,7 +201,7 @@ const MinhasVagas = () => {
                   {/* Informação Principal */}
                   <div className="w-full lg:col-span-4 flex flex-col min-w-0">
                     <span className="text-[13px] lg:text-[16px] font-bold text-slate-200 uppercase tracking-tight truncate group-hover:text-white transition-colors">
-                      {vaga.cargo_exibicao}
+                      {vaga.cargo_nome}
                     </span>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-[8px] lg:text-[10px] font-mono text-slate-400 uppercase tracking-tighter truncate">

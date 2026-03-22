@@ -1,5 +1,4 @@
-import { ExperiencePagination } from "@/interfaces/iExperience";
-import { Experience } from "@/interfaces/userProfile";
+import { Experience, ExperiencePagination } from "@/interfaces/iExperience";
 import { api } from "@/lib/api";
 import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
 

@@ -27,32 +27,36 @@ export default function DepartmentsPage() {
     members: [] as number[]
   });
 
-useEffect(() => {
-  if (activeCompany?.id) {
-    // Quando você muda a empresa no seletor, este useEffect dispara 
-    // e recarrega os departamentos da nova empresa.
-    fetchDepartments(activeCompany?.id);
-  }
-}, [activeCompany, fetchDepartments]);
+  useEffect(() => {
+    if (activeCompany?.id) {
+      // Quando você muda a empresa no seletor, este useEffect dispara 
+      // e recarrega os departamentos da nova empresa.
+      fetchDepartments(activeCompany?.id);
+    }
+  }, [activeCompany, fetchDepartments]);
 
   const handleSave = async () => {
     if (!activeCompany?.id) return;
     const targetId = editingId && typeof editingId === "string" ? editingId : null;
 
     try {
+      // Criamos o objeto de dados forçando o tipo que a API/Store espera
+      // Se a API aceita IDs mas a interface pede objetos, fazemos um cast:
       const formattedData = {
-        ...formData,
         name: formData.name?.trim().toUpperCase(),
         description: formData.description?.trim() || "",
-        company: activeCompany.id
+        company: activeCompany.id,
+        parent: formData.parent,
+        // Fazemos o cast aqui para 'acalmar' o TS, 
+        // assumindo que sua API trata o envio de IDs
+        leaders: formData.leaders as any,
+        members: formData.members as any,
       };
 
       if (targetId) {
         await updateDepartment(activeCompany.id, targetId, formattedData);
-        toast.success("DELTA_SYNC_COMPLETE: Nó atualizado.");
       } else {
         await addDepartment(activeCompany.id, formattedData);
-        toast.success("INJECTION_SUCCESS: Novo setor criado.");
       }
       resetForm();
     } catch (e) {
@@ -132,13 +136,13 @@ useEffect(() => {
           </div>
 
           <div className="space-y-4">
-             {step === 'list' && (
-                <button onClick={() => setStep('editor')} className="w-full group flex items-center justify-between bg-[var(--delos-amber)] text-black p-6 font-black text-xs uppercase tracking-widest hover:bg-white transition-all">
-                    <span>Adicionar_Novo_Setor</span>
-                    <Plus className="group-hover:rotate-90 transition-transform" />
-                </button>
-             )}
-             <p className="text-[7px] font-mono text-white/20 uppercase tracking-[0.3em]">Security_Level: Admin_Auth_Required</p>
+            {step === 'list' && (
+              <button onClick={() => setStep('editor')} className="w-full group flex items-center justify-between bg-[var(--delos-amber)] text-black p-6 font-black text-xs uppercase tracking-widest hover:bg-white transition-all">
+                <span>Adicionar_Novo_Setor</span>
+                <Plus className="group-hover:rotate-90 transition-transform" />
+              </button>
+            )}
+            <p className="text-[7px] font-mono text-white/20 uppercase tracking-[0.3em]">Security_Level: Admin_Auth_Required</p>
           </div>
         </div>
 
@@ -149,7 +153,7 @@ useEffect(() => {
               <div className="flex items-center gap-2 text-[var(--delos-amber)]">
                 <Layers className="w-4 h-4" />
                 <span className="text-[10px] font-black uppercase tracking-[0.5em]">
-                    {step === 'list' ? 'Passo_01: Seleção_de_Nó' : 'Passo_02: Configuração_Delta'}
+                  {step === 'list' ? 'Passo_01: Seleção_de_Nó' : 'Passo_02: Configuração_Delta'}
                 </span>
               </div>
               <h3 className="text-5xl md:text-7xl font-black uppercase italic tracking-tighter leading-none">
@@ -174,13 +178,13 @@ useEffect(() => {
                     className="group relative flex flex-col justify-end p-8 border-2 border-gray-100 hover:border-black hover:bg-black hover:text-white transition-all min-h-[160px] text-left"
                   >
                     <div className="absolute top-8 left-8 w-10 h-10 bg-black group-hover:bg-[var(--delos-amber)] flex items-center justify-center text-white group-hover:text-black transition-colors">
-                        {dept.parent ? <ChevronRight size={18} /> : <Database size={18} />}
+                      {dept.parent ? <ChevronRight size={18} /> : <Database size={18} />}
                     </div>
                     <div className="space-y-1">
-                        <h4 className="text-2xl font-black uppercase italic tracking-tighter">{dept.name}</h4>
-                        <p className="text-[8px] font-bold uppercase tracking-widest opacity-60">
-                            Membros: {dept.members?.length || 0} // Líderes: {dept.leaders?.length || 0}
-                        </p>
+                      <h4 className="text-2xl font-black uppercase italic tracking-tighter">{dept.name}</h4>
+                      <p className="text-[8px] font-bold uppercase tracking-widest opacity-60">
+                        Membros: {dept.members?.length || 0} // Líderes: {dept.leaders?.length || 0}
+                      </p>
                     </div>
                     <ChevronRight className="absolute right-8 bottom-8 w-6 h-6 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all text-[var(--delos-amber)]" />
                   </button>
@@ -189,82 +193,82 @@ useEffect(() => {
             ) : (
               <div className="max-w-4xl space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                            <Terminal size={14} className="text-[var(--delos-amber)]" /> Nome_do_Setor
-                        </label>
-                        <input 
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="w-full border-b-4 border-black p-4 text-2xl font-black uppercase italic focus:bg-black focus:text-white outline-none transition-all"
-                            placeholder="EX: LOGISTICA_SUL"
-                        />
-                    </div>
-                    <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                            <Layers size={14} className="text-[var(--delos-amber)]" /> Dependência_Hierárquica
-                        </label>
-                        <select 
-                             value={formData.parent}
-                             onChange={(e) => setFormData({ ...formData, parent: e.target.value })}
-                             className="w-full border-b-4 border-black p-4 text-xl font-black uppercase italic outline-none"
-                        >
-                            <option value="">RAIZ_SISTEMA</option>
-                            {departments.filter(d => d.id !== editingId).map(d => (
-                                <option key={d.id} value={d.id}>{d.name}</option>
-                            ))}
-                        </select>
-                    </div>
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                      <Terminal size={14} className="text-[var(--delos-amber)]" /> Nome_do_Setor
+                    </label>
+                    <input
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full border-b-4 border-black p-4 text-2xl font-black uppercase italic focus:bg-black focus:text-white outline-none transition-all"
+                      placeholder="EX: LOGISTICA_SUL"
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                      <Layers size={14} className="text-[var(--delos-amber)]" /> Dependência_Hierárquica
+                    </label>
+                    <select
+                      value={formData.parent}
+                      onChange={(e) => setFormData({ ...formData, parent: e.target.value })}
+                      className="w-full border-b-4 border-black p-4 text-xl font-black uppercase italic outline-none"
+                    >
+                      <option value="">RAIZ_SISTEMA</option>
+                      {departments.filter(d => d.id !== editingId).map(d => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    {/* SEÇÃO LÍDERES */}
-                    <div className="p-8 border-2 border-black space-y-6">
-                        <div className="flex justify-between items-center border-b border-black/10 pb-4">
-                            <span className="text-[10px] font-black uppercase flex items-center gap-2"><Star size={14} fill="black" /> Comando</span>
-                            <span className="text-xs font-mono font-bold">[{formData.leaders.length}/3]</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 min-h-[40px]">
-                            {formData.leaders.map(id => (
-                                <div key={id} className="bg-black text-white px-3 py-1 text-[9px] font-black uppercase italic">
-                                    {companyMembers.find(m => m.id === id)?.profile_name}
-                                </div>
-                            ))}
-                        </div>
-                        <button onClick={() => setShowMemberSelector({ type: 'leaders', open: true })} className="w-full py-3 bg-black text-white text-[10px] font-black uppercase hover:bg-[var(--delos-amber)] hover:text-black transition-all">
-                            Atribuir_Líder
-                        </button>
+                  {/* SEÇÃO LÍDERES */}
+                  <div className="p-8 border-2 border-black space-y-6">
+                    <div className="flex justify-between items-center border-b border-black/10 pb-4">
+                      <span className="text-[10px] font-black uppercase flex items-center gap-2"><Star size={14} fill="black" /> Comando</span>
+                      <span className="text-xs font-mono font-bold">[{formData.leaders.length}/3]</span>
                     </div>
+                    <div className="flex flex-wrap gap-2 min-h-[40px]">
+                      {formData.leaders.map(id => (
+                        <div key={id} className="bg-black text-white px-3 py-1 text-[9px] font-black uppercase italic">
+                          {companyMembers.find(m => m.id === id)?.profile_name}
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={() => setShowMemberSelector({ type: 'leaders', open: true })} className="w-full py-3 bg-black text-white text-[10px] font-black uppercase hover:bg-[var(--delos-amber)] hover:text-black transition-all">
+                      Atribuir_Líder
+                    </button>
+                  </div>
 
-                    {/* SEÇÃO MEMBROS */}
-                    <div className="p-8 border-2 border-black space-y-6">
-                        <div className="flex justify-between items-center border-b border-black/10 pb-4">
-                            <span className="text-[10px] font-black uppercase flex items-center gap-2"><Users size={14} /> Operacionais</span>
-                            <span className="text-xs font-mono font-bold">[{formData.members.length}]</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 min-h-[40px]">
-                            {formData.members.slice(0, 4).map(id => (
-                                <div key={id} className="border border-black px-3 py-1 text-[9px] font-black uppercase italic">
-                                    {companyMembers.find(m => m.id === id)?.profile_name}
-                                </div>
-                            ))}
-                            {formData.members.length > 4 && <span className="text-xs">...</span>}
-                        </div>
-                        <button onClick={() => setShowMemberSelector({ type: 'members', open: true })} className="w-full py-3 border-2 border-black text-[10px] font-black uppercase hover:bg-black hover:text-white transition-all">
-                            Vincular_Host
-                        </button>
+                  {/* SEÇÃO MEMBROS */}
+                  <div className="p-8 border-2 border-black space-y-6">
+                    <div className="flex justify-between items-center border-b border-black/10 pb-4">
+                      <span className="text-[10px] font-black uppercase flex items-center gap-2"><Users size={14} /> Operacionais</span>
+                      <span className="text-xs font-mono font-bold">[{formData.members.length}]</span>
                     </div>
+                    <div className="flex flex-wrap gap-2 min-h-[40px]">
+                      {formData.members.slice(0, 4).map(id => (
+                        <div key={id} className="border border-black px-3 py-1 text-[9px] font-black uppercase italic">
+                          {companyMembers.find(m => m.id === id)?.profile_name}
+                        </div>
+                      ))}
+                      {formData.members.length > 4 && <span className="text-xs">...</span>}
+                    </div>
+                    <button onClick={() => setShowMemberSelector({ type: 'members', open: true })} className="w-full py-3 border-2 border-black text-[10px] font-black uppercase hover:bg-black hover:text-white transition-all">
+                      Vincular_Host
+                    </button>
+                  </div>
                 </div>
 
                 <div className="pt-10 space-y-6">
-                    <button onClick={handleSave} className="w-full bg-black text-white py-8 font-black text-xl uppercase italic tracking-[0.3em] hover:bg-[var(--delos-amber)] hover:text-black transition-all flex items-center justify-center gap-4">
-                        <Save size={24} /> Sincronizar_Estrutura
+                  <button onClick={handleSave} className="w-full bg-black text-white py-8 font-black text-xl uppercase italic tracking-[0.3em] hover:bg-[var(--delos-amber)] hover:text-black transition-all flex items-center justify-center gap-4">
+                    <Save size={24} /> Sincronizar_Estrutura
+                  </button>
+                  {editingId && (
+                    <button onClick={() => removeDepartment(activeCompany!.id, editingId)} className="w-full text-red-600 font-black text-[10px] uppercase tracking-widest hover:underline">
+                      Remover_Setor_do_Cluster
                     </button>
-                    {editingId && (
-                        <button onClick={() => removeDepartment(activeCompany!.id, editingId)} className="w-full text-red-600 font-black text-[10px] uppercase tracking-widest hover:underline">
-                            Remover_Setor_do_Cluster
-                        </button>
-                    )}
+                  )}
                 </div>
               </div>
             )}
@@ -275,40 +279,40 @@ useEffect(() => {
       {/* MODAL DE SELEÇÃO DE MEMBROS (OVERLAY DELOS) */}
       {showMemberSelector.open && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-6">
-            <div className="bg-white w-full max-w-2xl border-4 border-black flex flex-col max-h-[80vh]">
-                <div className="bg-black p-6 flex justify-between items-center">
-                    <span className="text-white text-xs font-black uppercase tracking-widest">Assign_{showMemberSelector.type}</span>
-                    <X className="text-white cursor-pointer hover:text-[var(--delos-amber)]" onClick={() => setShowMemberSelector({ ...showMemberSelector, open: false })} />
-                </div>
-                <div className="p-8 space-y-6 overflow-y-auto">
-                    <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/30" size={18} />
-                        <input 
-                            placeholder="FILTRAR_HOSTS..."
-                            className="w-full pl-12 p-4 border-b-2 border-black font-black uppercase outline-none"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <div className="grid grid-cols-1 gap-2">
-                        {filteredMembers.map(m => {
-                            const selected = formData[showMemberSelector.type].includes(m.id);
-                            return (
-                                <button key={m.id} onClick={() => toggleMember(m.id, showMemberSelector.type)} className={`p-4 flex justify-between items-center border-2 transition-all ${selected ? 'bg-black text-white border-black' : 'border-gray-100 hover:border-black'}`}>
-                                    <div className="text-left">
-                                        <p className="font-black uppercase text-xs">{m.profile_name}</p>
-                                        <p className="text-[8px] font-mono opacity-50">{m.role}</p>
-                                    </div>
-                                    {selected && <Check className="text-[var(--delos-amber)]" />}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-                <button onClick={() => setShowMemberSelector({ ...showMemberSelector, open: false })} className="p-6 bg-black text-white font-black uppercase text-xs tracking-widest hover:bg-[var(--delos-amber)] hover:text-black transition-all">
-                    Finalizar_Seleção
-                </button>
+          <div className="bg-white w-full max-w-2xl border-4 border-black flex flex-col max-h-[80vh]">
+            <div className="bg-black p-6 flex justify-between items-center">
+              <span className="text-white text-xs font-black uppercase tracking-widest">Assign_{showMemberSelector.type}</span>
+              <X className="text-white cursor-pointer hover:text-[var(--delos-amber)]" onClick={() => setShowMemberSelector({ ...showMemberSelector, open: false })} />
             </div>
+            <div className="p-8 space-y-6 overflow-y-auto">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/30" size={18} />
+                <input
+                  placeholder="FILTRAR_HOSTS..."
+                  className="w-full pl-12 p-4 border-b-2 border-black font-black uppercase outline-none"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                {filteredMembers.map(m => {
+                  const selected = formData[showMemberSelector.type].includes(m.id);
+                  return (
+                    <button key={m.id} onClick={() => toggleMember(m.id, showMemberSelector.type)} className={`p-4 flex justify-between items-center border-2 transition-all ${selected ? 'bg-black text-white border-black' : 'border-gray-100 hover:border-black'}`}>
+                      <div className="text-left">
+                        <p className="font-black uppercase text-xs">{m.profile_name}</p>
+                        <p className="text-[8px] font-mono opacity-50">{m.role}</p>
+                      </div>
+                      {selected && <Check className="text-[var(--delos-amber)]" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <button onClick={() => setShowMemberSelector({ ...showMemberSelector, open: false })} className="p-6 bg-black text-white font-black uppercase text-xs tracking-widest hover:bg-[var(--delos-amber)] hover:text-black transition-all">
+              Finalizar_Seleção
+            </button>
+          </div>
         </div>
       )}
     </div>

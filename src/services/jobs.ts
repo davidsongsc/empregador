@@ -1,4 +1,4 @@
-import { Job } from "@/interfaces/iJob";
+import { Job, JobPayload } from "@/interfaces/iJob";
 import { api } from "@/lib/api";
 
 export async function getJobs(page: number) {
@@ -14,7 +14,7 @@ export async function createJob(jobData: Job) {
     headers: { "Content-Type": "application/json" }
   });
 }
-export async function updateJob(uid: string, jobData: Job) {
+export async function updateJob(uid: string, jobData: JobPayload) {
   return await api(`/vagas/${uid}/editar/`, {
     method: "PATCH",
     body: JSON.stringify(jobData),

@@ -99,7 +99,42 @@ export const applicationService = {
     await idbDel("apps_list_ts");
     return res;
   },
+  /**
+     * Busca todas as candidaturas de uma vaga específica (Visão Recrutador)
+     * Inclui cache por JobID para evitar re-fetch constante ao alternar abas
+     */
+  getJobApplications: async (jobId: string, forceRefresh = false) => {
+    const cleanId = jobId.toString().replace(/["'“”]/g, '').trim();
+    const cacheKey = `job_apps_${cleanId}`;
+    const tsKey = `${cacheKey}_ts`;
 
+    const now = Date.now();
+    const [cachedData, lastSync] = await Promise.all([
+      idbGet(cacheKey),
+      idbGet(tsKey)
+    ]);
+
+    // TTL de 5 minutos para candidaturas de uma vaga (mais curto que o global)
+    const JOB_APP_STALE = 5 * 60 * 1000;
+
+    if (!forceRefresh && cachedData && lastSync && (now - lastSync < JOB_APP_STALE)) {
+      return cachedData;
+    }
+
+    const data = await api(`/api/v1/applications/job/${cleanId}/`, {
+      method: "GET",
+      headers: { ...DELTA_HEADERS },
+      credentials: "include",
+    });
+
+    // Persistência no IndexedDB
+    await Promise.all([
+      idbSet(cacheKey, data),
+      idbSet(tsKey, now)
+    ]);
+
+    return data;
+  },
   /**
    * Busca as vagas onde o usuário está inscrito
    */

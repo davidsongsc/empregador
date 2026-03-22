@@ -1,5 +1,5 @@
-import { Role } from "@/enum/permissionEnum";
+import { RoleEnum } from "@/enum/permissionEnum";
 
-export function roleKey(role: Role): string {
+export function roleKey(role: RoleEnum): string {
   return `${role.scope}_${role.department}_${role.level}`
 }

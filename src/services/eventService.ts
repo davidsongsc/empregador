@@ -8,8 +8,8 @@ const DELTA_HEADERS = {
 
 export const eventService = {
   // --- EVENTOS ---
-  getEvents: async () => {
-    return await api("/eventos/events/", {
+  getEvents: async (page: number = 1) => {
+    return await api(`/eventos/events/?page=${page}`, {
       method: "GET",
       headers: DELTA_HEADERS,
     });
@@ -66,10 +66,7 @@ export const eventService = {
   createEvent: async (data: Partial<CreateEventPayload>) => {
     return await api("/eventos/events/", {
       method: "POST",
-      headers: {
-        ...DELTA_HEADERS,
-        "X-Delta-Action": "CREATE_ROOT"
-      },
+      headers: { ...DELTA_HEADERS, "X-Delta-Action": "CREATE_ROOT" },
       body: JSON.stringify(data),
     });
   },
@@ -80,5 +77,22 @@ export const eventService = {
       body: JSON.stringify(data),
     });
   },
+
+  // Renomeado de getEventDetails para getEventByUid para bater com o Hook
+  getEventByUid: async (uid: string) => {
+    return await api(`/eventos/events/${uid}/`, {
+      method: "GET",
+      headers: DELTA_HEADERS,
+    });
+  },
+
+  // Renomeado de publishSchedule para publishJobs para bater com o Hook
+  publishJobs: async (uid: string) => {
+    return await api(`/eventos/schedules/${uid}/publish/`, {
+      method: "POST",
+      headers: DELTA_HEADERS,
+    });
+  },
 };
+
 

@@ -15,6 +15,7 @@ import { toast } from '@/components/Notification';
 import { updateJob } from '@/services/jobs';
 import { useRoleStore } from '@/store/useRoleStore';
 import { useJobStore } from '@/store/useJobStore';
+import {  JobPayload } from '@/interfaces/iJob';
 
 interface PostJobModalProps {
     isOpen: boolean;
@@ -47,7 +48,7 @@ const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobMo
             carregarVaga();
         }
     }, [activeCompanyId, jobUid, fetchJobById]);
-    
+
     console.log(vaga)
     const { user } = useAuthStore();
     const [step, setStep] = useState(1);
@@ -148,7 +149,7 @@ const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobMo
     };
 
     const handleFinalizar = async () => {
-        const payload = {
+        const payload: JobPayload = {
             role: selectedRoleUid,
             titulo_personalizado: tituloPersonalizado,
             company: user?.profile?.empresas?.[0]?.id || "",
@@ -427,7 +428,9 @@ const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobMo
                                         className={`relative w-14 h-7 transition-all duration-500 border ${isActive ? 'bg-emerald-600/20 border-emerald-500/50' : 'bg-red-600/20 border-red-500/50'}`}
                                     >
                                         {/* Knob Estilo Industrial */}
-                                        <div className={`absolute top-1 bottom-1 w-5 transition-all duration-500 ${isActive ? 'left-7 bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'left-1 bg-red-500 shadow-[0_0_10px_#ef4444]'}`}>
+                                        <div className={`absolute top-1 bottom-1 w-5 transition-all 
+                                            duration-500
+                                             ${isActive ? 'left-7 bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'left-1 bg-red-500 shadow-[0_0_10px_#ef4444]'}`}>
                                             <div className="w-full h-full flex items-center justify-center">
                                                 <div className="w-[1px] h-2 bg-white/30 mx-[1px]" />
                                                 <div className="w-[1px] h-2 bg-white/30 mx-[1px]" />
@@ -439,11 +442,19 @@ const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobMo
                                     <button
                                         onClick={handleFinalizar}
                                         disabled={posting}
-                                        className="w-full bg-amber-600 text-black py-6 font-black text-xs uppercase tracking-[0.4em] flex items-center justify-center gap-4 hover:bg-white transition-all shadow-[0_0_30px_rgba(217,119,6,0.2)]"
+                                        className="w-full bg-amber-600 text-black py-6 font-black 
+                                        text-xs uppercase tracking-[0.4em] flex items-center 
+                                        justify-center gap-4 hover:bg-white transition-all
+                                         shadow-[0_0_30px_rgba(217,119,6,0.2)]"
                                     >
                                         {posting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Salvar <CheckCircle className="w-4 h-4" /></>}
                                     </button>
-                                    <button onClick={() => setStep(2)} className="w-full text-[8px] font-black text-slate-700 uppercase tracking-widest hover:text-slate-400 transition-colors text-center italic underline">Review_Parameters</button>
+                                    <button onClick={() => setStep(2)} className="
+                                    w-full text-[8px] font-black text-slate-700
+                                     uppercase tracking-widest hover:text-slate-400
+                                      transition-colors text-center italic underline"
+                                    >Review_Parameters
+                                    </button>
                                 </div>
                             </div>
                         )}

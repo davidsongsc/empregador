@@ -45,10 +45,10 @@ export default function CandidatosPage() {
   const hasLowAccess = checkLevel("low")
   const hasMidAccess = checkLevel("mid")
   const hasHighAccess = checkLevel("high")
-  const handleNextStep = async (app: any) => {
+  const handleNextStep = async (app: Application) => {
     if (!hasMidAccess) {
-      toast.error(" Vocé nao possui permissão para avancar o candidato de etapa!");
-      return null;
+      toast.error("Você não possui permissão para avançar o candidato de etapa!");
+      return; // <--- REMOVIDO O 'null'. Agora o TS entende como 'void'
     };
 
     if (isUpdating) return;
@@ -58,7 +58,7 @@ export default function CandidatosPage() {
     if (currentIndex !== -1 && currentIndex < FLOW_SEQUENCE.length - 1) {
       const nextStatus = FLOW_SEQUENCE[currentIndex + 1];
 
-      setIsUpdating(true); // 2. Inicia o estado de bloqueio
+      setIsUpdating(true);
 
       try {
         await updateApplicationStatus(app.id, nextStatus);
@@ -72,7 +72,7 @@ export default function CandidatosPage() {
       } catch (err) {
         toast.error("Falha na atualização de protocolo");
       } finally {
-        setIsUpdating(false); // 3. Libera o botão independente do resultado
+        setIsUpdating(false);
       }
     }
   };

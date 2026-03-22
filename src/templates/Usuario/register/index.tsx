@@ -51,7 +51,7 @@ const RegisterPage = () => {
 
       if (res?.user?.id) {
         setUser(res?.user);
-        toast.success("Host registrado com sucesso!", "Sincronizando...");
+        toast.success("Host registrado com sucesso!");
         router.push("/perfil");
         router.refresh();
       }

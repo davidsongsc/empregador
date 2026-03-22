@@ -1,4 +1,5 @@
-import { JobCacheEntry, JobResult } from "./iJob";
+import { JobCacheEntry} from "./iJob";
+import { JobResult } from "./jobResult";
 
 export interface JobPatch {
     uid: string;

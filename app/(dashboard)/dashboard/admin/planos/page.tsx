@@ -5,10 +5,11 @@ import {
   Plus, Trash2, RefreshCw, Clock, Users, Layers, Star, Target, Zap, Terminal
 } from "lucide-react";
 import { useAdminPlanStore } from "@/store/useAdminPlanStore";
-import { Plan, adminPlanService } from "@/services/adminPlanService";
+import { adminPlanService } from "@/services/adminPlanService";
 import { debounce } from "lodash";
 import { toast } from "@/components/Notification";
 import FeatureManager from "@/components/MiniComponents/FeatureManager";
+import { Plan } from "@/interfaces/iPlan";
 
 export default function AdminPlanPage() {
   const { plans, loading, fetchPlans, updatePlan, addPlan } = useAdminPlanStore();

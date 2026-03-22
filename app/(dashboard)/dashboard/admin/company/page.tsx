@@ -10,7 +10,7 @@ import {
 import { useCompanyStore } from "@/store/useCompanyStore";
 import { useDepartmentStore } from "@/store/useDepartmentStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { companyService, Department } from "@/services/companies-service";
+import { companyService } from "@/services/companies-service";
 import { debounce } from "lodash";
 import DepartmentCard from "@/components/MiniComponents/DepartmentCard";
 import CreateDepartmentModal from "@/components/Modal/CreateDepartmentModal";
@@ -23,11 +23,6 @@ interface CreateDepartmentPayload {
     company: string; // UUID da empresa
 }
 
-interface CreateDepartmentModalProps {
-    companyId: string | null;
-    onClose: () => void;
-    onConfirm: (data: CreateDepartmentPayload) => void;
-}
 
 export default function CompanyAdminPage() {
     const activeCompanyId = useAuthStore((state) => state.activeCompanyId);

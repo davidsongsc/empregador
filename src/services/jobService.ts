@@ -1,5 +1,5 @@
-import { JobResult } from "@/interfaces/iJob";
 import { JobsResponse } from "@/interfaces/ijobResponse";
+import { JobResult } from "@/interfaces/jobResult";
 import { api } from "@/lib/api";
 
 import buildQuery from "@/utils/buildQuery";

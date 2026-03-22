@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Target, ChevronRight, Building2, Lock, MapPin } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion';
 
 interface JobCardProps {
   type: 'category' | 'job';
@@ -9,22 +9,34 @@ interface JobCardProps {
   index?: number;
 }
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 20, scale: 0.95 },
+const cardVariants: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 20,
+    scale: 0.95
+  },
   visible: (i: number) => ({
-    opacity: 1, y: 0, scale: 1,
+    opacity: 1,
+    y: 0,
+    scale: 1,
     transition: {
       delay: i * 0.05,
       duration: 0.4,
+      // Fazemos o cast 'as any' ou garantimos a assinatura do cubic-bezier
       ease: [0.215, 0.61, 0.355, 1],
     },
   }),
-  hover: { y: -5, transition: { duration: 0.2, ease: "easeOut" } },
-  tap: { scale: 0.98 }
+  hover: {
+    y: -5,
+    transition: { duration: 0.2, ease: "easeOut" }
+  },
+  tap: {
+    scale: 0.98
+  }
 };
 
 const JobCard = memo(({ type, data, onAction, index = 0 }: JobCardProps) => {
-  
+
   // --- MODO CATEGORIA (Clusters de Vagas) ---
   if (type === 'category') {
     const count = data.total_jobs ?? 0;

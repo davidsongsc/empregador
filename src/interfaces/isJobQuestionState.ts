@@ -16,12 +16,12 @@ export interface JobQuestionState {
     clearQuestionCache: (jobId?: string) => void;
 }
 
-interface CacheEntry {
+export interface CacheEntry {
     data: JobsResponse;
     timestamp: number;
 }
 
-interface JobsCacheState {
+export interface JobsCacheState {
     // O cache é um mapa: { "usuario=123&page=1": { data, timestamp } }
     cache: Record<string, CacheEntry>;
     setCache: (key: string, data: JobsResponse) => void;

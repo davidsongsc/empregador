@@ -12,6 +12,21 @@ export const useEventStore = create<EventState>((set, get) => ({
   activeEvent: null,
   loading: false,
 
+  // Inicialização obrigatória
+  count: 0,
+  search: "",
+  page: 1,
+  totalPages: 1,
+
+  // Implementação das novas funções
+  setSearch: (query) => set({ search: query, page: 1 }), // Reseta para pág 1 ao buscar
+
+  setPage: (newPage) => {
+    set({ page: newPage });
+    get().fetchEvents(true); // Re-sincroniza ao trocar de página
+  },
+
+
   /**
    * Recupera o estado do IndexedDB (Zero Latency Startup)
    */
@@ -32,6 +47,7 @@ export const useEventStore = create<EventState>((set, get) => ({
    * Busca lista de eventos (Camada Shallow)
    */
   fetchEvents: async (forceRefresh = false) => {
+    const { search, page } = get();
     const now = Date.now();
     const lastSync = await idbGet<number>("delta_events_ts") || 0;
 
@@ -47,7 +63,7 @@ export const useEventStore = create<EventState>((set, get) => ({
       const events = data.results || [];
 
       set({ events, loading: false });
-      
+
       // Persistência Atômica
       await idbSet("delta_events", events);
       await idbSet("delta_events_ts", now);
@@ -63,7 +79,7 @@ export const useEventStore = create<EventState>((set, get) => ({
   fetchScheduleDetails: async (uid: string, forceRefresh = false) => {
     const now = Date.now();
     const tsKey = `ts_${uid}`;
-    
+
     // Verifica se os dados desta escala específica estão obsoletos
     const lastFetch = get().schedulesCache[tsKey] || 0;
     const isFresh = (now - lastFetch) < STALE_TIME;
@@ -76,10 +92,10 @@ export const useEventStore = create<EventState>((set, get) => ({
       const data = await eventService.getScheduleDetails(uid);
 
       set((state) => {
-        const newCache = { 
-          ...state.schedulesCache, 
+        const newCache = {
+          ...state.schedulesCache,
           [uid]: data,
-          [tsKey]: now 
+          [tsKey]: now
         };
         // Background Sync com o IDB
         idbSet("schedules_cache", newCache);
@@ -99,7 +115,7 @@ export const useEventStore = create<EventState>((set, get) => ({
       const newEvent = await eventService.createEvent({
         name: formData.name,
         description: formData.description,
-        fixed_organizers: formData.fixed_organizers || [], 
+        fixed_organizers: formData.fixed_organizers || [],
         sponsors: formData.sponsors || []
       });
 
@@ -109,7 +125,7 @@ export const useEventStore = create<EventState>((set, get) => ({
           chamada: formData.chamada,
           start_time: formData.start_time,
           end_time: formData.end_time,
-          address: formData.address || null 
+          address: formData.address || null
         });
 
         const eventForStore = {
@@ -120,19 +136,19 @@ export const useEventStore = create<EventState>((set, get) => ({
 
         set((state) => {
           const updatedEvents = [eventForStore, ...state.events];
-          const updatedCache = { 
-            ...state.schedulesCache, 
+          const updatedCache = {
+            ...state.schedulesCache,
             [newSchedule.uid]: newSchedule,
             [`ts_${newSchedule.uid}`]: Date.now()
           };
-          
+
           idbSet("delta_events", updatedEvents);
           idbSet("schedules_cache", updatedCache);
 
-          return { 
-            events: updatedEvents, 
+          return {
+            events: updatedEvents,
             schedulesCache: updatedCache,
-            loading: false 
+            loading: false
           };
         });
 

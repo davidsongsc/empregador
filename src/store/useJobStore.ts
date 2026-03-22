@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { getAllJobs, getJobFeed, getJobCategories, getMyJobs, getJobById } from "@/services/jobService";
 import { JobState } from "@/interfaces/isJobState";
-import { JobCacheEntry, JobResult } from "@/interfaces/iJob";
+import { JobResult } from "@/interfaces/jobResult";
+import { JobCacheEntry } from "@/interfaces/iJob";
 
 export const useJobStore = create<JobState>()(
   persist(
@@ -235,8 +236,8 @@ export const useJobStore = create<JobState>()(
           const isFirstPage = key.includes("-p1-");
 
           patches.forEach(patch => {
-            const patchCategory = patch.data.category || "Geral";
-            const patchTipo = patch.data.tipo_vaga;
+            const patchCategory = patch.data.categoria || "Geral";
+            const patchTipo = patch.data.tipo || "FREELANCER";
 
             if (patch.type === 'UPDATED') {
               results = results.map(j => j.uid === patch.uid ? { ...j, ...patch.data } : j);

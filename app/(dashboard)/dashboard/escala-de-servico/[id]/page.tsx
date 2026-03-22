@@ -49,8 +49,11 @@ export default function EventAdminPage({ params }: PageProps) {
         </div>
 
         <div className="grid gap-4">
-          {activeEvent?.schedules?.map((scheduleUid: string) => (
-            <ScheduleCard key={scheduleUid} scheduleUid={scheduleUid} />
+          {activeEvent?.schedules?.map((schedule: any) => (
+            <ScheduleCard
+              key={schedule.uid || schedule}
+              scheduleUid={typeof schedule === 'string' ? schedule : schedule.uid}
+            />
           ))}
         </div>
       </section>
