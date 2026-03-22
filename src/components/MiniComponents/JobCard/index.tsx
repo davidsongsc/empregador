@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Target, ChevronRight, Building2, Lock, MapPin } from 'lucide-react';
 import { motion, Variants } from 'framer-motion';
+import { sendGAEvent } from '@next/third-parties/google';
 
 interface JobCardProps {
   type: 'category' | 'job';
@@ -10,11 +11,7 @@ interface JobCardProps {
 }
 
 const cardVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    y: 20,
-    scale: 0.95
-  },
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
@@ -22,7 +19,6 @@ const cardVariants: Variants = {
     transition: {
       delay: i * 0.05,
       duration: 0.4,
-      // Fazemos o cast 'as any' ou garantimos a assinatura do cubic-bezier
       ease: [0.215, 0.61, 0.355, 1],
     },
   }),
@@ -30,27 +26,36 @@ const cardVariants: Variants = {
     y: -5,
     transition: { duration: 0.2, ease: "easeOut" }
   },
-  tap: {
-    scale: 0.98
-  }
+  tap: { scale: 0.98 }
 };
 
 const JobCard = memo(({ type, data, onAction, index = 0 }: JobCardProps) => {
 
-  // --- MODO CATEGORIA (Clusters de Vagas) ---
+  // --- MODO CATEGORIA ---
   if (type === 'category') {
     const count = data.total_jobs ?? 0;
+
+    const handleCategoryClick = () => {
+      // 1. Rastreia o interesse por segmento (Exploração)
+      sendGAEvent('event', 'select_content', {
+        content_type: 'job_category',
+        item_id: data.id,
+        item_name: data.name,
+        total_vagas_available: count
+      });
+
+      onAction(data);
+    };
 
     return (
       <motion.div
         custom={index}
         initial="hidden" animate="visible" whileHover="hover" whileTap="tap"
         variants={cardVariants}
-        onClick={() => onAction(data)}
+        onClick={handleCategoryClick}
         className="group bg-delos-surface p-3 rounded-[14px] border border-delos-border hover:border-delos-amber/50 transition-all cursor-pointer flex flex-col justify-between min-h-[250px] relative overflow-hidden shadow-sm"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-delos-amber/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
         <div className="flex justify-between items-start relative z-10">
           <div className="p-2 bg-white border border-delos-border rounded-lg group-hover:bg-delos-black group-hover:text-white transition-colors">
             <Target className="w-5 h-5" />
@@ -77,6 +82,23 @@ const JobCard = memo(({ type, data, onAction, index = 0 }: JobCardProps) => {
 
   // --- MODO INDIVIDUAL (Job/Vaga) ---
   const job = data;
+
+  const handleApplyClick = () => {
+    // 2. Rastreia a intenção de candidatura (Lead inicial / View Item)
+    sendGAEvent('event', 'view_item', {
+      currency: 'BRL',
+      value: job.salario ? Number(job.salario) : 0,
+      items: [{
+        item_id: job.uid,
+        item_name: job.cargo_nome || job.cargo_fallback,
+        item_category: job.tipo_vaga,
+        price: job.salario ? Number(job.salario) : 0,
+        location_id: job.local_amigavel
+      }]
+    });
+
+    onAction(job);
+  };
 
   return (
     <motion.div
@@ -122,7 +144,7 @@ const JobCard = memo(({ type, data, onAction, index = 0 }: JobCardProps) => {
       </div>
 
       <motion.button
-        onClick={() => onAction(job)}
+        onClick={handleApplyClick}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.95 }}
         className="mt-6 w-full py-4 bg-delos-black text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-delos-amber transition-all flex items-center justify-center gap-2 group/btn"
@@ -133,7 +155,6 @@ const JobCard = memo(({ type, data, onAction, index = 0 }: JobCardProps) => {
     </motion.div>
   );
 }, (prev, next) => {
-  // Comparação otimizada: evita re-render se o ID e o título não mudarem
   return (
     prev.type === next.type &&
     prev.data.id === next.data.id &&

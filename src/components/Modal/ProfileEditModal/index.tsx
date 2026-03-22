@@ -10,6 +10,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useAddressStore } from '@/store/useAddressStore';
 import { updateAddress, createAddress } from '@/services/addressService';
 import { toast } from '@/components/Notification';
+import { sendGAEvent } from '@next/third-parties/google';
 
 type TabID = 'identity' | 'geo';
 
@@ -37,11 +38,16 @@ export const EditProfileModal = ({ isOpen, onClose }: { isOpen: boolean; onClose
 
     useEffect(() => {
         const cepLimpo = localAddress?.cep?.replace(/\D/g, "");
-
         if (cepLimpo?.length === 8) {
             const autoFill = async () => {
                 const data = await lookup(cepLimpo);
                 if (data) {
+                    // GA4: Registro de uso de automação (facilita a vida do user)
+                    sendGAEvent('event', 'address_autofill_success', {
+                        cep: cepLimpo,
+                        city: data.localidade
+                    });
+
                     setLocalAddress((prev: any) => ({
                         ...prev,
                         logradouro: data.logradouro,
@@ -54,15 +60,20 @@ export const EditProfileModal = ({ isOpen, onClose }: { isOpen: boolean; onClose
             autoFill();
         }
     }, [localAddress?.cep, lookup]);
+
+    const handleTabChange = (tab: TabID) => {
+        setActiveTab(tab);
+        sendGAEvent('event', 'modal_navigation', {
+            modal_name: 'edit_profile',
+            target_tab: tab
+        });
+    };
     const handleInternalSave = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             const tasks = [];
-
-            // Task A: Perfil
             tasks.push(saveProfile(localProfile));
 
-            // Task B: Endereço (Lógica de Upsert)
             if (localAddress.cep.replace(/\D/g, "").length === 8) {
                 if (localAddress.id) {
                     tasks.push(updateAddress(localAddress.id, localAddress));
@@ -72,14 +83,20 @@ export const EditProfileModal = ({ isOpen, onClose }: { isOpen: boolean; onClose
             }
 
             await Promise.all(tasks);
-            toast.success("Dados salvos com sucesso.");
 
-            // Refresh Store de Endereços
+            // --- GA4: GRAND FINALE DE DADOS ---
+            sendGAEvent('event', 'profile_update_complete', {
+                has_bio: !!localProfile.bio,
+                has_occupation: !!localProfile.ocupation,
+                city_updated: localAddress.cidade
+            });
+
+            toast.success("Dados sincronizados com a matriz.");
             if (profile?.usuario_id) fetchAddresses(profile.usuario_id);
-
             onClose();
         } catch (err) {
-            toast.error("Erro na sincronização dos dados.");
+            sendGAEvent('event', 'profile_update_error', { error: 'sync_failure' });
+            toast.error("Falha na transmissão dos dados.");
         }
     };
 
@@ -142,7 +159,20 @@ export const EditProfileModal = ({ isOpen, onClose }: { isOpen: boolean; onClose
                                             <div className="col-span-1 md:col-span-9"><label className={labelClassName}>Complemento</label><input type="text" value={localAddress.complemento} onChange={e => setLocalAddress({ ...localAddress, complemento: e.target.value })} className={inputClassName} /></div>
                                             <div className="col-span-2 md:col-span-5"><label className={labelClassName}>Bairro</label><input type="text" value={localAddress.bairro} onChange={e => setLocalAddress({ ...localAddress, bairro: e.target.value })} className={inputClassName} /></div>
                                             <div className="col-span-1 md:col-span-5"><label className={labelClassName}>Cidade</label><input type="text" value={localAddress.cidade} onChange={e => setLocalAddress({ ...localAddress, cidade: e.target.value })} className={inputClassName} /></div>
-                                            <div className="col-span-1 md:col-span-2"><label className={labelClassName}>UF</label><input type="text" maxLength={2} value={localAddress.estado} onChange={e => setLocalAddress({ ...localAddress, estado: e.target.value.toUpperCase() })} className={`${inputClassName} text-center`} /></div>
+                                            <div className="col-span-1 md:col-span-2">
+                                                <label className={labelClassName}>UF</label>
+                                                <input
+                                                    type="text"
+                                                    maxLength={2}
+                                                    value={localAddress.estado}
+                                                    onChange={e => setLocalAddress({
+                                                        ...localAddress,
+                                                        estado: e.target.value.toUpperCase()
+                                                    })}
+                                                    placeholder="RJ"
+                                                    className={`${inputClassName} text-center font-mono placeholder:opacity-20`}
+                                                />
+                                            </div>
                                         </div>{/* Indicador de carregamento sutil dentro do input */}
                                         {loadingCep && (
                                             <div className="absolute right-3 bottom-3">

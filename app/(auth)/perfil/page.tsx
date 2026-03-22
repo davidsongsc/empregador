@@ -20,6 +20,7 @@ import PerfilLoading from '@/components/PerfilLoading';
 import { EditProfileModal } from '@/components/Modal/ProfileEditModal';
 import WorkExperience from '@/components/MiniComponents/WorkExperience';
 import { toast } from '@/components/Notification';
+import { sendGAEvent } from '@next/third-parties/google';
 
 const App = () => {
   const router = useRouter();
@@ -56,7 +57,12 @@ const App = () => {
     if (isAuthenticated && profile?.usuario_id) {
       fetchAddresses(profile.usuario_id);
       fetchApplications();
-      fetchEducations(); // Sincroniza logs acadêmicos ao carregar
+      fetchEducations(); 
+      sendGAEvent('event', 'view_profile', {
+        user_id: profile.usuario_id,
+        profile_completeness: profile.bio ? 'full' : 'incomplete',
+        occupation: profile.ocupation || 'generalist'
+      });
     }
   }, [profile?.usuario_id, isAuthenticated, fetchAddresses, fetchApplications, fetchEducations]);
 
@@ -304,7 +310,7 @@ const App = () => {
         onClose={() => {
           setIsEditModalOpen(false);
           refresh();
-       
+
         }}
       />
 
@@ -312,7 +318,7 @@ const App = () => {
       <ExperienceManagerModal
         isOpen={isExpModalOpen}
         onClose={() => setIsExpModalOpen(false)}
-        profileId={profile?.id} 
+        profileId={profile?.id}
       />
       <EducationManagerModal
         isOpen={isEduModalOpen}
