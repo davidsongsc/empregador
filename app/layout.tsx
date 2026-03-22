@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { Geist, Geist_Mono, Montserrat } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Script from 'next/script';
