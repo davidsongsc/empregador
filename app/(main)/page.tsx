@@ -1,5 +1,6 @@
 "use client";
 
+import { sendGAEvent } from '@next/third-parties/google';
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Search, Loader2, SearchX, ArrowLeft, Zap, Briefcase, Users, ChevronRight } from 'lucide-react';
 import JobApplyModal from '@/components/JobApplyModal';
@@ -76,16 +77,47 @@ const VagasPage = () => {
   }, [viewMode, categories, cachedEntry]);
   // 6. HANDLERS
   const handleAction = useCallback((item: any) => {
-    // Se o JobCard passou o objeto {id, name}
+    // Se for uma CATEGORIA
     if (item?.name && !item?.descricao) {
+      // Rastreia o clique na categoria
+      sendGAEvent('event', 'select_content', {
+        content_type: 'category',
+        item_id: item.id,
+        item_name: item.name
+      });
+
       setSelectedCategory(item.id);
       setCategoryDisplayName(item.name);
       setCurrentPage(1);
-    } else {
+    }
+    // Se for uma VAGA (O JobCard interno já dispara o clique, 
+    // mas aqui rastreamos a abertura do Modal de aplicação)
+    else {
+      sendGAEvent('event', 'view_item', {
+        currency: 'BRL',
+        value: item.salario ? Number(item.salario) : 0,
+        items: [{
+          item_id: item.uid,
+          item_name: item.cargo_exibicao || item.cargo_nome,
+          item_category: categoryDisplayName || 'Geral'
+        }]
+      });
+
       setSelectedJob(item);
       setOpenApply(true);
     }
-  }, []);
+  }, [categoryDisplayName]);
+
+  const handleSearch = useCallback((val: string) => {
+    setSearch(val);
+    if (val.length > 3) {
+      // Rastreia o que as pessoas estão procurando (Valioso para saber demanda)
+      sendGAEvent('event', 'search', {
+        search_term: val
+      });
+    }
+    if (viewMode === 'categories') setCurrentPage(1);
+  }, [viewMode]);
 
   const resetView = useCallback(() => {
     setSelectedCategory(null);
@@ -138,10 +170,7 @@ const VagasPage = () => {
                 placeholder="PESQUISAR_NA_MATRIZ..."
                 className="w-full bg-white border border-gray-100 rounded-xl py-4 pl-12 pr-4 text-[11px] font-bold uppercase outline-none focus:border-delos-black transition-all shadow-sm"
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  if (viewMode === 'categories') setCurrentPage(1);
-                }}
+                onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
           </div>

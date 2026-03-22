@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono, Montserrat } from "next/font/google";
+import { GoogleAnalytics } from '@next/third-parties/google';
 import { AuthProvider } from "@/contexts/AuthContext";
 import Script from 'next/script';
 import "./globals.css";
@@ -67,6 +68,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <CookieBanner />
         </ThemeProvider>
       </body>
+      <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || "G-XXXXXXXXXX"} />
     </html>
   );
 }

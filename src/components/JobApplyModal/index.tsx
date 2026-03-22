@@ -4,6 +4,7 @@ import {
   HelpCircle, Sparkles, Loader2, ChevronRight, Binary,
   Plus, Trash2, Calendar, Zap, Fingerprint, Database
 } from "lucide-react"
+import { sendGAEvent } from '@next/third-parties/google';
 import React, { useState, useMemo, useEffect } from "react"
 import { applicationService } from "@/services/applicationService"
 import { toast } from "@/components/Notification"
@@ -87,6 +88,8 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
       }
     }
   }, [remoteExperiences, open, loadingExp]);
+
+
   // 68 | Adicionamos o ?. no job e uma verificação curta no início
   const currentBenefits = useMemo(() => {
     if (!job?.id) return [];
@@ -117,6 +120,16 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
     list.push({ id: "impulsionar", label: "Impulsionamento", icon: <Zap size={14} /> });
     return list;
   }, [questionGroups, shouldEditExperience]); // Adicione a dependência aqui!
+
+  useEffect(() => {
+    if (open && steps[stepIndex]) {
+      sendGAEvent('event', 'screen_view', {
+        app_name: 'FreelaCerto',
+        screen_name: `Apply_Step: ${steps[stepIndex].id}`,
+        job_title: job?.cargo_nome
+      });
+    }
+  }, [stepIndex, open, steps, job?.cargo_nome]);
 
   if (!open || !job) return null;
   const currentStep = steps[stepIndex] || steps[0] || { id: 'loading' };
@@ -182,18 +195,28 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
       }));
 
       const targetJobId = job.id || job.uid;
-
       await applicationService.applyToJob(targetJobId, formattedAnswers);
+      sendGAEvent('event', 'conversion', {
+        event_category: 'job_application_complete',
+        event_label: job.cargo_nome,
+        job_id: targetJobId,
+        boost_active: false, // Você pode capturar o estado do checkbox de impulsionar aqui
+        value: 1
+      });
 
-      // --- 3. PROTOCOLO_DELTA: CLEANUP & SYNC ---
       removeJobFromCache(targetJobId);
-
-      // Atualiza o store de candidaturas para o Dashboard refletir a nova vaga
       await fetchApplications({}, true, true);
 
       toast.success("Sincronização completa: Perfil e Candidatura.");
       onClose();
     } catch (err: any) {
+      // Rastrear falha também é importante para entender erros no funil
+      toast.error(err.message);
+      sendGAEvent('event', 'exception', {
+        description: `Application Error: ${err.message}`,
+        fatal: false
+      });
+
       const errorMsg = err.response?.data?.detail || "ERRO_NA_OPERACAO";
       toast.error(errorMsg);
     } finally {
@@ -345,28 +368,91 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
                         <div className="grid md:grid-cols-2 gap-6">
                           <div className="text-left">
                             <label className={labelClassName}>Empresa</label>
-                            <input type="text" value={exp.empresa} onChange={(e) => updateExperience(idx, 'empresa', e.target.value)} className={inputClassName} placeholder="Ex: Delos_Corp" />
+                            <input
+                              type="text"
+                              value={exp.empresa}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                updateExperience(idx, 'empresa', val);
+
+                                // Rastreia o início da digitação (Interação com o Formulário)
+                                if (val.length === 1) {
+                                  sendGAEvent('event', 'form_start_typing', {
+                                    field_name: 'experience_company',
+                                    job_id: job?.id || job?.uid
+                                  });
+                                }
+                              }}
+                              className={inputClassName}
+                              placeholder="Ex: Delos_Corp"
+                            />
                           </div>
+
                           <div className="text-left">
                             <label className={labelClassName}>Função/Cargo</label>
-                            <input type="text" value={exp.cargo} onChange={(e) => updateExperience(idx, 'cargo', e.target.value)} className={inputClassName} />
+                            <input
+                              type="text"
+                              value={exp.cargo}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                updateExperience(idx, 'cargo', val);
+
+                                // Rastreia a interação com o campo de cargo
+                                sendGAEvent('event', 'form_interaction', {
+                                  field_name: 'experience_role',
+                                  job_context: job?.cargo_nome
+                                });
+                              }}
+                              className={inputClassName}
+                              placeholder="Ex: Garçom_Líder"
+                            />
                           </div>
 
                           {/* Datas de Entrada e Saída */}
                           <div className="grid grid-cols-2 gap-4">
                             <div className="text-left">
                               <label className={labelClassName}>Entrou em</label>
-                              <input type="date" value={exp.data_entrada} onChange={(e) => updateExperience(idx, 'data_entrada', e.target.value)} className={inputClassName} />
+                              <input
+                                type="date"
+                                value={exp.data_entrada}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  updateExperience(idx, 'data_entrada', val);
+
+                                  // Rastreia a interação com datas (UX Insight)
+                                  sendGAEvent('event', 'form_interaction', {
+                                    field: 'date_entry',
+                                    job_context: job?.cargo_nome
+                                  });
+                                }}
+                                className={inputClassName}
+                              />
                             </div>
+
                             <div className="text-left">
                               <label className={labelClassName}>Saida em</label>
                               <input
                                 type="date"
                                 disabled={exp.atualmente_trabalhando}
-                                // O segredo está no "?? ''" ou "|| ''" ao final
+                                // Protocolo de Segurança: Se for 'Active_Role', o valor é forçado para vazio
                                 value={exp.atualmente_trabalhando ? "" : (exp.data_saida ?? "")}
-                                onChange={(e) => updateExperience(idx, 'data_saida', e.target.value)}
-                                className={`${inputClassName} ${exp.atualmente_trabalhando ? "opacity-20 cursor-not-allowed" : ""}`}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  updateExperience(idx, 'data_saida', val);
+
+                                  // Validação Analítica: Se a saída for antes da entrada, logamos como atrito de UX
+                                  if (exp.data_entrada && val < exp.data_entrada) {
+                                    sendGAEvent('event', 'form_error_user', {
+                                      error_type: 'invalid_date_range',
+                                      field: 'date_exit'
+                                    });
+                                  }
+                                }}
+                                // Estilização Dinâmica: Opacidade reduzida via Protocolo Delos quando bloqueado
+                                className={`${inputClassName} ${exp.atualmente_trabalhando
+                                  ? "opacity-20 cursor-not-allowed grayscale"
+                                  : "hover:border-[var(--delos-amber)]/50"
+                                  }`}
                               />
                             </div>
                           </div>
@@ -377,8 +463,23 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
                                 type="checkbox"
                                 checked={exp.atualmente_trabalhando}
                                 onChange={(e) => {
-                                  updateExperience(idx, 'atualmente_trabalhando', e.target.checked);
-                                  if (e.target.checked) updateExperience(idx, 'data_saida', null);
+                                  const isChecked = e.target.checked;
+
+                                  // 1. Rastreamento GA4: Entender o perfil do candidato
+                                  sendGAEvent('event', 'profile_update_interaction', {
+                                    event_category: 'experience_form',
+                                    event_label: 'toggle_currently_working',
+                                    is_active_worker: isChecked,
+                                    job_context: job?.cargo_exibicao || "unknown"
+                                  });
+
+                                  // 2. Lógica Funcional Original
+                                  updateExperience(idx, 'atualmente_trabalhando', isChecked);
+
+                                  // Se estiver trabalhando, o sistema limpa a data de saída (Protocolo de Integridade)
+                                  if (isChecked) {
+                                    updateExperience(idx, 'data_saida', null);
+                                  }
                                 }}
                                 className="w-4 h-4 rounded-none border-[var(--delos-grey)] text-[var(--delos-indigo)] focus:ring-0 bg-transparent"
                               />
