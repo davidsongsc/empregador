@@ -17,7 +17,7 @@ export function useCompanyContext() {
       // Busca os detalhes da empresa (seu fetchCompanyDetails ja faz isso)
       fetchCompanyDetails(activeCompanyId);
       // Busca os departamentos daquela empresa
-      fetchDepartments();
+      fetchDepartments(activeCompanyId);
     }
   }, [activeCompanyId]);
 

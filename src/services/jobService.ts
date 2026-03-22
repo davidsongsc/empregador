@@ -1,19 +1,21 @@
-import { JobsResponse } from "@/interfaces/jobResponse";
+import { JobsResponse } from "@/interfaces/ijobResponse";
+import { JobResult } from "@/interfaces/jobResult";
 import { api } from "@/lib/api";
 
-// Helper para construir a query string com paginação e filtros
-const buildQuery = (params: Record<string, any>) => {
-  const query = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      query.append(key, value.toString());
-    }
-  });
-  return query.toString();
-};
+import buildQuery from "@/utils/buildQuery";
+
 interface FetchOptions {
   headers?: Record<string, string>;
 }
+
+interface JobSearchParams extends PaginationParams {
+  selectedCategory?: string;
+  fields?: string[]; // Array de campos sob demanda
+  category?: string;
+  search?: string;
+  ordering?: string;
+}
+
 interface PaginationParams {
   page?: number;
   page_size?: number;
@@ -24,17 +26,15 @@ interface PaginationParams {
  */
 // jobService.ts
 export async function getAllJobs(
-  params: PaginationParams = {},
-  options: FetchOptions = {} // <--- ADICIONE ESTE ARGUMENTO
+  params: any,
+  options: FetchOptions = {}
 ): Promise<JobsResponse> {
-  const queryString = buildQuery(params);
 
-  return api(`/vagas/?${queryString}`, {
+
+  return api(`/api/v1/jobs/public/category/${params}`, {
     method: "GET",
     credentials: "include",
-    headers: {
-      ...options.headers, // <--- MESCLE OS HEADERS AQUI
-    }
+    headers: { ...(options.headers || {}) }
   });
 }
 
@@ -42,37 +42,42 @@ export async function getAllJobs(
  * ROTA PRIVADA: Feed de vagas (vagas que o usuário não se candidatou)
  */
 export async function getJobFeed(
-  params: PaginationParams = {},
-  options: FetchOptions = {} // <--- ADICIONE ESTE ARGUMENTO
+  params: any = {},
+  options: FetchOptions = {}
 ): Promise<JobsResponse> {
-  const queryString = buildQuery(params);
 
-  return api(`/vagas/feed/?${queryString}`, {
+  return api(`/api/v1/jobs/category/${params}`, {
     method: "GET",
     credentials: "include",
-    headers: {
-      ...options.headers, // <--- MESCLE OS HEADERS AQUI
-    }
+    headers: { ...(options.headers || {}) }
   });
 }
 
 /**
  * Busca as vagas filtradas (Visão do Recrutador/Empresa)
  */
-interface MyJobsParams extends PaginationParams {
-  usuario?: string;
-  company?: string;
+interface MyJobsParams extends JobSearchParams {
+  company: string;
 }
 
+/**
+ * ROTA CORPORATIVA: Busca as vagas da empresa (Visão Interna)
+ * Aplicando o Protocolo Delta e Sparse Fieldsets
+ */
 export async function getMyJobs(params: MyJobsParams): Promise<JobsResponse> {
+  // 1. Criamos uma cópia limpa para evitar efeitos colaterais
+  // Se o seu buildQuery já faz o join(',') do array fields, 
+  // você pode passar o objeto direto. 
   const queryString = buildQuery(params);
 
   return api(`/vagas/internas/?${queryString}`, {
     method: "GET",
+    // Importante: No Next.js/Browser, 'include' permite enviar os cookies da sessão
     credentials: "include",
     headers: {
-      // Garantimos que sempre será uma string para o TS não reclamar
+      // O Header X-Company-Id é o que ativa o Mixin no Django
       "X-Company-Id": String(params.company || ""),
+      "Content-Type": "application/json",
     },
   });
 }
@@ -95,21 +100,15 @@ export interface CorporateFilterParams {
  */
 
 export async function getCorporateApplications(companyId: string, filters: any) {
-  // LIMPEZA DE SEGURANÇA: Se o ID vier duplicado, pega só o primeiro
   const cleanCompanyId = companyId.includes(',')
     ? companyId.split(',')[0].trim()
     : companyId;
 
-  const params = new URLSearchParams();
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value) params.set(key, value.toString()); // .set evita duplicar na URL
-  });
+  const queryString = buildQuery(filters);
 
-  return api(`/vagas/corporate/candidaturas/?${params.toString()}`, {
+  return api(`/vagas/corporate/candidaturas/?${queryString}`, {
     method: "GET",
-    headers: {
-      "X-Company-Id": cleanCompanyId, // Envia o ID limpo
-    },
+    headers: { "X-Company-Id": cleanCompanyId },
     credentials: "include",
   });
 }
@@ -134,6 +133,13 @@ export async function updateApplicationStatus(applicationId: string, newStatus: 
     credentials: "include",
   });
 }
+export async function getJobCategories(page: number = 1): Promise<any> {
+  // Passamos o page na query string
+  return api(`/api/v1/categories/categories?page=${page}`, {
+    method: "GET",
+    credentials: "include",
+  });
+}
 
 export async function getOwnerJobs(companyId?: string): Promise<JobsResponse> {
   return api(`/vagas/owner/`, {
@@ -142,5 +148,58 @@ export async function getOwnerJobs(companyId?: string): Promise<JobsResponse> {
       // Se companyId for null/undefined, o backend cai na lógica de "vagas do user"
       ...(companyId && { "X-Company-Id": companyId }),
     },
+  });
+}
+
+
+export async function getJobById(uid: string, companyId: string): Promise<JobResult> {
+  // Limpeza para evitar a duplicidade/aspas que vimos no log
+  const cleanCompanyId = companyId.toString().replace(/["'“”]/g, '').split(',')[0].trim();
+
+  // REMOVIDO o /editar/ para bater na rota limpa do Django
+  return api(`/vagas/internas/${uid}/`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "X-Company-Id": cleanCompanyId,
+    },
+  });
+}
+
+export async function patchJobDelta(uid: string, companyId: string, data: Partial<JobResult>) {
+  const cleanCompanyId = companyId.toString().replace(/["'“”]/g, '').split(',')[0].trim();
+
+  return api(`/vagas/internas/${uid}/`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+      "X-Company-Id": cleanCompanyId,
+    },
+    credentials: "include",
+  });
+}
+
+
+/**
+ * Busca perguntas personalizadas de uma vaga específica.
+ * @param jobId O UID da vaga (UUID)
+ * @param params Objeto contendo pagina e tamanho (conforme sua API Server Response)
+ */
+export async function getJobQuestions(jobId: string, params: { pagina?: number; tamanho?: number } = {}) {
+  // Garante que o ID esteja limpo caso venha com aspas de algum storage/cache
+  const cleanJobId = jobId.toString().replace(/["'“”]/g, '').trim();
+
+  const { pagina = 1, tamanho = 10 } = params;
+
+  // Montagem da query string seguindo o padrão: ?job_id=UUID&pagina=1&tamanho=10
+  const queryString = `?job_id=${cleanJobId}&pagina=${pagina}&tamanho=${tamanho}`;
+
+  return api(`/api/v1/jobs/questions/${queryString}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
   });
 }

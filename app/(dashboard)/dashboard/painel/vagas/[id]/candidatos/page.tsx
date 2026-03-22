@@ -5,21 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCorporateApplications } from "@/hooks/useCorporateApplications";
 import { updateApplicationStatus } from "@/services/jobService";
-import {
-  User, Phone, ChevronLeft, Loader2, MapPin, Lock, Mail,
-  FileText, History, Search, ArrowRight, Zap, X,
-  CheckCircle2, Ban, MoreHorizontal, Calendar, Info,
-  ChevronRight
-} from "lucide-react";
-import Image from "next/image";
 import { toast } from "@/components/Notification";
 import { GROUPED_STATUS, STATUS_CONFIG } from "@/data/statusLabels";
 import { CandidateFilters } from "@/components/Candidate/Filters";
-import { CandidateDrawer } from "@/components/Candidate/Drawer";
 import { CandidateList } from "@/components/Candidate/List";
 import { FooterHUD } from "@/components/Footer/System";
 import { Application } from "@/interfaces/aplications";
-import { checkModuleAccess } from "@/utils/hasRecruitmentPermission";
+import { checkLevel } from "@/utils/checkLevel";
 
 const FLOW_SEQUENCE = [
   'applied', 'screening', 'reviewing', 'shortlisted',
@@ -29,17 +21,12 @@ const FLOW_SEQUENCE = [
 
 export default function CandidatosPage() {
   const params = useParams();
-  const router = useRouter();
   const jobId = params.id as string;
-  const { user, } = useAuthStore();
-  const [isChangingStatus, setIsChangingStatus] = useState(false);
-  // Estados de Filtro e UI
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false); // Adicione este estado no topo do componente
-  // Hook Corporativo Original
+  const [isUpdating, setIsUpdating] = useState(false);
   const { candidatos, total, loading, updateStatus } = useCorporateApplications({
     jobId: jobId,
     status: filterStatus === "all" ? undefined : filterStatus,
@@ -55,8 +42,15 @@ export default function CandidatosPage() {
   }, [candidatos, searchTerm]);
 
 
-  const handleNextStep = async (app: any) => {
-    // 1. Bloqueio imediato se já estiver carregando
+  const hasLowAccess = checkLevel("low")
+  const hasMidAccess = checkLevel("mid")
+  const hasHighAccess = checkLevel("high")
+  const handleNextStep = async (app: Application) => {
+    if (!hasMidAccess) {
+      toast.error("Você não possui permissão para avançar o candidato de etapa!");
+      return; // <--- REMOVIDO O 'null'. Agora o TS entende como 'void'
+    };
+
     if (isUpdating) return;
 
     const currentIndex = FLOW_SEQUENCE.indexOf(app.status);
@@ -64,7 +58,7 @@ export default function CandidatosPage() {
     if (currentIndex !== -1 && currentIndex < FLOW_SEQUENCE.length - 1) {
       const nextStatus = FLOW_SEQUENCE[currentIndex + 1];
 
-      setIsUpdating(true); // 2. Inicia o estado de bloqueio
+      setIsUpdating(true);
 
       try {
         await updateApplicationStatus(app.id, nextStatus);
@@ -78,12 +72,16 @@ export default function CandidatosPage() {
       } catch (err) {
         toast.error("Falha na atualização de protocolo");
       } finally {
-        setIsUpdating(false); // 3. Libera o botão independente do resultado
+        setIsUpdating(false);
       }
     }
   };
 
   const handleStatusChange = async (appId: string, newStatus: string) => {
+    if (!hasHighAccess) {
+      toast.error("Você não possui permissão para alterar o status!");
+      return null;
+    };
     if (isUpdating) return; // Bloqueio preventivo
 
     setIsUpdating(true); // Ativa o lock
@@ -103,7 +101,7 @@ export default function CandidatosPage() {
         setSelectedApp({ ...selectedApp, status: newStatus });
       }
 
-      setIsChangingStatus(false); // Fecha o menu após sucesso
+
     } catch (err) {
       toast.error("Erro na reescrita de dados do Host");
       console.error(err);

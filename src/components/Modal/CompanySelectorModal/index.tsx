@@ -29,7 +29,7 @@ export function CompanySelectorModal({ isOpen, onClose }: CompanySelectorModalPr
     setActiveCompany(id);
     // Sincronização automática de tema baseada na empresa
     if (empresaName.toLowerCase().includes("freelacerto")) {
-      setTheme("dark"); // Modo Delos Original
+      setTheme("light"); // Modo Delos Original
     }
     onClose();
   };

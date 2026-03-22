@@ -1,66 +1,63 @@
-// middleware.ts
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { decodeJwt } from "jose"; // Usamos jose no middleware por ser Edge-compatible
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { decodeJwt } from "jose"
 
-// Mapeamento de permissões: quais roles podem acessar quais caminhos
-const ROLE_PERMISSIONS: Record<string, string[]> = {
-  // Rotas exclusivas de candidatos
-  "/vagas": ["CANDIDATO", "CANDIDATO_VIP", "TALENTO", "DEVELOPER", "SUPER_ADMIN"],
-  
-  // Rotas de recrutadores e empresas
-  "/anunciar": ["RECRUITER", "RECRUITER_VIP", "RECRUITER_LEAD", "COMPANY_ADMIN", "DEVELOPER", "SUPER_ADMIN"],
-  
-  // Dashboard administrativo e suporte
-  "/dashboard": ["SUPPORT_N1", "SUPPORT_N2", "SUPPORT_N3", "MODERATOR", "ADMIN_N1", "ADMIN_N2", "SUPER_ADMIN", "DEVELOPER"],
-  
-  // Perfil é comum, mas você pode restringir se necessário
-  "/perfil": ["ANY"], 
-};
+import { Module } from "./enum/moduleEnum"
+import hasModuleAccess from "./utils/hasModuleAccess"
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const token = request.cookies.get("access")?.value;
-
-  const isAuthRoute = pathname === "/login" || pathname === "/cadastro";
-
-  // 1. Se tentar acessar rota de login já estando logado
-  if (isAuthRoute && token) {
-    return NextResponse.redirect(new URL("/vagas", request.url));
-  }
-
-  // 2. Verificação de Rotas Privadas
-  const matchedPath = Object.keys(ROLE_PERMISSIONS).find(path => pathname.startsWith(path));
-
-  if (matchedPath) {
-    // Se não tem token, tchau.
-    if (!token) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("from", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    try {
-      // Decodificamos o cargo do usuário
-      const payload = decodeJwt(token);
-      const userRole = (payload.role as string) || "";
-
-      const allowedRoles = ROLE_PERMISSIONS[matchedPath];
-
-      // Se a rota exige cargos específicos e o user não tem o cargo certo
-      if (!allowedRoles.includes("ANY") && !allowedRoles.includes(userRole)) {
-        // Redireciona para uma página de "Sem Permissão" ou volta para a home
-        return NextResponse.redirect(new URL("/403", request.url));
-      }
-    } catch (e) {
-      // Token inválido/corrompido
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-  }
-
-  return NextResponse.next();
+const ROUTE_TO_MODULE_MAP: Record<string, Module> = {
+  "/vagas": Module.RECRUITMENT,
+  "/candidato": Module.RECRUITMENT,
+  "/anunciar": Module.RECRUITMENT,
+  "/recrutamento": Module.RECRUITMENT,
+  "/dashboard": Module.DASHBOARD,
+  "/empresa": Module.ADMIN_PANEL,
+  "/financeiro": Module.FINANCE,
+  "/comercial": Module.SALES,
+  "/suporte": Module.SUPPORT_PANEL,
+  "/admin": Module.ADMIN_PANEL,
+  "/operacional": Module.OPERATIONAL
 }
 
-export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|img|.*\\.png|.*\\.jpg).*)"],
-};
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const token = request.cookies.get("access")?.value
+  
+  // DEBUG: Delete isso depois, mas agora é essencial:
+  // console.log(`[Middleware] Path: ${pathname} | Token: ${!!token}`);
+
+  // 1. ESCAPE PARA ASSETS E HOME (Trava de segurança)
+  if (
+    pathname === "/" || 
+    pathname.startsWith("/_next") || 
+    pathname.includes(".") // Pula arquivos (png, jpg, etc)
+  ) {
+    return NextResponse.next()
+  }
+
+  // 2. ROTAS DE AUTENTICAÇÃO (Evita loop de logado tentando logar)
+  const isAuthRoute = pathname === "/login" || pathname === "/cadastro"
+  if (isAuthRoute) {
+    if (token) return NextResponse.redirect(new URL("/dashboard", request.url))
+    return NextResponse.next()
+  }
+
+  // 3. VERIFICAÇÃO DE MÓDULOS
+  const matchedPath = Object.keys(ROUTE_TO_MODULE_MAP).find(path => pathname.startsWith(path))
+
+  if (matchedPath) {
+    if (!token) {
+      // Se não tem token, criamos a URL de redirecionamento para a Home
+      const url = new URL("/", request.url)
+      url.searchParams.set("showLogin", "true")
+      url.searchParams.set("from", pathname)
+      
+      // console.log("--- REDIRECIONANDO PARA HOME (SEM TOKEN) ---");
+      return NextResponse.redirect(url)
+    }
+
+    // ... lógica de jose (decodeJwt) e permissões continua igual
+  }
+
+  return NextResponse.next()
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Freela Facil",
+  "short_name": "FreelaFacil",
+  "description": "Protocolo de conexão entre talentos e oportunidades operacionais.",
+  "url": "https://freelafacil.com.br",
+  "ogImage": "https://freelafacil.com.br/og-image.png",
+  "links": {
+    "twitter": "https://twitter.com/freelafacil",
+    "github": "https://github.com/seu-user/freelafacil"
+  },
+  "keywords": [
+    "Next.js",
+    "Freelance",
+    "Eventos",
+    "Gestão de Staff",
+    "FAETEC",
+    "Delos System"
+  ]
+}

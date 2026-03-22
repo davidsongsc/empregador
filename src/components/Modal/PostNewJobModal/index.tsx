@@ -8,23 +8,54 @@ import {
     Activity
 } from 'lucide-react';
 import { usePostJob } from '@/hooks/usePostJob';
-import { useRoles } from '@/hooks/useRoles';
+
 import { createRole } from '@/services/roles';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from '@/components/Notification';
 import { updateJob } from '@/services/jobs';
+import { useRoleStore } from '@/store/useRoleStore';
+import { useJobStore } from '@/store/useJobStore';
+import {  JobPayload } from '@/interfaces/iJob';
 
 interface PostJobModalProps {
     isOpen: boolean;
     onClose: () => void;
-    jobToEdit?: any;
+    jobUid?: string;
+    activeCompanyId?: string
 }
 
-const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
+const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobModalProps) => {
+    const { fetchJobById, loading, error } = useJobStore();
+    const [vaga, setVaga] = useState<any>(null);
+    const { roles, loading: rolesLoading, setInitialRoles, applyDelta, setLoading } = useRoleStore();
+    console.log(jobUid);
+    console.log(activeCompanyId);
+    useEffect(() => {
+        const carregarVaga = async () => {
+            try {
+                // Verificação explícita antes de chamar a função
+                if (jobUid && activeCompanyId) {
+                    const dados = await fetchJobById(jobUid, activeCompanyId);
+                    setVaga(dados);
+                }
+            } catch (error) {
+                console.error("Erro ao carregar detalhes da vaga:", error);
+            }
+        };
+
+        // Só dispara se ambos existirem
+        if (activeCompanyId && jobUid) {
+            carregarVaga();
+        }
+    }, [activeCompanyId, jobUid, fetchJobById]);
+
+    console.log(vaga)
     const { user } = useAuthStore();
     const [step, setStep] = useState(1);
     const { postJob, loading: posting } = usePostJob();
-    const { roles, loading: loadingRoles } = useRoles();
+
+
+
     const [tipoVaga, setTipoVaga] = useState('FREELANCER');
     const [roleSearch, setRoleSearch] = useState('');
     const [selectedRoleUid, setSelectedRoleUid] = useState('');
@@ -44,27 +75,27 @@ const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
     const [isActive, setIsActive] = useState(true);
     useEffect(() => { if (!isOpen) setStep(1); }, [isOpen]);
     useEffect(() => {
-        if (isOpen && jobToEdit) {
+        if (isOpen && vaga) {
             // MODO EDIÇÃO: Mapeia os dados da API para o formulário
-            setSelectedRoleUid(jobToEdit.role_details?.uid || '');
-            setRoleSearch(jobToEdit.role_details?.name || '');
-            setTituloPersonalizado(jobToEdit.titulo_personalizado || '');
-            setSalario(jobToEdit.salario?.toString() || '');
-            setLocal(jobToEdit.endereco?.cidade || jobToEdit.local || '');
-            setTurno(jobToEdit.turno || '');
-            setDescricao(jobToEdit.descricao || '');
-            setTipoVaga(jobToEdit.tipo_vaga || 'FREELANCER');
-            setContatoOpt(jobToEdit.metodo_contato || 'plataforma');
-            setIsActive(jobToEdit.is_active );
-            
+            setSelectedRoleUid(vaga.role_details?.uid || '');
+            setRoleSearch(vaga.role_details?.name || '');
+            setTituloPersonalizado(vaga.titulo_personalizado || '');
+            setSalario(vaga.salario?.toString() || '');
+            setLocal(vaga.endereco?.cidade || vaga.local || '');
+            setTurno(vaga.turno || '');
+            setDescricao(vaga.descricao || '');
+            setTipoVaga(vaga.tipo_vaga || 'FREELANCER');
+            setContatoOpt(vaga.metodo_contato || 'plataforma');
+            setIsActive(vaga.is_active);
+
             // Sanitização de arrays (Benefícios e Requisitos)
             // Se o backend enviar objetos [{description: '...'}], extraímos apenas a string
-            const reqs = jobToEdit.requisitos?.map((r: any) => typeof r === 'string' ? r : r.description) || [];
-            const bens = jobToEdit.beneficios?.map((b: any) => typeof b === 'string' ? b : b.description) || [];
+            const reqs = vaga.requisitos?.map((r: any) => typeof r === 'string' ? r : r.description) || [];
+            const bens = vaga.beneficios?.map((b: any) => typeof b === 'string' ? b : b.description) || [];
 
             setRequisitos(reqs);
             setBeneficios(bens);
-        } else if (isOpen && !jobToEdit) {
+        } else if (isOpen && !vaga) {
             // MODO CRIAÇÃO: Reset de todos os campos para o padrão Delos
             setRoleSearch('');
             setSelectedRoleUid('');
@@ -75,16 +106,17 @@ const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
 
             // ... resetar os demais estados
         }
-    }, [isOpen, jobToEdit]);
+    }, [isOpen, vaga]);
 
-    const modalTitle = jobToEdit ? "Editar_Vaga" : "Criar_Vaga";
-    const buttonLabel = jobToEdit ? "Proximo" : "Avançar";
+    const modalTitle = vaga ? "Editar_Vaga" : "Criar_Vaga";
+    const buttonLabel = vaga ? "Proximo" : "Avançar";
 
     const filteredRoles = useMemo(() => {
         if (!roleSearch || selectedRoleUid) return [];
         return roles.filter(r => r.name.toLowerCase().includes(roleSearch.toLowerCase())).slice(0, 5);
     }, [roles, roleSearch, selectedRoleUid]);
-
+    console.log(filteredRoles)
+    console.log(roles)
     const handleSelectRole = (role: any) => {
         setSelectedRoleUid(role.uid);
         setRoleSearch(role.name);
@@ -117,7 +149,7 @@ const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
     };
 
     const handleFinalizar = async () => {
-        const payload = {
+        const payload: JobPayload = {
             role: selectedRoleUid,
             titulo_personalizado: tituloPersonalizado,
             company: user?.profile?.empresas?.[0]?.id || "",
@@ -135,9 +167,9 @@ const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
         };
 
         try {
-            if (jobToEdit?.uid) {
+            if (vaga?.uid) {
                 // Chamada de PATCH para Edição
-                await updateJob(jobToEdit.uid, payload);
+                await updateJob(vaga.uid, payload);
                 toast.success("Unit_Reconfigured");
             } else {
                 // Chamada de POST para Criação
@@ -396,7 +428,9 @@ const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
                                         className={`relative w-14 h-7 transition-all duration-500 border ${isActive ? 'bg-emerald-600/20 border-emerald-500/50' : 'bg-red-600/20 border-red-500/50'}`}
                                     >
                                         {/* Knob Estilo Industrial */}
-                                        <div className={`absolute top-1 bottom-1 w-5 transition-all duration-500 ${isActive ? 'left-7 bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'left-1 bg-red-500 shadow-[0_0_10px_#ef4444]'}`}>
+                                        <div className={`absolute top-1 bottom-1 w-5 transition-all 
+                                            duration-500
+                                             ${isActive ? 'left-7 bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'left-1 bg-red-500 shadow-[0_0_10px_#ef4444]'}`}>
                                             <div className="w-full h-full flex items-center justify-center">
                                                 <div className="w-[1px] h-2 bg-white/30 mx-[1px]" />
                                                 <div className="w-[1px] h-2 bg-white/30 mx-[1px]" />
@@ -408,11 +442,19 @@ const PostNewJobModal = ({ isOpen, onClose, jobToEdit }: PostJobModalProps) => {
                                     <button
                                         onClick={handleFinalizar}
                                         disabled={posting}
-                                        className="w-full bg-amber-600 text-black py-6 font-black text-xs uppercase tracking-[0.4em] flex items-center justify-center gap-4 hover:bg-white transition-all shadow-[0_0_30px_rgba(217,119,6,0.2)]"
+                                        className="w-full bg-amber-600 text-black py-6 font-black 
+                                        text-xs uppercase tracking-[0.4em] flex items-center 
+                                        justify-center gap-4 hover:bg-white transition-all
+                                         shadow-[0_0_30px_rgba(217,119,6,0.2)]"
                                     >
                                         {posting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Salvar <CheckCircle className="w-4 h-4" /></>}
                                     </button>
-                                    <button onClick={() => setStep(2)} className="w-full text-[8px] font-black text-slate-700 uppercase tracking-widest hover:text-slate-400 transition-colors text-center italic underline">Review_Parameters</button>
+                                    <button onClick={() => setStep(2)} className="
+                                    w-full text-[8px] font-black text-slate-700
+                                     uppercase tracking-widest hover:text-slate-400
+                                      transition-colors text-center italic underline"
+                                    >Review_Parameters
+                                    </button>
                                 </div>
                             </div>
                         )}

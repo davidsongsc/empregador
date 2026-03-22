@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { cepService, CepResponse } from "@/services/buscaCepService";
+import { cepService } from "@/services/buscaCepService";
 import { toast } from "@/components/Notification";
+import { CepResponse } from "@/interfaces/iCep";
 
 /**
  * Hook para gerir a lógica de procura de CEP na interface

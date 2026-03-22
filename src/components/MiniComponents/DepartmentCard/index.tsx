@@ -1,4 +1,5 @@
-import { Department, CompanyMemberDetail } from "@/services/companies-service";
+import { CompanyMemberDetail } from "@/interfaces/iCompanyMember";
+import { Department } from "@/interfaces/iDepartament";
 import { debounce } from "lodash";
 import { 
     Settings2, ShieldCheck, Trash2, UserPlus, Users, 

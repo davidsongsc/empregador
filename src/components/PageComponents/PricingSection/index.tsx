@@ -116,7 +116,7 @@ const SubscriptionCard = ({ sub }: { sub: any }) => {
 
 export default function PricingSection() {
   const { subscriptions, loading, fetchSubscriptions, lastUpdate } = useAdminSubscriptionStore();
-
+  
   useEffect(() => {
     fetchSubscriptions();
   }, [fetchSubscriptions]);

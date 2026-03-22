@@ -1,38 +1,46 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { useJobStore } from "./useJobStore";
-
-interface JobSyncStore {
-  lastSequenceId: string; // O nosso Hash de Integridade (Sequence ID do Django)
-  isSyncing: boolean;
-  
-  // Ações
-  syncData: (patches: any[], newHash: string) => void;
-  setSyncing: (status: boolean) => void;
-}
+import { JobSyncStore } from "@/interfaces/isJobSyncStore";
 
 export const useJobSyncStore = create<JobSyncStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       lastSequenceId: "0",
       isSyncing: false,
 
-      setSyncing: (status) => set({ isSyncing: status }),
+      setSyncing: (status) => {
+        // Evita disparar um novo estado se o status já for o mesmo
+        if (get().isSyncing !== status) {
+          set({ isSyncing: status });
+        }
+      },
 
       syncData: (patches, newHash) => {
-        // Acessamos a função de patch do store principal
+        // 1. Evita atualizar se o Hash for idêntico (Redundância de segurança)
+        if (get().lastSequenceId === newHash) {
+          set({ isSyncing: false });
+          return; // Aborta se já estamos sincronizados
+
+        }
+
         const { applyDeltaPatches } = useJobStore.getState();
-        
-        if (patches.length > 0) {
+
+        // 2. Aplica os patches na store principal de Jobs
+        if (patches && patches.length > 0) {
           applyDeltaPatches(patches);
         }
 
-        set({ 
-          lastSequenceId: newHash, 
-          isSyncing: false 
+        // 3. Atualiza o metadado de sincronismo
+        set({
+          lastSequenceId: newHash,
+          isSyncing: false
         });
       },
     }),
-    { name: "nexus-sync-metadata" }
+    {
+      name: "freelacerto-sync-metadata",
+      storage: createJSONStorage(() => localStorage), // Explícito para o Next.js
+    }
   )
 );

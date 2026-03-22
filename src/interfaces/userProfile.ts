@@ -1,14 +1,19 @@
+import { Address } from "./iAddress";
+import { Education } from "./iEducation";
+import { Experience } from "./iExperience";
+
 export type UserProfile = {
   id?: string;
   name?: string;
   last_name?: string;
   full_name?: string;
   ocupation?: string;
-  email?: string;
+  email_contato?: string;
   role?: string;
   bio?: string;
   foto?: string | null;
-  endereco?: Endereco;
+  foto_url?: string;
+  endereco?: Address;
   data_nascimento?: string;
   empresas?: {
     id: string;
@@ -17,33 +22,8 @@ export type UserProfile = {
     is_active: boolean;
   }[];
   experiences?: Experience[];
-  educations?: Educations[];
+  educations?: Education[];
+
+  usuario_id?: string;
 };
 
-export type Endereco = {
-  id?: string;
-  cep?: string;
-  logradouro?: string;
-  numero?: string;
-  bairro?: string;
-  cidade?: string;
-  estado?: string;
-  complemento?: string;
-};
-
-export type Experience = {
-  id?: string;
-  cargo?: string;
-  empresa?: string;
-  inicio?: string;
-  fim?: string;
-  descricao?: string;
-};
-
-export type Educations = {
-  id?: string;
-  instituicao?: string;
-  curso?: string;
-  inicio?: string;
-  fim?: string;
-};

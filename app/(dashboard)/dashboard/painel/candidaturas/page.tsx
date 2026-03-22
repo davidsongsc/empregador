@@ -1,7 +1,7 @@
 "use client";
 
 import STATUS_LABELS from "@/data/statusLabels";
-import { useApplications } from "@/hooks/useApplications";
+import { useApplicationStore } from "@/store/useApplicationStore";
 import {
     Search,
     Filter,
@@ -14,12 +14,15 @@ import {
     Activity
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ApplicationsPage() {
     const router = useRouter();
-    const { applications, loading, statusFilter, searchFilter } = useApplications();
+    const { data: applications, loading, fetchApplications } = useApplicationStore();
+    const searchParams = useSearchParams();
 
+    const statusFilter = searchParams.get("status") || undefined;
+    const searchFilter = searchParams.get("search") || undefined;
     const removeFilter = (key: string) => {
         const params = new URLSearchParams(window.location.search);
         params.delete(key);
@@ -27,7 +30,7 @@ export default function ApplicationsPage() {
     };
 
     return (
-        <div className="p-4 sm:p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700 selection:bg-amber-600/30">
+        <div className="p-4 sm:p-8 max-w-8xl mx-auto space-y-8 animate-in fade-in duration-700 selection:bg-amber-600/30">
 
             {/* CABEÇALHO E BUSCA - ESTILO TERMINAL */}
             <header className="space-y-6">
@@ -35,7 +38,7 @@ export default function ApplicationsPage() {
                     <Terminal size={16} className="text-amber-600 opacity-50" />
                     <span className="text-[9px] font-black tracking-[0.4em] text-slate-600 uppercase">Sistema de mapeamento pessoal</span>
                 </div>
-                
+
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
                     <div>
                         <h1 className="text-4xl font-light text-white tracking-tighter uppercase">
@@ -136,16 +139,15 @@ export default function ApplicationsPage() {
                                 {/* Status e Ação */}
                                 <div className="flex items-center justify-between sm:justify-end gap-8 relative z-10">
                                     <div className="text-right flex flex-col items-end gap-1">
-                                        <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] border ${
-                                            app.status === 'hired' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]' :
-                                            app.status === 'rejected' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
-                                            'bg-white/5 text-slate-500 border-white/10'
-                                        }`}>
+                                        <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] border ${app.status === 'hired' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]' :
+                                                app.status === 'rejected' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
+                                                    'bg-white/5 text-slate-500 border-white/10'
+                                            }`}>
                                             {STATUS_LABELS[app.status] || app.status}
                                         </span>
                                         <span className="text-[7px] font-mono text-slate-800 uppercase italic">Verification_Status</span>
                                     </div>
-                                    
+
                                     <div className="p-3 bg-black border border-white/5 text-slate-700 group-hover:text-amber-600 group-hover:border-amber-600/30 transition-all">
                                         <ChevronRight className="w-4 h-4" />
                                     </div>

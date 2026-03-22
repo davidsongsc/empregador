@@ -1,46 +1,31 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
+import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
-import { MODULE_PERMISSIONS } from "@/constants/permissions";
-import { toast } from "@/components/Notification";
+import { Suspense } from "react";
+import LoginTrigger from "@/components/MiniComponents/LoginTrigger";
 
 export default function PrivateLayout({ children }: { children: React.ReactNode }) {
-  const { user, isHydrated } = useAuthStore();
+  const { user, loading: isLoading } = useAuthStore(); // Supondo que seu store tenha loading
   const router = useRouter();
-
-  // 1. Lógica de extração baseada no array de empresas
-  const hasAccess = useMemo(() => {
-    if (!user?.profile?.empresas || user.profile.empresas.length === 0) {
-      return false;
-    }
-
-    // Verifica se existe alguma empresa onde o cargo do usuário está na lista de permissões
-    return user.profile.empresas.some(empresa =>
-      MODULE_PERMISSIONS.RECRUITMENT.includes(empresa.role) && empresa.is_active
-    );
-  }, [user]);
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (isHydrated && !hasAccess) {
-      // Pegamos o cargo da primeira empresa apenas para o log/toast, se existir
-      const currentRole = user?.profile?.empresas?.[0]?.role || "GUEST";
-
-      toast.error(`Acesso negado. Seu cargo (${currentRole}) não tem permissão.`);
-      router.replace("/vagas");
+    // Se o carregamento terminou e não temos usuário
+    if (!isLoading && !user) {
+      // Injetamos o parâmetro na URL para o Trigger abrir o Modal
+      // Mantemos o usuário na página atual (pathname)
+      router.replace(`${pathname}?showLogin=true&from=${pathname}`);
     }
-  }, [isHydrated, hasAccess, user, router]);
-
-  // --- RENDERIZAÇÃO ---
-  if (!isHydrated || !hasAccess) {
-    return null;
-  }
-
+  }, [user, isLoading, router, pathname]);
+  
   return (
     <>
       {children}
+      <Suspense fallback={null}>
+        <LoginTrigger />
+      </Suspense>
     </>
   );
 }

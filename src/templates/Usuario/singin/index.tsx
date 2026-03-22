@@ -13,7 +13,8 @@ import {
   ChevronDown,
   CheckCircle,
   Terminal,
-  Activity
+  Activity,
+  Mail
 } from "lucide-react";
 import { toast } from "@/components/Notification";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -31,82 +32,77 @@ const LoginUser = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
   const [countryCode, setCountryCode] = useState("55");
-  const [whatsapp, setWhatsapp] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
   const [isValid, setIsValid] = useState(false);
 
-  // Monitor de Parâmetros de Acesso
+  // 1. Validação em tempo real
   useEffect(() => {
-    const cleanWhatsapp = whatsapp.replace(/\D/g, "");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isEmailValid = emailRegex.test(email);
+    const isPasswordValid = password.length >= 8;
 
-    // Critérios: WhatsApp (min 10 dígitos) E Senha (min 8 caracteres)
-    const isPhoneNumberReady = cleanWhatsapp.length >= 10;
-    const isPasswordReady = password.length >= 8;
+    setIsValid(isEmailValid && isPasswordValid);
+  }, [email, password]);
 
-    setIsValid(isPhoneNumberReady && isPasswordReady);
-  }, [whatsapp, password]);
   useEffect(() => {
-    const savedWhatsapp = localStorage.getItem("saved_whatsapp");
+    const savedEmail = localStorage.getItem("saved_email");
     const savedCountry = localStorage.getItem("saved_country");
-    if (savedWhatsapp) setWhatsapp(savedWhatsapp);
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
     if (savedCountry) setCountryCode(savedCountry);
   }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // --- VALIDAÇÃO DE PROTOCOLO ---
-    const cleanWhatsapp = whatsapp.replace(/\D/g, "");
-
-    if (cleanWhatsapp.length < 10) {
-      setError("INVALID_ID: Número de WhatsApp incompleto.");
-      return;
-    }
-
-    if (password.length < 8) {
-      setError("SECURITY_BREACH: Senha deve conter no mínimo 8 caracteres.");
-      return;
-    }
-    // ------------------------------
-
     setLoading(true);
     setError(null);
 
     try {
-      const fullNumber = `${countryCode}${cleanWhatsapp}`;
-      const res = await login(fullNumber, password, rememberMe);
+      const res = await login(email, password, rememberMe);
 
-      if (res && (res.user || res.profile || res.ok)) {
-        const userData = res.user || res.data?.user || res;
-
-        if (!userData?.profile) {
-          setError("PROTOCOL_ERROR: Perfil não localizado.");
-          return;
-        }
-
-        useAuthStore.getState().setUser(userData);
-        const empresas = userData.profile.empresas || [];
-
-        if (empresas.length > 1) {
-          router.push("/select-company");
-        } else if (empresas.length === 1) {
-          const companyId = empresas[0].id;
-          useAuthStore.getState().setActiveCompany(companyId);
-          router.push(`/dashboard/painel/companies`);
+      if (res && (res.user || res.ok)) {
+        // --- LÓGICA DE PERSISTÊNCIA ---
+        if (rememberMe) {
+          localStorage.setItem("saved_email", email);
+          localStorage.setItem("saved_country", countryCode);
         } else {
-          router.push("/vagas");
+          localStorage.removeItem("saved_email");
+          localStorage.removeItem("saved_country");
         }
-        toast.success("Sincronização realizada.");
+        
+        const userData = res.user || res.data?.user || res;
+        setUser(userData);
+        router.push("/"); // Exemplo simplificado
       } else {
-        setError(res?.message || "ACESSO_NEGADO: Credenciais inválidas.");
+        setError("ACESSO_NEGADO: Credenciais inválidas.");
       }
     } catch (err: any) {
-      setError("SERVER_OFFLINE: Erro de conexão.");
-      toast.error("Ocorreu um erro ao fazer login.");
+      // --- LÓGICA DE CAPTURA DE ERRO DO FASTAPI ---
+      let backendError = "CRITICAL_ERROR: Falha ao criar conta."; 
+      
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+
+        // Se for o array de erros do FastAPI (validação)
+        if (Array.isArray(detail)) {
+          backendError = `VALIDATION_ERROR: ${detail[0].msg}`;
+          toast.error(backendError);
+        } else {
+          // Se for uma mensagem simples (HTTPException)
+          backendError = detail;
+        }
+      } else {
+        backendError = err.message || backendError;
+      }
+
+      setError(backendError);
+      toast.error(backendError); // Agora a notificação mostra o erro real
     } finally {
       setLoading(false);
     }
@@ -171,29 +167,16 @@ const LoginUser = () => {
                 Identification_Number (WhatsApp)
               </label>
               <div className="flex gap-2">
-                <div className="relative">
-                  <select
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(e.target.value)}
-                    className="appearance-none bg-delos-surface border border-white/10 rounded-xl py-4 pl-4 pr-10 outline-none font-bold text-delos-black cursor-pointer focus:border-delos-amber transition-all"
-                  >
-                    {COUNTRIES.map((c) => (
-                      <option key={c.code} value={c.code} className="bg-delos-surface text-delos-black">
-                        {c.flag} +{c.code}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-grey pointer-events-none" />
-                </div>
+           
 
                 <div className="relative flex-1">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-grey" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-grey" />
                   <input
-                    type="tel"
-                    placeholder="Número"
-                    value={whatsapp}
+                    type="email"
+                    placeholder="Email"
+                    value={email}
                     required
-                    onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ""))}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-delos-surface border border-white/10 rounded-xl py-4 pl-12 pr-4 outline-none focus:border-delos-amber text-delos-black transition-all font-bold tracking-widest"
                   />
                 </div>

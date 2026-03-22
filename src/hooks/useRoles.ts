@@ -1,32 +1,34 @@
-import { useState, useEffect } from "react";
-import { getRoles, Role } from "@/services/roles";
+// @/hooks/useRoles.ts
+import { useEffect } from "react";
+import { useRoleStore } from "@/store/useRoleStore";
+import { getRoles } from "@/services/roles";
 
 export function useRoles() {
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { roles, lastHash, setInitialRoles, setLoading, loading } = useRoleStore();
 
   useEffect(() => {
-    const fetchRoles = async () => {
+    const bootstrap = async () => {
+      // Se já temos roles e o cache é recente, não fazemos nada (Zustand Persist já carregou)
+      if (roles.length > 0 && loading === false) return;
+
       setLoading(true);
-      setError(null);
       try {
-        const data = await getRoles();
+        const response = await getRoles(lastHash);
         
-        // AJUSTE AQUI: 
-        // Como o objeto chega com "results", precisamos extrair o array.
-        // O fallback "|| []" evita erros caso o backend venha vazio.
-        setRoles(data.results || []); 
-        
-      } catch (err: any) {
-        setError("Não foi possível carregar a lista de cargos.");
+        // Se a API retornar dados novos (res.items), atualizamos a store
+        // Se retornar vazio (cache hit), a store continua como está
+        if (response?.items) {
+          setInitialRoles(response.items, response.hash || "0");
+        }
+      } catch (err) {
+        console.error("Erro ao sincronizar Roles:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRoles();
-  }, []);
+    bootstrap();
+  }, []); // Executa ao montar o componente
 
-  return { roles, loading, error };
+  return { roles, loading };
 }

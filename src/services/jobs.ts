@@ -1,36 +1,12 @@
+import { Job, JobPayload } from "@/interfaces/iJob";
 import { api } from "@/lib/api";
-
-export type Job = {
-  uid: string;
-  role_details: { name: string, category: string } | null;
-  tipo_vaga_display: string | null;
-  cargo_exibicao: string;
-  tipo_vaga: string;
-  titulo_personalizado: string | null;
-  salario: number | null;
-  turno: string;
-  company: string | null;
-  empresa_nome: string;
-  endereco: { cidade: string, estado: string } | null;
-  descricao: string;
-  requisitos: string[];
-  beneficios: string[];
-  perguntas: string[];
-};
-
-export type PaginatedJobsResponse = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Job[];
-};
 
 export async function getJobs(page: number) {
   // Passamos 'true' como terceiro argumento para indicar que é uma rota pública
   return await api(`/vagas/?page=${page}`, { method: "GET" }, true);
 }
 
-export async function createJob(jobData: any) {
+export async function createJob(jobData: Job) {
   return await api("/vagas/postar/", {
     method: "POST",
     body: JSON.stringify(jobData),
@@ -38,7 +14,7 @@ export async function createJob(jobData: any) {
     headers: { "Content-Type": "application/json" }
   });
 }
-export async function updateJob(uid: string, jobData: any) {
+export async function updateJob(uid: string, jobData: JobPayload) {
   return await api(`/vagas/${uid}/editar/`, {
     method: "PATCH",
     body: JSON.stringify(jobData),
@@ -46,7 +22,7 @@ export async function updateJob(uid: string, jobData: any) {
     headers: { "Content-Type": "application/json" }
   });
 }
-export async function getCorporateApplications(companyId: string, jobId?: string): Promise<any> {
+export async function getCorporateApplications(companyId: string, jobId?: string): Promise<Job> {
   const query = jobId ? `?job=${jobId}` : '';
 
   return api(`/vagas/corporate/candidaturas/${query}`, {

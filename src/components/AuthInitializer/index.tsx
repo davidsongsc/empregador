@@ -3,27 +3,25 @@ import { UserData } from "@/interfaces/userData";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useEffect, useRef } from "react";
 
+// AuthInitializer.tsx
+// AuthInitializer.tsx
 export function AuthInitializer({ serverUser }: { serverUser: UserData | null }) {
-  const { setUser, setHydrated, isHydrated } = useAuthStore();
+  const { setUser, setHydrated, refresh } = useAuthStore();
   const initialized = useRef(false);
 
   useEffect(() => {
-    // Executa apenas uma vez quando o app "acorda" (F5 ou primeiro acesso)
     if (!initialized.current) {
-      
+      initialized.current = true; // Marca como disparado IMEDIATAMENTE
+
       if (serverUser) {
-        // Se o servidor (SSR) encontrou a sessão nos cookies, sincronizamos o Zustand
         setUser(serverUser);
       } else {
-        // Se o servidor não achou nada, limpamos o estado para garantir
-        // Mas atenção: não checamos Cookies.get pois ele é HttpOnly
-        setUser(null);
+        // Só busca se o servidor não enviou nada e o app está "acordando"
+        refresh();
       }
-
-      setHydrated(true); // Marca que o estado inicial foi resolvido
-      initialized.current = true;
+      setHydrated(true);
     }
-  }, [serverUser, setUser, setHydrated]);
+  }, []); // Dependências vazias para rodar apenas no mount
 
   return null;
 }

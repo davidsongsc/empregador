@@ -1,18 +1,23 @@
 import { api } from "@/lib/api";
 
-export async function login(whatsappNumber: string, password: string, remember: boolean = false) {
-    const data = await api("/auth/login/", {
+/**
+ * Realiza o login do usuário.
+ *
+ * @param {string} email - Email do usuário.
+ * @param {string} password - Senha do usuário.
+ * @param {boolean} [remember=false] - Se o usuário deseja manter a sessão ativa.
+ * @returns {Promise} - Uma promessa com o resultado da API.
+ */
+export async function login(email: string, password: string, remember: boolean = false) {
+    const data = await api("/api/v1/auth/login", { 
         method: "POST",
         credentials: "include",
         body: JSON.stringify({
-            
-            whatsapp_number: whatsappNumber,
+            user: email, 
             password,
             remember,
         }),
     });
 
-    // Se o login foi ok, mas não veio o objeto 'user' como no /me/,
-    // você precisa formatar aqui ou no componente:
     return data;
 }

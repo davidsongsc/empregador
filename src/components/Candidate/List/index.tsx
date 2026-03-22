@@ -9,8 +9,10 @@ import {
 import { CandidateDrawer } from '@/components/Candidate/Drawer';
 
 import { Application } from '@/interfaces/aplications';
-import { checkModuleAccess } from '@/utils/hasRecruitmentPermission';
 import { useAuthStore } from '@/store/useAuthStore';
+import checkModuleAccess from '@/utils/checkModuleAccess';
+import { getActiveMembership } from '@/utils/userHelpers';
+import { Module } from '@/enum/moduleEnum';
 
 // --- Interfaces ---
 interface Experience {
@@ -68,8 +70,10 @@ export const CandidateList = ({
     const { user } = useAuthStore();
     // Estado para detecção de Mobile
     const [isMobile, setIsMobile] = useState(false);
-    const canAccessSupervision = checkModuleAccess(user?.profile?.empresas, 'SUPERVISION');
-
+    const canAccessSupervision = checkModuleAccess(
+        getActiveMembership()?.role ?? "GUEST",
+        Module.SUPERVISION
+    );
     // Efeito para monitorar largura da janela e definir comportamento Mobile/Desktop
     useEffect(() => {
         const checkMobile = () => {
@@ -257,7 +261,7 @@ export const CandidateList = ({
 
                                             <button
                                                 onClick={() => setIsChangingStatus(true)}
-                                                disabled={!canAccessSupervision || loading || isUpdating }
+                                                disabled={!canAccessSupervision || loading || isUpdating}
 
                                                 className={`w-full py-4.5 ${isUnlocked ? 'bg-amber-600' : 'bg-delos-indigo text-amber-500/50 border border-amber-500/20'} hover:bg-amber-500 text-black font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all disabled:opacity-40`}
 
@@ -298,7 +302,7 @@ export const CandidateList = ({
                                                         {/* Header do Modal */}
                                                         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
                                                             <div>
-                                                                <h3 className="text-[11px] font-black text-amber-600 uppercase tracking-[0.5em]">System_Override</h3>
+                                                                <h3 className="text-[11px] font-black text-amber-600 uppercase tracking-[0.5em]">Editar Progresso</h3>
                                                                 <p className="text-[9px] text-slate-500 uppercase mt-1 tracking-widest">Reescrita manual de status do Host</p>
                                                             </div>
                                                             <button onClick={() => setIsChangingStatus(false)} className="p-2 hover:bg-white/5 rounded-full text-slate-500 transition-colors">
@@ -308,40 +312,50 @@ export const CandidateList = ({
 
                                                         {/* Área de Botões Dinâmicos */}
                                                         <div className="p-6 overflow-y-auto custom-scrollbar space-y-8">
-                                                            {Object.entries(GROUPED_STATUS).map(([groupName, keys]) => (
-                                                                <div key={groupName} className="space-y-3">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] whitespace-nowrap">{groupName}</span>
-                                                                        <div className="h-px w-full bg-white/5" />
-                                                                    </div>
+                                                            {Object.entries(GROUPED_STATUS).map(([groupName, keys]) => {
+                                                                // 1. Filtramos as chaves para remover 'withdrawn' e 'applied'
+                                                                const filteredKeys = keys.filter(k => k !== 'withdrawn' && k !== 'applied');
 
-                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                                        {keys.map((k) => {
-                                                                            const status = STATUS_CONFIG[k];
-                                                                            if (!status) return null;
+                                                                // Se o grupo ficar vazio após o filtro, não renderizamos o título do grupo
+                                                                if (filteredKeys.length === 0) return null;
 
-                                                                            return (
-                                                                                <button
-                                                                                    key={k}
-                                                                                    onClick={() => {
-                                                                                        handleStatusChange(app.id, k);
-                                                                                        setIsChangingStatus(false);
-                                                                                    }}
-                                                                                    className="group/item flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 hover:border-amber-600/50 hover:bg-amber-600/5 transition-all text-left rounded-xl"
-                                                                                >
-                                                                                    <div className="flex items-center gap-3">
-                                                                                        <div className={`w-1.5 h-1.5 rounded-full ${status.color.replace('text', 'bg')} shadow-[0_0_8px_currentColor] group-hover/item:scale-125 transition-transform`} />
-                                                                                        <span className="text-[10px] font-bold text-slate-400 group-hover/item:text-white uppercase tracking-widest">
-                                                                                            {status.label}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                    <ChevronRight size={14} className="text-slate-800 group-hover/item:text-amber-600 group-hover/item:translate-x-1 transition-all" />
-                                                                                </button>
-                                                                            );
-                                                                        })}
+                                                                return (
+                                                                    <div key={groupName} className="space-y-3">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] whitespace-nowrap">
+                                                                                {groupName}
+                                                                            </span>
+                                                                            <div className="h-px w-full bg-white/5" />
+                                                                        </div>
+
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                                            {filteredKeys.map((k) => {
+                                                                                const status = STATUS_CONFIG[k];
+                                                                                if (!status) return null;
+
+                                                                                return (
+                                                                                    <button
+                                                                                        key={k}
+                                                                                        onClick={() => {
+                                                                                            handleStatusChange(selectedApp?.id as string, k); // Usei selectedApp.id conforme sua estrutura anterior
+                                                                                            setIsChangingStatus(false);
+                                                                                        }}
+                                                                                        className="group/item flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 hover:border-amber-600/50 hover:bg-amber-600/5 transition-all text-left rounded-xl"
+                                                                                    >
+                                                                                        <div className="flex items-center gap-3">
+                                                                                            <div className={`w-1.5 h-1.5 rounded-full ${status.color.replace('text', 'bg')} shadow-[0_0_8px_currentColor] group-hover/item:scale-125 transition-transform`} />
+                                                                                            <span className="text-[10px] font-bold text-slate-400 group-hover/item:text-white uppercase tracking-widest">
+                                                                                                {status.label}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <ChevronRight size={14} className="text-slate-800 group-hover/item:text-amber-600 group-hover/item:translate-x-1 transition-all" />
+                                                                                    </button>
+                                                                                );
+                                                                            })}
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            ))}
+                                                                );
+                                                            })}
                                                         </div>
 
                                                         {/* Rodapé informativo */}

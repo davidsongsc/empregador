@@ -7,11 +7,12 @@ import {
     MessageSquare, Mail, Search, Sparkles
 } from 'lucide-react';
 import { usePostJob } from '@/hooks/usePostJob';
-import { useRoles } from '@/hooks/useRoles';
+
 import { createRole } from '@/services/roles';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from '@/components/Notification';
 import { useRouter } from 'next/navigation'; // Correto para App Router
+import { useRoleStore } from '@/store/useRoleStore';
 interface PostJobModalProps {
     isOpen: boolean;
     onClose?: () => void; // Voltamos para a função simples: string;
@@ -21,7 +22,7 @@ const PostJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
     const { user, isAuthenticated } = useAuthStore();
     const [step, setStep] = useState(1);
     const { postJob, loading: posting } = usePostJob();
-    const { roles, loading: loadingRoles } = useRoles();
+    const { roles, lastHash, loading, setInitialRoles, applyDelta, setLoading } = useRoleStore();
     const [display, setDisplay] = useState(isOpen);
     const router = useRouter();
     const [tipoVaga, setTipoVaga] = useState('FREELANCER');
@@ -124,7 +125,7 @@ const PostJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
-                    onClick={onClose} 
+                    onClick={onClose}
                     type="button"
                     className="absolute right-8 top-8 p-3 hover:bg-gray-100 rounded-full z-[110] cursor-pointer"
                 >
@@ -164,7 +165,7 @@ const PostJobModal = ({ isOpen, onClose }: PostJobModalProps) => {
                                             placeholder="Ex: Vendedor, Desenvolvedor..."
                                             className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-12 pr-6 font-bold text-gray-900 outline-none focus:ring-4 focus:ring-indigo-50 transition-all"
                                         />
-                                        {loadingRoles && <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-300" />}
+                                        {loading && <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-300" />}
                                     </div>
 
                                     {roleSearch && !selectedRoleUid && (

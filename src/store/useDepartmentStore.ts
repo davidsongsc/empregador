@@ -1,42 +1,31 @@
 import { create } from "zustand";
-// Certifique-se de que o import aponta para onde o departmentService está definido
-import { departmentService, Department } from "@/services/companies-service";
+import { departmentService } from "@/services/companies-service";
 import { toast } from "@/components/Notification";
-
-interface DepartmentState {
-  departments: Department[];
-  loading: boolean;
-  fetchDepartments: () => Promise<void>;
-  addDepartment: (data: Partial<Department>) => Promise<void>;
-  updateDepartment: (id: string, data: Partial<Department>) => Promise<void>;
-  removeDepartment: (id: string) => Promise<void>;
-}
+import { Department } from "@/interfaces/iDepartament";
+import { DepartmentState } from "@/interfaces/isDepartamentState";
 
 export const useDepartmentStore = create<DepartmentState>((set, get) => ({
   departments: [],
   loading: false,
 
-  fetchDepartments: async () => {
+  fetchDepartments: async (companyId: string) => {
+    if (!companyId) return;
     set({ loading: true });
     try {
-      const response = await departmentService.getDepartments();
+      // Injeção do ID obrigatório na rota aninhada
+      const response = await departmentService.getDepartments(companyId);
 
-      // NEXUS_DATA_RECOVERY: Se o dado chegar como objeto indexado { "0": {}, "ok": true }
       let cleanList: Department[] = [];
-
       if (Array.isArray(response)) {
         cleanList = response;
-      } else if (response && typeof response === "object") {
-        // Removemos a chave 'ok' para sobrar apenas os índices
-        const { ok, ...indexedItems } = response;
+      } else if (response && typeof response === "object" && !Array.isArray(response)) {
+        const { ok, ...indexedItems } = response as Record<string, any>;
 
-        // Transformamos { "0": {id: 1}, "1": {id: 2} } em [ {id: 1}, {id: 2} ]
         cleanList = Object.values(indexedItems).filter(
           (item: any) => item && typeof item === "object" && item.id
         ) as Department[];
       }
 
-      console.log("Departments_Clean_Length:", cleanList.length);
       set({ departments: cleanList, loading: false });
     } catch (err) {
       set({ loading: false, departments: [] });
@@ -44,44 +33,42 @@ export const useDepartmentStore = create<DepartmentState>((set, get) => ({
     }
   },
 
-  addDepartment: async (data) => {
+  addDepartment: async (companyId, data) => {
     try {
-      const res = await departmentService.createDepartment(data);
-      // Sua API injeta 'ok: true' no retorno
-      if (res.ok) {
+      const res = await departmentService.createDepartment(companyId, data);
+      if (res.ok || res.id) {
         toast.success("NEW_SECTOR: Protocolo inicializado.");
-        await get().fetchDepartments();
+        await get().fetchDepartments(companyId);
       }
     } catch (err) {
       toast.error("DENIED: Falha ao criar setor.");
     }
   },
 
-  updateDepartment: async (id, data) => {
-    // Update Otimista para performance Delos
+  updateDepartment: async (companyId, deptId, data) => {
     const previous = get().departments;
+    // Update Otimista (Visual instantâneo)
     set({
-      departments: previous.map((d) => (d.id === id ? { ...d, ...data } : d)),
+      departments: previous.map((d) => (d.id === deptId ? { ...d, ...data } : d)),
     });
 
     try {
-      const res = await departmentService.updateDepartment(id, data);
-      if (!res.ok) throw new Error();
-      // Opcional: toast.success("SYNC_COMPLETE");
+      const res = await departmentService.updateDepartment(companyId, deptId, data);
+      // Sua API retorna .ok ou o próprio objeto atualizado
+      if (!res.ok && !res.id) throw new Error();
     } catch (err) {
-      // Rollback se falhar
       set({ departments: previous });
       toast.error("SYNC_ERROR: Parâmetros rejeitados.");
     }
   },
 
-  removeDepartment: async (id) => {
+  removeDepartment: async (companyId, deptId) => {
     if (!confirm("CONFIRM_TERMINATION: Deseja remover este setor?")) return;
 
     try {
-      const res = await departmentService.deleteDepartment(id);
-      if (res.ok) {
-        set({ departments: get().departments.filter((d) => d.id !== id) });
+      const res = await departmentService.deleteDepartment(companyId, deptId);
+      if (res.ok || res.status === 204) {
+        set({ departments: get().departments.filter((d) => d.id !== deptId) });
         toast.success("SECTOR_TERMINATED.");
       }
     } catch (err) {
