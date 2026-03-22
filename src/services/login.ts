@@ -1,14 +1,18 @@
 import { api } from "@/lib/api";
 
+/**
+ * Realiza o login do usuário.
+ *
+ * @param {string} email - Email do usuário.
+ * @param {string} password - Senha do usuário.
+ * @param {boolean} [remember=false] - Se o usuário deseja manter a sessão ativa.
+ * @returns {Promise} - Uma promessa com o resultado da API.
+ */
 export async function login(email: string, password: string, remember: boolean = false) {
-    // 1. REMOVA A BARRA FINAL: Use /login para evitar o 307 Redirect
-    // 2. PREFIXO: Se o seu api_router já tem o prefixo /api/v1, verifique se não está duplicando
     const data = await api("/api/v1/auth/login", { 
         method: "POST",
-        credentials: "include", // Mantém o HttpOnly Cookie (Session)
+        credentials: "include",
         body: JSON.stringify({
-            // 3. MAPEAMENTO: O FastAPI geralmente espera 'username' ou 'email'
-            // Se o seu Schema Pydantic no Back usa 'user', mantenha 'user'
             user: email, 
             password,
             remember,

@@ -1,8 +1,6 @@
 import { api } from "@/lib/api";
 import { get as idbGet, set as idbSet, del as idbDel, keys as idbKeys } from "idb-keyval";
 
-import { toast } from "@/components/Notification";
-
 /**
  * PROTOCOLO_DELTA_AUTH_CONFIG
  * TTL: 24 Horas (86.400.000 ms)
@@ -50,7 +48,7 @@ export async function getMyProfile(forceRefresh = false) {
 
 export async function updateMyProfile(profileData: any) {
     // PATCH sempre usa Protocolo Delta para informar mudança imediata
-    const res = await api("/api/v1/perfis/me/", {
+    const res = await api("/api/v1/perfis/me", {
         method: "PATCH",
         headers: {
             ...DELTA_HEADERS,
@@ -69,7 +67,7 @@ export async function updateMyProfile(profileData: any) {
 
 export async function logout() {
     try {
-        await api("/api/v1/auth/logout/", {
+        await api("/api/v1/auth/logout", {
             method: "POST",
             credentials: "include",
         });
@@ -88,13 +86,38 @@ export async function logout() {
 
 // ROTA PÚBLICA: Não precisa de Delta Sync (sempre fresh)
 export async function registerUser(email: string, whatsappNumber: string, password: string) {
-    return await api("/api/v1/usuarios/", {
+    return await api("/api/v1/usuarios/register", {
         method: "POST",
         body: JSON.stringify({
             email: email,
             whatsapp_number: whatsappNumber,
             password
 
+        }),
+    });
+}
+
+/**
+ * ROTA PÚBLICA: Solicita o link de recuperação de senha via Email/WhatsApp.
+ * Não utiliza Protocolo Delta pois exige dados 100% fresh do servidor.
+ */
+export async function forgotPassword(email: string) {
+    return await api("/api/v1/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+        // Não enviamos credentials: "include" aqui pois é uma rota de pré-auth
+    });
+}
+
+/**
+ * ROTA PÚBLICA: Define a nova senha utilizando o token recebido.
+ */
+export async function resetPassword(token: string, newPassword: string) {
+    return await api("/api/v1/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({
+            token,
+            new_password: newPassword
         }),
     });
 }

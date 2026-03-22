@@ -75,20 +75,17 @@ const LoginUser = () => {
           localStorage.removeItem("saved_email");
           localStorage.removeItem("saved_country");
         }
-
-        // ... Lógica de redirecionamento (empresas, etc)
+        
         const userData = res.user || res.data?.user || res;
         setUser(userData);
-
-        toast.success("Sincronização realizada.");
         router.push("/"); // Exemplo simplificado
       } else {
         setError("ACESSO_NEGADO: Credenciais inválidas.");
       }
     } catch (err: any) {
       // --- LÓGICA DE CAPTURA DE ERRO DO FASTAPI ---
-      let backendError = "CRITICAL_ERROR: Falha ao criar conta.";
-
+      let backendError = "CRITICAL_ERROR: Falha ao criar conta."; 
+      
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
 

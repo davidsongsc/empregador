@@ -1,34 +1,6 @@
+import { Company } from "@/interfaces/iCompany";
+import { Department } from "@/interfaces/iDepartament";
 import { api } from "@/lib/api";
-
-export interface Company {
-  id: string;
-  name: string;
-  is_active: boolean;
-  average_rate: number;
-  members_count: number;
-  parent?: string | null;
-  subscription?: any;
-}
-
-export interface CompanyMemberDetail {
-  id: number;
-  profile: number;
-  profile_name: string;
-  role: string;
-  joined_at: string;
-}
-
-export interface Department {
-  id: string;
-  company: string;
-  name: string;
-  description: string;
-  parent: string | null;
-  leaders_detail: CompanyMemberDetail[]; // Onde o Mario está
-  members_count: number;
-  created_at: string;
-  updated_at: string;
-}
 
 export const departmentService = {
   // O Django filtra no backend pelo Header X-Company-ID que sua api envia

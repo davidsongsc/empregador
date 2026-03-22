@@ -24,7 +24,7 @@ const cardVariants = {
 };
 
 const JobCard = memo(({ type, data, onAction, index = 0 }: JobCardProps) => {
-  console.log(data);
+  
   // --- MODO CATEGORIA (Clusters de Vagas) ---
   if (type === 'category') {
     const count = data.total_jobs ?? 0;

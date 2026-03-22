@@ -30,13 +30,13 @@ export enum RoleLevel {
   ADMIN = 'ADMIN'
 }
 
-export type Role = {
+export type RoleEnum = {
   scope: RoleScope
   department: RoleDepartment
   level: RoleLevel
 }
 
-export const ROLE_MAP: Record<string, Role> = {
+export const ROLE_MAP: Record<string, RoleEnum> = {
   // --- CLIENTES ---
   'CLIENT_OPERATIONAL_INTERN': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONS, level: RoleLevel.INTERN },
   'CLIENT_OPERATIONAL_JR': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONS, level: RoleLevel.JR },

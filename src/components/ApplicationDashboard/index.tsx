@@ -90,7 +90,7 @@ const ApplicationDashboard = ({ applications, totalCount }: { applications: any[
 
             {/* Rodapé do Bloco */}
             <div className="mt-12 pt-6 border-t border-[var(--delos-border)] flex justify-between items-center opacity-20 relative z-10">
-                <span className="text-[7px] font-mono uppercase tracking-[0.4em]">Auth::Verified_Access</span>
+                <span className="text-[7px] text-delos-black font-mono uppercase tracking-[0.4em]">Histórico de candidaturas</span>
                 <div className="flex gap-2">
                     <div className="w-1 h-1 bg-[var(--delos-grey)] rounded-full" />
                     <div className="w-1 h-1 bg-[var(--delos-grey)] rounded-full" />

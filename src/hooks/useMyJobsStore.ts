@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { getMyJobs } from "@/services/jobService";
-import { JobsResponse } from "@/interfaces/jobResponse";
+import { JobsResponse } from "@/interfaces/ijobResponse";
 import { toast } from "@/components/Notification";
 
 const CACHE_TTL = 60 * 1000; // 1 minuto de frescor

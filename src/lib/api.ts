@@ -88,7 +88,7 @@ export async function api(
                 };
             }
 
-            if (isServer || isRetry || url.includes("/api/v1/auth/refresh/")) {
+            if (isServer || isRetry || url.includes("/api/v1/auth/refresh")) {
                 if (!isServer) handleGlobalLogout();
                 throw { status: 401, message: "Sessão expirada" };
             }
@@ -154,7 +154,7 @@ const useRefreshManager = () => ({
 
 async function refreshToken(serverHeaders?: Record<string, string>) {
     try {
-        const res = await fetch(`${API_URL}/api/v1/auth/refresh/`, {
+        const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
             method: "POST",
             // IMPORTANTE: credentials "include" faz o navegador enviar o cookie 'refresh' no Client-side
             credentials: "include",

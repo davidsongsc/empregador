@@ -1,27 +1,6 @@
 import { create } from 'zustand';
 import { getJobQuestions } from '@/services/jobService';
-
-interface JobQuestion {
-  id: string;
-  question: string;
-  job_id: string;
-}
-
-interface QuestionCacheEntry {
-  items: JobQuestion[];
-  hash: string; // O data_hash da sua API
-  updatedAt: number;
-}
-
-interface JobQuestionState {
-  questions: JobQuestion[];
-  loadingQuestions: boolean;
-  questionCache: Record<string, QuestionCacheEntry>; // Chave será o jobId
-  
-  // Actions
-  fetchQuestions: (jobId: string, force?: boolean) => Promise<void>;
-  clearQuestionCache: (jobId?: string) => void;
-}
+import { JobQuestionState, QuestionCacheEntry } from '@/interfaces/isJobQuestionState';
 
 export const useJobQuestionStore = create<JobQuestionState>((set, get) => ({
   questions: [],
@@ -50,7 +29,7 @@ export const useJobQuestionStore = create<JobQuestionState>((set, get) => ({
       const options = {
         pagina: 1,
         tamanho: 50,
-        headers: { "If-None-Match": cached?.hash || "" } 
+        headers: { "If-None-Match": cached?.hash || "" }
       };
 
       const response = await getJobQuestions(cleanId, options);
@@ -58,8 +37,8 @@ export const useJobQuestionStore = create<JobQuestionState>((set, get) => ({
       // 3. Validação de Hash/Etag
       // Se a API retornar 304 ou se o hash for idêntico ao do cache
       if (response.data_hash === cached?.hash && !force) {
-        set({ 
-          questions: cached.items, 
+        set({
+          questions: cached.items,
           loadingQuestions: false,
           questionCache: {
             ...get().questionCache,

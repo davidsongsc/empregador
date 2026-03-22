@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Search, Loader2, SearchX, ArrowLeft, Zap, Briefcase, Users, ChevronRight } from 'lucide-react';
 import JobApplyModal from '@/components/JobApplyModal';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useJobStore } from '@/store/useJobStore';
 import JobCard from '@/components/MiniComponents/JobCard';
 import JobCardSkeleton from '@/components/MiniComponents/JobCardSkeleton';
+import { useApplicationStore } from '@/store/useApplicationStore';
 
 const VagasPage = () => {
   const { user } = useAuthStore();
@@ -27,7 +28,7 @@ const VagasPage = () => {
     fetchCategories,
     categories,
     categoriesLoading,
-    
+
     loading,
     globalTotal,
     total_vagas,
@@ -92,7 +93,10 @@ const VagasPage = () => {
     setSearch("");
     setCurrentPage(1);
   }, []);
-
+  const handleCloseModal = () => {
+    setOpenApply(false);
+    useApplicationStore.getState().refresh();
+  };
   return (
     <div className="min-h-screen bg-delos-surface pt-20 md:pt-32 pb-10 px-4 md:px-8 relative">
       <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{
@@ -103,9 +107,9 @@ const VagasPage = () => {
       <div className="max-w-7xl mx-auto relative z-10">
         <header className="mb-12 space-y-8">
           <div className="flex flex-wrap gap-4 mb-4">
-            <StatCard icon={<Briefcase size={16} />} label="Total_Vagas" value={total_vagas} />
-            <StatCard icon={<Zap size={16} />} label="Freelancers" value={total_vagas_freela} color="emerald" />
-            <StatCard icon={<Users size={16} />} label="Efetivos_CLT" value={total_vagas_efetivo} color="blue" />
+            <StatCard icon={<Briefcase size={20} />} label="Total_Vagas" value={total_vagas} />
+            <StatCard icon={<Zap size={20} />} label="Freelancers" value={total_vagas_freela} color="amber" />
+            <StatCard icon={<Users size={20} />} label="Efetivos_CLT" value={total_vagas_efetivo} color="green" />
           </div>
 
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
@@ -175,12 +179,12 @@ const VagasPage = () => {
             total={viewMode === 'categories' ? null : globalTotal}
             pageSize={pageSize}
             hasMore={viewMode === 'categories' ? categories.length >= 10 : false}
-            label={viewMode === 'categories' ? "Discovery_Matrix" : "Job_Matrix"}
+            label={viewMode === 'categories' ? "Listando categorias" : "Listando vagas"}
           />
         </footer>
       </div>
 
-      <JobApplyModal user={user} open={openApply} onClose={() => setOpenApply(false)} job={selectedJob} />
+      <JobApplyModal user={user} open={openApply} onClose={handleCloseModal} job={selectedJob} />
     </div>
   );
 };
@@ -226,4 +230,4 @@ const EmptyState = ({ onReset }: any) => (
   </div>
 );
 
-export default VagasPage;
+export default React.memo(VagasPage);

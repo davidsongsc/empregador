@@ -2,28 +2,37 @@ import { useRoleStore } from "@/store/useRoleStore";
 import { api } from "@/lib/api";
 
 export const syncRolesData = async () => {
-  const { lastHash, lastUpdated, setInitialRoles, applyDelta, setLoading } = useRoleStore.getState();
-  
-  const TEN_DAYS_IN_MS = 10 * 24 * 60 * 60 * 1000;
-  const isCacheExpired = Date.now() - lastUpdated > TEN_DAYS_IN_MS;
+  // Pegamos as funções e o estado atual
+  const state = useRoleStore.getState();
 
-  // Se o cache expirou ou não temos hash, resetamos para carga total
-  const effectiveHash = isCacheExpired ? "0" : lastHash;
+  // Se estiver carregando, evita chamadas duplicadas
+  if (state.loading) return;
+
+  const isExpired = state.isCacheStale();
+  const effectiveHash = isExpired ? "0" : state.lastHash;
 
   try {
-    setLoading(true);
+    state.setLoading(true);
+
+    // Chamada à API enviando o hash atual do LocalStorage
     const response = await api(`/roles/sync/?last_hash=${effectiveHash}`);
 
-    if (response.no_changes) return; // Cache ainda é válido no servidor
+    // 1. Sem mudanças (304 Not Modified manual)
+    if (response.no_changes || response.status === 304) return;
 
+    // 2. Carga Total (Hash "0" ou Cache expirado no server)
     if (response.type === 'FULL_LOAD') {
-      setInitialRoles(response.roles, response.new_hash);
-    } else if (response.type === 'DELTA') {
-      applyDelta(response.patches, response.new_hash);
+      state.setInitialRoles(response.roles, response.new_hash);
     }
+
+    // 3. Carga Incremental (Apenas o que mudou)
+    else if (response.type === 'DELTA') {
+      state.applyDelta(response.patches, response.new_hash);
+    }
+
   } catch (err) {
-    console.error("Delta_Sync_Error: Falha na matriz de cargos", err);
+    console.error("Delta_Sync_Error:", err);
   } finally {
-    setLoading(false);
+    state.setLoading(false);
   }
 };

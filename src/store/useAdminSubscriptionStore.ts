@@ -1,39 +1,30 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { AdminSubscription, getAdminSubscriptions } from "@/services/adminSubscriptionService";
+import {  getAdminSubscriptions } from "@/services/adminSubscriptionService";
+import { AdminSubState } from "@/interfaces/isSubscriptions";
+import { AdminSubscription } from "@/interfaces/iSubscription";
 
-interface AdminSubState {
-  subscriptions: AdminSubscription[];
-  loading: boolean;
-  lastUpdate: number | null;
-  error: string | null;
-  currentRequest: boolean;
 
-  fetchSubscriptions: (force?: boolean) => Promise<void>;
-  applyDeltaPatches: (patches: any[]) => void;
-  addSubscription: (newSub: AdminSubscription) => void;
-  updateSubscription: (id: string | number, data: Partial<AdminSubscription>) => void;
-  removeSubscription: (id: string | number) => void;
-  clearSubscriptions: () => void;
-}
-
-const FRESHNESS_THRESHOLD = 30 * 1000; // 30 segundos
+const FRESHNESS_THRESHOLD = 30 * 1000; 
 
 export const useAdminSubscriptionStore = create<AdminSubState>()(
   persist(
     (set, get) => ({
       subscriptions: [],
+      total: 0,
       loading: false,
       lastUpdate: null,
       error: null,
       currentRequest: false,
+      dataHash: null,
 
       fetchSubscriptions: async (force = false) => {
-        const { lastUpdate, subscriptions, currentRequest } = get();
+        const { lastUpdate, subscriptions, currentRequest, dataHash } = get();
         const now = Date.now();
         
         if (currentRequest) return;
 
+        // Validação de Freshness
         if (!force && subscriptions.length > 0 && lastUpdate && (now - lastUpdate < FRESHNESS_THRESHOLD)) {
           return;
         }
@@ -41,52 +32,56 @@ export const useAdminSubscriptionStore = create<AdminSubState>()(
         set({ loading: subscriptions.length === 0, error: null, currentRequest: true });
 
         try {
+          // Passamos o hash atual para o serviço tentar um 304 Not Modified
           const response: any = await getAdminSubscriptions();
 
-          // 3. CENÁRIO DELTA (Inalterado)
+          // 1. CENÁRIO DELTA (Se o backend suportar envio de patches)
           if (response?.isDelta && response?.patches) {
             get().applyDeltaPatches(response.patches);
-            set({ lastUpdate: Date.now(), loading: false, currentRequest: false });
+            set({ 
+                lastUpdate: now, 
+                loading: false, 
+                currentRequest: false,
+                dataHash: response.data_hash || dataHash 
+            });
             return;
           }
 
-          // 4. CENÁRIO FULL - AJUSTADO PARA ESTRUTURA "PLANOS"
+          // 2. LÓGICA DE EXTRAÇÃO REVISADA (Foco no campo 'items')
           let cleanData: AdminSubscription[] = [];
-          
-          /**
-           * LÓGICA DE EXTRAÇÃO RESILIENTE:
-           * 1. Verifica se 'planos' é o array direto (seu JSON atual).
-           * 2. Verifica se existe 'planos.results' (formato anterior).
-           * 3. Verifica se existe 'results' no nível raiz.
-           */
-          if (Array.isArray(response?.planos)) {
+          let totalCount = 0;
+
+          if (Array.isArray(response?.items)) {
+            // Padrão atual do seu JSON
+            cleanData = response.items;
+            totalCount = response.total || response.items.length;
+          } else if (Array.isArray(response)) {
+            // Fallback para array puro
+            cleanData = response;
+            totalCount = response.length;
+          } else if (Array.isArray(response?.planos)) {
+            // Compatibilidade com versões anteriores
             cleanData = response.planos;
-          } else if (Array.isArray(response?.planos?.results)) {
-            cleanData = response.planos.results;
-          } else if (Array.isArray(response?.results)) {
-            cleanData = response.results;
-          } else if (response && typeof response === "object") {
-             // Caso venha o objeto indexado do Django
-            const { ok, etag, isDelta, count, planos, results, ...indexedItems } = response;
-            cleanData = Object.values(indexedItems).filter(
-              (item: any) => item && typeof item === "object" && item.id
-            ) as AdminSubscription[];
+            totalCount = response.total || response.planos.length;
           }
 
           set({
             subscriptions: cleanData,
-            lastUpdate: Date.now(),
+            total: totalCount,
+            dataHash: response?.data_hash || null,
+            lastUpdate: now,
             loading: false,
             currentRequest: false
           });
 
           if (process.env.NODE_ENV === 'development') {
-            console.log(`[Nexus_Admin] Sincronização: ${cleanData.length} planos ativos.`);
+            console.log(`[Nexus_Admin] Sincronizado: ${cleanData.length} planos via Terminal.`);
           }
 
         } catch (error: any) {
-          if (error.status === 304 || error.message?.includes("304")) {
-            set({ lastUpdate: Date.now(), loading: false, currentRequest: false });
+          // Tratamento de 304 via Exception
+          if (error.status === 304) {
+            set({ lastUpdate: now, loading: false, currentRequest: false });
             return;
           }
 
@@ -109,11 +104,12 @@ export const useAdminSubscriptionStore = create<AdminSubState>()(
             updatedList = updatedList.filter(s => s.id !== patch.id);
           }
         });
-        return { subscriptions: updatedList };
+        return { subscriptions: updatedList, total: updatedList.length };
       }),
 
       addSubscription: (newSub) => set((state) => ({
         subscriptions: [newSub, ...state.subscriptions],
+        total: state.total + 1,
         lastUpdate: Date.now()
       })),
 
@@ -124,17 +120,27 @@ export const useAdminSubscriptionStore = create<AdminSubState>()(
 
       removeSubscription: (id) => set((state) => ({
         subscriptions: state.subscriptions.filter((sub) => sub.id !== id),
+        total: Math.max(0, state.total - 1),
         lastUpdate: Date.now()
       })),
 
-      clearSubscriptions: () => set({ subscriptions: [], lastUpdate: null, error: null, currentRequest: false }),
+      clearSubscriptions: () => set({ 
+        subscriptions: [], 
+        total: 0, 
+        lastUpdate: null, 
+        error: null, 
+        currentRequest: false,
+        dataHash: null 
+      }),
     }),
     {
-      name: "nexus-admin-vault",
+      name: "nexus-admin-plans-vault", // Nome único para não conflitar com outros storages
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         subscriptions: state.subscriptions,
-        lastUpdate: state.lastUpdate
+        total: state.total,
+        lastUpdate: state.lastUpdate,
+        dataHash: state.dataHash
       }),
     }
   )

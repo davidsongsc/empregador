@@ -1,14 +1,8 @@
 import { create } from "zustand";
-import { Plan, adminPlanService } from "@/services/adminPlanService";
+import { adminPlanService } from "@/services/adminPlanService";
 import { toast } from "@/components/Notification";
-
-interface AdminPlanState {
-    plans: Plan[];
-    loading: boolean;
-    fetchPlans: () => Promise<void>;
-    updatePlan: (id: string, data: Partial<Plan>) => Promise<void>;
-    addPlan: (data: Partial<Plan>) => Promise<void>;
-}
+import { AdminPlanState } from "@/interfaces/isPlan";
+import { Plan } from "@/interfaces/iPlan";
 
 export const useAdminPlanStore = create<AdminPlanState>((set, get) => ({
     plans: [],

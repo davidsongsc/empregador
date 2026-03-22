@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { getMyJobs } from "@/services/jobService";
 import { toast } from "@/components/Notification";
 import { useJobsCacheStore } from "@/store/useJobsCacheStore";
-import { JobsResponse } from "@/interfaces/jobResponse";
+import { JobsResponse } from "@/interfaces/ijobResponse";
 
 interface FilterParams {
   usuario?: string;

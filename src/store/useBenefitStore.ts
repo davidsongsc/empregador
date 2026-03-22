@@ -1,14 +1,7 @@
 import { create } from 'zustand';
 import { benefitService } from '@/services/jobBenefitService';
 import { toast } from '@/components/Notification';
-
-interface BenefitState {
-  benefitsByJob: Record<string, any[]>; // Cache em memória por vaga
-  loading: boolean;
-  
-  fetchBenefits: (jobId: string, force?: boolean) => Promise<void>;
-  addBenefit: (payload: any) => Promise<void>;
-}
+import { BenefitState } from '@/interfaces/isBenefit';
 
 export const useBenefitStore = create<BenefitState>((set, get) => ({
   benefitsByJob: {},

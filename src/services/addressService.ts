@@ -1,40 +1,9 @@
+import { Address } from "@/interfaces/iAddress";
 import { api } from "@/lib/api";
 
-// --- TIPAGEM ---
-
-export type Address = {
-  id: string;
-  usuario_id: string;
-  empresa_id: string | null;
-  cep: string;
-  logradouro: string;
-  numero: string;
-  complemento: string | null;
-  bairro: string;
-  cidade: string;
-  estado: string;
-  is_default: boolean;
-  latitude: number | null;
-  longitude: number | null;
-};
-
-export type PaginatedAddressResponse = {
-  total: number;
-  pagina: number;
-  tamanho: number;
-  paginas_totais: number;
-  data_hash: string;
-  enderecos: Address[] | null; // Pode vir null se o hash bater (304/Delta)
-};
-
-// --- SERVIÇOS ---
-
-/**
- * Lista endereços de um usuário específico com suporte a paginação e cache.
- */
 export async function getUserAddresses(usuarioId: string, page: number = 1, currentHash?: string) {
   const headers: Record<string, string> = {};
-  
+
   if (currentHash) {
     headers["If-None-Match"] = currentHash;
   }
@@ -51,7 +20,7 @@ export async function getUserAddresses(usuarioId: string, page: number = 1, curr
  */
 export async function getAddressById(id: string, currentHash?: string) {
   const headers: Record<string, string> = {};
-  
+
   if (currentHash) {
     headers["If-None-Match"] = currentHash;
   }

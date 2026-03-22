@@ -1,65 +1,8 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { getAllJobs, getJobFeed, getJobCategories, getMyJobs, getJobById } from "@/services/jobService";
-
-// --- INTERFACES ---
-
-interface JobResult {
-  uid: string;
-  cargo_exibicao: string;
-  empresa_nome: string;
-  tipo_vaga: string;
-  salario?: string;
-  local?: string;
-  category?: string;
-  [key: string]: any;
-}
-
-interface JobPatch {
-  uid: string;
-  type: 'CREATED' | 'UPDATED' | 'DELETED';
-  data: Partial<JobResult>;
-}
-
-interface JobCacheEntry {
-  results: JobResult[];
-  count: number;
-  metadata: any;
-  etag: string;
-  updatedAt: number;
-}
-
-interface Category {
-  name: string;
-  total_vagas: number;
-}
-
-interface JobState {
-  cache: Record<string, JobCacheEntry>;
-  globalTotal: number;
-  loading: boolean;
-  error: string | null;
-  currentRequest: string | null;
-
-  // Discovery & Stats
-  categories: Category[];
-  categoriesLoading: boolean;
-  categoriesUpdatedAt: number;
-  total_vagas: number;
-  total_vagas_freela: number;
-  total_vagas_efetivo: number;
-
-  // ACTIONS
-  fetchJobsDelta: (companyId: string) => Promise<void>;
-  fetchJobs: (params: any, user: any, selectedCategory?: any, isSilent?: boolean) => Promise<void>;
-  fetchCategories: (page?: number, force?: boolean) => Promise<void>;
-  applyDeltaPatches: (patches: JobPatch[]) => void;
-  removeJobFromCache: (jobId: string) => void;
-  fetchJobById: (uid: string, companyId: string) => Promise<JobResult>;
-  clearCache: () => void;
-}
-
-// --- STORE CORE ---
+import { JobState } from "@/interfaces/isJobState";
+import { JobCacheEntry, JobResult } from "@/interfaces/iJob";
 
 export const useJobStore = create<JobState>()(
   persist(
@@ -75,7 +18,12 @@ export const useJobStore = create<JobState>()(
       total_vagas: 0,
       total_vagas_freela: 0,
       total_vagas_efetivo: 0,
-
+      total_vagas_prestador: 0,
+      categoriesCache: {},           // Faltava este
+      categoriesCount: 0,            // Provavelmente faltava este também
+      totalPages: 0,                 // E este
+      currentPage: 1,                // E este
+      categoriesHash: null,          // E este
       /**
        * FETCH_JOBS: Agora também atualiza os metadados globais se retornados
        */
@@ -337,20 +285,27 @@ export const useJobStore = create<JobState>()(
           total_vagas_efetivo: newTotalEfetivo
         };
       }),
-      fetchJobById: async (uid: string, companyId: string) => {
+      fetchJobById: async (uid: string, companyId: string): Promise<JobResult> => {
         set({ loading: true });
+
         try {
-          const fullJob = await getJobById(uid, companyId);
+          // 1. Fazemos o cast 'as JobResult' para garantir que os dados da API 
+          // se alinhem ao contrato da Store (resolvendo o erro de tipo_vaga missing)
+          const fullJob = await getJobById(uid, companyId) as JobResult;
 
           set((state) => {
+            // 2. Clonagem profunda do cache para manter a imutabilidade
             const newCache = { ...state.cache };
 
-            // Itera por todas as entradas do cache (p1, p2, delta-cache) 
-            // e atualiza o objeto onde ele for encontrado.
+            // 3. Atualização do cache em todas as chaves (paginação/deltas)
             Object.keys(newCache).forEach((key) => {
-              newCache[key].results = newCache[key].results.map((job) =>
-                job.uid === uid ? { ...job, ...fullJob } : job
-              );
+              if (newCache[key]?.results) {
+                newCache[key].results = newCache[key].results.map((job) =>
+                  // Fazemos o merge: mantemos o que já existia no cache (ex: tipo_vaga)
+                  // e sobrescrevemos com os detalhes novos vindos da API
+                  job.uid === uid ? { ...job, ...fullJob } : job
+                );
+              }
             });
 
             return {
@@ -359,9 +314,12 @@ export const useJobStore = create<JobState>()(
             };
           });
 
+          // 4. Retorna o objeto já tipado corretamente
           return fullJob;
+
         } catch (err) {
           set({ loading: false, error: "FALHA_AO_OBTER_DETALHE" });
+          console.error("Erro ao buscar detalhe do job:", err);
           throw err;
         }
       },

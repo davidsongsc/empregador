@@ -1,3 +1,4 @@
+import { CreateEventPayload, CreateSchedulePayload } from "@/interfaces/isEventCreate";
 import { api } from "@/lib/api";
 
 const DELTA_HEADERS = {
@@ -54,7 +55,7 @@ export const eventService = {
   },
 
   // --- ALOCAÇÕES (ASSIGNMENTS) ---
-  updateAssignment: async (uid: string, data: Partial<any>) => {
+  updateAssignment: async (uid: string, data: Partial<CreateEventPayload>) => {
     return await api(`/eventos/assignments/${uid}/`, {
       method: "PATCH",
       headers: { ...DELTA_HEADERS, "X-Delta-Target": "ASSIGNMENT_UPDATE" },
@@ -62,7 +63,7 @@ export const eventService = {
     });
   },
 
-  createEvent: async (data: { name: string; description?: string }) => {
+  createEvent: async (data: Partial<CreateEventPayload>) => {
     return await api("/eventos/events/", {
       method: "POST",
       headers: {
@@ -72,7 +73,7 @@ export const eventService = {
       body: JSON.stringify(data),
     });
   },
-  createSchedule: async (data: { event: string; chamada: string; start_time: string; end_time: string }) => {
+  createSchedule: async (data: Partial<CreateSchedulePayload>) => {
     return await api("/eventos/schedules/", {
       method: "POST",
       headers: DELTA_HEADERS,

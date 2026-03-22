@@ -16,6 +16,7 @@ import DepartmentCard from "@/components/MiniComponents/DepartmentCard";
 import CreateDepartmentModal from "@/components/Modal/CreateDepartmentModal";
 import TabButton from "@/components/MiniComponents/TabButton";
 import InputGroup from "@/components/MiniComponents/InputGroup";
+import { toast } from "@/components/Notification";
 interface CreateDepartmentPayload {
     name: string;
     description: string;
@@ -41,10 +42,10 @@ export default function CompanyAdminPage() {
     useEffect(() => {
         if (activeCompanyId) {
             fetchCompanyDetails(activeCompanyId);
-            fetchDepartments();
+            fetchDepartments(activeCompanyId);
         }
     }, [activeCompanyId, fetchCompanyDetails, fetchDepartments]);
-    
+
     const isLocked = activeCompany?.is_active ?? false;
 
     const debouncedCompanyUpdate = useMemo(() =>
@@ -164,8 +165,12 @@ export default function CompanyAdminPage() {
                     companyId={activeCompanyId}
                     onClose={() => setShowAddModal(false)}
                     onConfirm={(data: CreateDepartmentPayload) => {
-                        addDepartment(data);
-                        setShowAddModal(false);
+                        if (activeCompanyId) {
+                            addDepartment(activeCompanyId, data);
+                            setShowAddModal(false);
+                        } else {
+                            toast.error("Erro: Nenhuma empresa selecionada.");
+                        }
                     }}
                 />
             )}

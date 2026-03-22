@@ -4,23 +4,7 @@ import { UserData } from '@/interfaces/userData';
 import { logout as apiLogout, checkSession } from '@/services/auth';
 import { getCookie, setCookie, deleteCookie } from "@/lib/cookies";
 import { toast } from '@/components/Notification';
-
-interface AuthState {
-  user: UserData | null;
-  activeCompanyId: string | null;
-  isAuthenticated: boolean;
-  loading: boolean;
-  isHydrated: boolean;
-  lastUpdated: number; // Essencial para o Protocolo Delta
-
-  // Ações
-  setUser: (user: UserData | null) => void;
-  setActiveCompany: (id: string | null) => void;
-  setLoading: (loading: boolean) => void;
-  setHydrated: (state: boolean) => void;
-  logout: () => Promise<void>;
-  refresh: () => Promise<void>;
-}
+import { AuthState } from '@/interfaces/isAuthState';
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -40,6 +24,7 @@ export const useAuthStore = create<AuthState>()(
             // Se houver campos novos (Delta), fazemos o merge
             const hasChanges = JSON.stringify(state.user) !== JSON.stringify(user);
             if (!hasChanges) return state;
+
           }
 
           const updatedUser = user ? { ...state.user, ...user } : null;
@@ -51,9 +36,18 @@ export const useAuthStore = create<AuthState>()(
 
           if (!activeId && empresas.length === 1) {
             activeId = empresas[0].id;
-            setCookie("active_company", activeId, { expires: 7 });
+            setCookie("active_company", activeId, 7);
           }
-
+          if (!user) {
+            deleteCookie("active_company");
+            return {
+              user: null,
+              isAuthenticated: false,
+              activeCompanyId: null,
+              loading: false,
+              lastUpdated: Date.now()
+            };
+          }
           return {
             user: updatedUser,
             isAuthenticated: !!updatedUser,
@@ -65,7 +59,7 @@ export const useAuthStore = create<AuthState>()(
 
       setActiveCompany: (id) => {
         if (id) {
-          setCookie("active_company", id, { expires: 7 });
+          setCookie("active_company", id, 7);
         } else {
           deleteCookie("active_company");
         }

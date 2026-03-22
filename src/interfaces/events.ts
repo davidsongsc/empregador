@@ -46,6 +46,7 @@ export interface Event {
   sponsors: string[];
   schedules: EventSchedule[];
   created_at: string;
+  updated_at: string;
 }
 
 export interface PaginatedResponse<T> {

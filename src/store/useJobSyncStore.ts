@@ -1,13 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { useJobStore } from "./useJobStore";
-
-interface JobSyncStore {
-  lastSequenceId: string;
-  isSyncing: boolean;
-  setSyncing: (status: boolean) => void;
-  syncData: (patches: any[], newHash: string) => void;
-}
+import { JobSyncStore } from "@/interfaces/isJobSyncStore";
 
 export const useJobSyncStore = create<JobSyncStore>()(
   persist(

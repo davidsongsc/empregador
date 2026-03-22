@@ -1,10 +1,7 @@
+import { ConsentState } from "@/interfaces/isConsentState";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface ConsentState {
-  hasAccepted: boolean | null; // null = não decidiu, true = aceitou, false = recusou
-  setConsent: (accepted: boolean) => void;
-}
 
 export const useConsentStore = create<ConsentState>()(
   persist(

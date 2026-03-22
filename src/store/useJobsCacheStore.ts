@@ -1,18 +1,5 @@
+import { JobsCacheState } from '@/interfaces/isJobQuestionState';
 import { create } from 'zustand';
-import { JobsResponse } from '@/interfaces/jobResponse';
-
-interface CacheEntry {
-  data: JobsResponse;
-  timestamp: number;
-}
-
-interface JobsCacheState {
-  // O cache é um mapa: { "usuario=123&page=1": { data, timestamp } }
-  cache: Record<string, CacheEntry>;
-  setCache: (key: string, data: JobsResponse) => void;
-  getCache: (key: string, ttl: number) => JobsResponse | null;
-  invalidate: (key?: string) => void;
-}
 
 export const useJobsCacheStore = create<JobsCacheState>((set, get) => ({
   cache: {},

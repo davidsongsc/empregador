@@ -12,7 +12,9 @@ import { useProfile } from '@/hooks/useProfile';
 import { useAddressStore } from '@/store/useAddressStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useApplicationStore } from '@/store/useApplicationStore';
+import { useEducationStore } from '@/store/useEducationStore';
 
+import { EducationManagerModal } from '@/components/Modal/EducationManagerModal';
 import ApplicationDashboard from '@/components/ApplicationDashboard';
 import PerfilLoading from '@/components/PerfilLoading';
 import { EditProfileModal } from '@/components/Modal/ProfileEditModal';
@@ -22,18 +24,20 @@ import { toast } from '@/components/Notification';
 const App = () => {
   const router = useRouter();
   const { logout, isAuthenticated } = useAuthStore();
-  const { profile, loading: profileLoading } = useProfile();
+  const { profile, loading: profileLoading, refresh } = useProfile();
   const {
     data: applications,
     loading: appsLoading,
     total,
-    fetchApplications
+    fetchApplications,
+    refresh: refreshApps
   } = useApplicationStore();
   const { addresses, fetchAddresses } = useAddressStore();
   const [isExpModalOpen, setIsExpModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEduModalOpen, setIsEduModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const { educations, fetchEducations, loading: eduLoading } = useEducationStore();
   const currentApps = useMemo(() => {
     return Array.isArray(applications) ? applications : (applications as any)?.items || [];
   }, [applications]);
@@ -52,8 +56,9 @@ const App = () => {
     if (isAuthenticated && profile?.usuario_id) {
       fetchAddresses(profile.usuario_id);
       fetchApplications();
+      fetchEducations(); // Sincroniza logs acadêmicos ao carregar
     }
-  }, [profile?.usuario_id, isAuthenticated, fetchAddresses, fetchApplications]);
+  }, [profile?.usuario_id, isAuthenticated, fetchAddresses, fetchApplications, fetchEducations]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -83,8 +88,8 @@ const App = () => {
             style={{ borderColor: 'rgba(var(--delos-grey), 0.1)' }}
             className="bg-white dark:bg-[#080808] border rounded-sm p-8 shadow-2xl relative overflow-hidden group transition-all"
           >
-            <div className="absolute top-0 left-0 p-2 bg-[var(--delos-black)] text-[var(--delos-surface)] text-[7px] font-mono tracking-[0.3em] uppercase">
-              Host_Unit::DRV_{profile?.id?.slice(0, 5) || "Nome"}
+            <div className="absolute top-0 left-0 p-2 bg-[var(--delos-black)] text-[var(--delos-surface)] text-[8px] font-mono tracking-[0.3em] uppercase">
+              USER_{profile?.id?.slice(0, 5) || "Nome"}
             </div>
 
             <div className="absolute top-6 right-6 z-20">
@@ -92,7 +97,7 @@ const App = () => {
                 onClick={logout}
                 className="group p-2 flex items-center gap-2 text-gray-400 hover:text-[var(--delos-red)] transition-all font-black text-[9px] uppercase tracking-widest"
               >
-                Terminate <LogOut className="w-3 h-3" />
+                sAIR <LogOut className="w-3 h-3" />
               </button>
             </div>
 
@@ -131,7 +136,7 @@ const App = () => {
               <div className="flex items-center justify-center gap-2">
                 <div className="w-1.5 h-1.5 bg-[var(--delos-amber)] rounded-full animate-pulse" />
                 <span className="text-[10px] font-mono font-black text-[var(--delos-indigo)] uppercase tracking-[0.3em]">
-                  {profile?.ocupation || 'Assignment_Pending'}
+                  {profile?.ocupation || 'Profissão não informada!'}
                 </span>
               </div>
 
@@ -140,11 +145,11 @@ const App = () => {
                   <MapPin className="w-3 h-3" />
                   {currentAddress
                     ? `${currentAddress.bairro}, ${currentAddress.cidade}`
-                    : 'Location_Not_Synced'}
+                    : 'Endereço não cadastrado!'}
                 </div>
                 <div className="flex items-center justify-center gap-2 opacity-40 text-[10px] font-mono lowercase">
                   <Mail className="w-3 h-3" />
-                  {profile?.email_contato || 'no-link@database.com'}
+                  {profile?.email_contato || 'email não informado!'}
                 </div>
               </div>
 
@@ -163,20 +168,67 @@ const App = () => {
             className="p-8 rounded-sm relative overflow-hidden border border-white/5 shadow-2xl"
           >
             <Activity className="absolute -right-4 -bottom-4 w-24 h-24 opacity-5 text-indigo-500" />
+
             <h3
               style={{ color: 'var(--delos-amber)' }}
               className="font-black text-[10px] uppercase tracking-[0.4em] mb-6 flex items-center gap-2"
             >
-              <Terminal className="w-3 h-3" /> Cognitive_Link
+              <Terminal className="w-3 h-3" /> Links
             </h3>
+
             <div className="space-y-4">
+
+              <div className="bg-white/5 border border-white/10 p-4 rounded-sm">
+                <p className="text-[8px] font-mono text-[var(--delos-amber)] uppercase mb-2 tracking-widest opacity-70">
+                  Profile_Status
+                </p>
+
+                <p className="font-black text-xs uppercase tracking-tight">
+                  {profile?.ocupation || 'Generalist'}
+                </p>
+
+                <p className="text-[10px] opacity-60 mt-2 leading-relaxed">
+                  {profile?.bio
+                    ? 'Perfil identificado. Dados suficientes para recomendação estratégica.'
+                    : 'Perfil incompleto. Adicione uma bio para desbloquear recomendações mais precisas.'}
+                </p>
+              </div>
+
               <div className="bg-white/5 border border-white/10 p-4 rounded-sm hover:bg-white/10 transition-all cursor-pointer group">
-                <p className="text-[8px] font-mono text-[var(--delos-amber)] uppercase mb-2 tracking-widest opacity-70">Suggested_Evolution</p>
+                <p className="text-[8px] font-mono text-[var(--delos-amber)] uppercase mb-2 tracking-widest opacity-70">
+                  Suggested_Evolution
+                </p>
+
                 <div className="flex justify-between items-center">
-                  <p className="font-black text-xs uppercase tracking-tighter italic">Especialização: {profile?.ocupation || 'Generalist'}</p>
+                  <div>
+                    <p className="font-black text-xs uppercase tracking-tight italic">
+                      {profile?.ocupation
+                        ? `Aprimorar especialização em ${profile.ocupation}`
+                        : 'Definir especialização principal'}
+                    </p>
+
+                    <p className="text-[10px] opacity-60 mt-1">
+                      {profile?.bio
+                        ? 'Refine sua bio com resultados, métricas e diferenciais.'
+                        : 'Descreva experiência, habilidades e objetivos.'}
+                    </p>
+                  </div>
+
                   <ChevronRight className="w-4 h-4 text-indigo-500 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
+
+              <div className="bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-sm">
+                <p className="text-[8px] font-mono text-indigo-400 uppercase mb-2 tracking-widest opacity-70">
+                  Impact
+                </p>
+
+                <p className="text-[10px] leading-relaxed opacity-70">
+                  Perfis completos têm maior visibilidade, melhor correspondência com oportunidades
+                  e aumento na taxa de contato.
+                </p>
+              </div>
+
             </div>
           </div>
         </aside>
@@ -190,37 +242,55 @@ const App = () => {
               <span className="w-8 h-[1px] bg-[var(--delos-indigo)]" /> Core_Narrative
             </h3>
             <p className="font-bold leading-relaxed text-2xl italic border-l-2 border-[var(--delos-indigo)] pl-8 opacity-90 tracking-tighter">
-              "{profile?.bio || "Trajectory data not initialized. Please synchronize your executive summary."}"
+              "{profile?.bio || "Complete sua bio e aumente suas chances de destaque. Perfis completos geram mais confiança e são priorizados nas buscas."}"
             </p>
           </section>
 
           <div className="grid md:grid-cols-2 gap-8">
             <div className="relative group">
-            
+
               <WorkExperience onAddEntry={() => setIsExpModalOpen(true)} />
             </div>
 
-            <div className="bg-white dark:bg-[#080808] p-8 rounded-sm border border-black/5 dark:border-white/5 group transition-all">
+            {/* Bloco de Educação (Refatorado para usar Store + Modal) */}
+            <div className="bg-white dark:bg-[#080808] p-8 rounded-sm border border-black/5 dark:border-white/5 group transition-all relative">
               <div className="flex justify-between items-center mb-8">
                 <div className="w-10 h-10 bg-black/5 dark:bg-white/5 flex items-center justify-center text-[var(--delos-black)] group-hover:bg-[var(--delos-indigo)] group-hover:text-white transition-all border border-black/5 dark:border-white/10">
-                  <GraduationCap className="w-4 h-4" />
+                  {eduLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <GraduationCap className="w-4 h-4" />}
                 </div>
+
+                <button
+                  onClick={() => setIsEduModalOpen(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 border border-black/10 dark:border-white/10 hover:border-[var(--delos-amber)] hover:text-[var(--delos-amber)] transition-all group/btn"
+                >
+                  <Terminal size={10} className="opacity-40" />
+                  <span className="text-[8px] font-mono font-black uppercase tracking-widest">Manage_Logs</span>
+                </button>
               </div>
+
               <h3 className="text-sm font-black uppercase tracking-[0.2em] mb-6 italic">Academic_Logs</h3>
+
               <div className="space-y-6">
-                {profile?.educations?.length ? profile.educations.map((edu: any) => (
-                  <div key={edu.id} className="relative pl-6 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[1px] before:bg-indigo-500/20">
+                {educations.length ? educations.map((edu: any) => (
+                  <div key={edu.id} className="relative pl-6 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[1px] before:bg-indigo-500/20 hover:before:bg-indigo-500 transition-colors">
                     <p className="font-black text-xs uppercase tracking-tight">{edu.curso}</p>
-                    <p className="text-[10px] opacity-40 font-mono uppercase mt-1">{edu.instituicao}</p>
+                    <p className="text-[10px] opacity-40 font-mono uppercase mt-1">
+                      {edu.instituicao} <span className="text-[var(--delos-amber)] opacity-60 ml-2">// {edu.data_inicio?.split('-')[0]}</span>
+                    </p>
                   </div>
                 )) : (
-                  <p className="text-[10px] font-mono opacity-30 italic">Academic history not synchronized.</p>
+                  <div className="flex flex-col items-center py-4 border border-dashed border-black/10 opacity-30">
+                    <p className="text-[10px] font-mono opacity-30 italic uppercase">Empty_Database</p>
+                    <button onClick={() => setIsEduModalOpen(true)} className="text-[8px] font-black underline mt-2">Initialize_Sync</button>
+                  </div>
                 )}
               </div>
             </div>
+
+
           </div>
         </main>
-      </div>
+      </div >
 
       <style jsx global>{`
         @keyframes pan {
@@ -231,16 +301,24 @@ const App = () => {
 
       <EditProfileModal
         isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          refresh();
+       
+        }}
       />
 
       {/* Novo Terminal de Gestão de Experiências */}
       <ExperienceManagerModal
         isOpen={isExpModalOpen}
         onClose={() => setIsExpModalOpen(false)}
-        profileId={profile?.id} // Usando o ID do perfil sincronizado
+        profileId={profile?.id} 
       />
-  
+      <EducationManagerModal
+        isOpen={isEduModalOpen}
+        onClose={() => setIsEduModalOpen(false)}
+        profileId={profile?.id}
+      />
     </div >
   );
 };

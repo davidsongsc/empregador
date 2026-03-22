@@ -304,6 +304,7 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
 
             {currentStep.id === "experiencias" && (
               <motion.div key="exp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+
                 <div className="flex justify-between items-center border-b border-black/5 dark:border-white/5 pb-4">
                   <div className="text-left">
                     <h2 className="text-sm xl:text-2xl font-black uppercase italic tracking-widest">Experiências</h2>
@@ -465,32 +466,35 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
             <ChevronLeft className="w-4 h-4" />
             <span>Voltar</span>
           </button>
-          <div className=" border-t border-black/5 dark:border-white/5">
-            <label className="flex items-start gap-4 p-6 bg-delos-indigo/5 border border-delos-indigo/20 rounded-sm cursor-pointer group hover:bg-delos-indigo/10 transition-all">
-              <input
-                type="checkbox"
-                checked={shouldEditExperience}
-                onChange={(e) => {
-                  const hasExp = remoteExperiences?.length > 0 || (remoteExperiences as any)?.items?.length > 0;
-                  // Se não tiver experiência, não deixa desmarcar
-                  if (!hasExp) {
-                    toast.info("DNA_CAREER_EMPTY: Você precisa cadastrar ao menos uma experiência.");
-                    return;
-                  }
-                  setShouldEditExperience(e.target.checked);
-                }}
-                className="w-5 h-5 mt-1 rounded-none border-delos-indigo/30 bg-transparent text-delos-indigo focus:ring-0"
-              />
-              <div className="space-y-1">
-                <span className="block text-[12px] font-black uppercase tracking-widest text-delos-indigo">
-                  Experiências
-                </span>
-                <p className="text-[9px] font-mono opacity-50 uppercase leading-tight">
-                  Para adicionar ou editar experiências.
-                </p>
-              </div>
-            </label>
-          </div>
+          {validateUser && (
+            <div className=" border-t border-black/5 dark:border-white/5">
+              <label className="flex items-start gap-4 p-6 bg-delos-indigo/5 border border-delos-indigo/20 rounded-sm cursor-pointer group hover:bg-delos-indigo/10 transition-all">
+                <input
+                  type="checkbox"
+                  checked={shouldEditExperience}
+                  onChange={(e) => {
+                    const hasExp = remoteExperiences?.length > 0 || (remoteExperiences as any)?.items?.length > 0;
+                    // Se não tiver experiência, não deixa desmarcar
+                    if (!hasExp) {
+                      toast.info("DNA_CAREER_EMPTY: Você precisa cadastrar ao menos uma experiência.");
+                      return;
+                    }
+                    setShouldEditExperience(e.target.checked);
+                  }}
+                  className="w-5 h-5 mt-1 rounded-none border-delos-indigo/30 bg-transparent text-delos-indigo focus:ring-0"
+                />
+                <div className="space-y-1">
+                  <span className="block text-[12px] font-black uppercase tracking-widest text-delos-indigo">
+                    Experiências
+                  </span>
+                  <p className="text-[9px] font-mono opacity-50 uppercase leading-tight">
+                    Para adicionar ou editar experiências.
+                  </p>
+                </div>
+              </label>
+            </div>
+          )}
+
           {/* Botão de Avançar/Sync (EXECUTE_SYNC) */}
           <button
             type="button"

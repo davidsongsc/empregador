@@ -1,16 +1,8 @@
 import { create } from "zustand";
-import { departmentService, Department } from "@/services/companies-service";
+import { departmentService } from "@/services/companies-service";
 import { toast } from "@/components/Notification";
-
-interface DepartmentState {
-  departments: Department[];
-  loading: boolean;
-  // Agora as ações aceitam ou dependem do companyId
-  fetchDepartments: (companyId: string) => Promise<void>;
-  addDepartment: (companyId: string, data: Partial<Department>) => Promise<void>;
-  updateDepartment: (companyId: string, deptId: string, data: Partial<Department>) => Promise<void>;
-  removeDepartment: (companyId: string, deptId: string) => Promise<void>;
-}
+import { Department } from "@/interfaces/iDepartament";
+import { DepartmentState } from "@/interfaces/isDepartamentState";
 
 export const useDepartmentStore = create<DepartmentState>((set, get) => ({
   departments: [],
@@ -26,8 +18,9 @@ export const useDepartmentStore = create<DepartmentState>((set, get) => ({
       let cleanList: Department[] = [];
       if (Array.isArray(response)) {
         cleanList = response;
-      } else if (response && typeof response === "object") {
-        const { ok, ...indexedItems } = response;
+      } else if (response && typeof response === "object" && !Array.isArray(response)) {
+        const { ok, ...indexedItems } = response as Record<string, any>;
+
         cleanList = Object.values(indexedItems).filter(
           (item: any) => item && typeof item === "object" && item.id
         ) as Department[];

@@ -2,13 +2,9 @@
 import { create } from "zustand";
 import { DashboardStats } from "@/types/dashboard";
 import { getDashboardStats } from "@/services/dashboardService";
+import { DashboardState } from "@/interfaces/isDashboardState";
 
-interface DashboardState {
-  stats: DashboardStats | null;
-  loading: boolean;
-  error: string | null;
-  fetchStats: () => Promise<void>;
-}
+
 
 export const useDashboardStore = create<DashboardState>((set) => ({
   stats: null,

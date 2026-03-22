@@ -1,18 +1,9 @@
-import { JobsResponse } from "@/interfaces/jobResponse";
+import { JobResult } from "@/interfaces/iJob";
+import { JobsResponse } from "@/interfaces/ijobResponse";
 import { api } from "@/lib/api";
-import { Job } from "./jobs";
-import { JobResult } from "@/interfaces/jobResult";
 
-// Helper para construir a query string com paginação e filtros
-const buildQuery = (params: Record<string, any>) => {
-  const query = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      query.append(key, value.toString());
-    }
-  });
-  return query.toString();
-};
+import buildQuery from "@/utils/buildQuery";
+
 interface FetchOptions {
   headers?: Record<string, string>;
 }
@@ -40,7 +31,7 @@ export async function getAllJobs(
 ): Promise<JobsResponse> {
 
 
-  return api(`/api/v1/jobs/category/${params}`, {
+  return api(`/api/v1/jobs/public/category/${params}`, {
     method: "GET",
     credentials: "include",
     headers: { ...(options.headers || {}) }
@@ -51,7 +42,7 @@ export async function getAllJobs(
  * ROTA PRIVADA: Feed de vagas (vagas que o usuário não se candidatou)
  */
 export async function getJobFeed(
-  params: JobSearchParams = {},
+  params: any = {},
   options: FetchOptions = {}
 ): Promise<JobsResponse> {
 

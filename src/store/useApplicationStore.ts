@@ -1,33 +1,8 @@
 import { create } from "zustand";
 import { getApplications } from "@/services/applicationResult"; // Serviço de busca/filtros
 import { myApplicationService } from "@/services/applications"; // Serviço do perfil do candidato
-import { ApplicationResult } from "@/interfaces/applicationResult";
 import { toast } from "@/components/Notification";
-
-interface ApplicationState {
-  // Estado
-  data: ApplicationResult[];
-  total: number;
-  loading: boolean;
-  cache: Record<string, { data: ApplicationResult[]; total: number; timestamp: number }>;
-  currentRequest: string | null;
-
-  // Actions
-  // Unificamos: se passar 'isMyApps', ele usa o serviço do candidato, senão usa o de busca
-  fetchApplications: (filters?: any, force?: boolean, isMyApps?: boolean) => Promise<void>;
-
-  // Operações Locais (Otimistas)
-  removeItem: (id: string) => void;
-  addOptimistic: (newApp: any) => void;
-
-  // Helpers
-  getStats: () => {
-    total: number;
-    applied: number;
-    withdrawn: number;
-    reviewing: number;
-  };
-}
+import { ApplicationState } from "@/interfaces/isApplicationState";
 
 export const useApplicationStore = create<ApplicationState>((set, get) => ({
   data: [],
@@ -77,6 +52,25 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
     } catch (err: any) {
       toast.error("Falha na sincronização com o Terminal Delos.");
       set({ loading: false, currentRequest: null });
+    }
+  },
+  refresh: async () => {
+    const { currentRequest, fetchApplications } = get();
+
+    // Se não houver uma requisição anterior, não sabemos o que "refrescar"
+    if (!currentRequest) return;
+
+    // Lógica para extrair se era 'isMyApps' e quais eram os filtros
+    const isMyApps = currentRequest.startsWith("MY_APPS_");
+    const filterString = currentRequest.replace(isMyApps ? "MY_APPS_" : "SEARCH_", "");
+
+    try {
+      const filters = JSON.parse(filterString);
+      // Chamamos o fetch passando force: true
+      await fetchApplications(filters, true, isMyApps);
+    } catch (e) {
+      // Caso o JSON.parse falhe (filtros vazios), tenta busca limpa
+      await fetchApplications({}, true, isMyApps);
     }
   },
 

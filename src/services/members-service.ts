@@ -1,5 +1,5 @@
+import { CompanyMemberDetail } from "@/interfaces/iCompanyMember";
 import { api } from "@/lib/api";
-import { CompanyMemberDetail } from "./companies-service";
 
 /**
  * PROTOCOLO_DELTA_HEADERS
@@ -15,7 +15,7 @@ export const memberService = {
   /**
    * Recupera uma camada específica de membros (Pagination Layer).
    */
-  getMembers: async (companyId: string, page: number = 1): Promise<any> => {
+  getMembers: async (companyId: string, page: number = 1): Promise<CompanyMemberDetail> => {
     // A query string ?page= garante que o Django Rest Framework ative o PaginationSerializer
     return await api(`/company/companies/${companyId}/members/?page=${page}`, {
       method: "GET",

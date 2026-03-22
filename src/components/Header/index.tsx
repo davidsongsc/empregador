@@ -109,11 +109,10 @@ const Header = () => {
                                 <Link href="/perfil" className="flex items-center gap-3 pl-4 group">
                                     <div className="flex flex-col items-end">
                                         <span className="text-[7px] font-black text-[var(--delos-amber)] uppercase tracking-tighter leading-none mb-1">
-                                            {isRecruiter ? "Acesso_Staff" : "Host_Ativo"}
+                                            {isRecruiter ? "Staff" : "Candidato"}
                                         </span>
-                                        <span className="text-[10px] font-black text-[var(--delos-black)] uppercase italic leading-none">
-                                            {user?.profile?.name?.split(' ')[0]}
-                                        </span>
+                                        {user?.profile?.name && <span className="text-[10px] font-black text-[var(--delos-black)] uppercase leading-none">{user.profile.name.split(' ')[0]}</span>}
+                                    
                                     </div>
                                     <div className="w-9 h-9 bg-[var(--delos-black)] flex items-center justify-center text-[var(--delos-surface)] overflow-hidden shadow-xl group-hover:scale-105 transition-transform border border-[var(--delos-border)]">
                                         {user?.profile?.foto ? (

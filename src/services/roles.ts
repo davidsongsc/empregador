@@ -1,16 +1,25 @@
+// @/services/roles.ts
 import { api } from "@/lib/api";
 
-export type Role = {
-  uid: string;
-  name: string;
-  category: string;
-};
 
-export async function getRoles() {
-  return await api("/vagas/roles/", { method: "GET" }, true);
+/**
+ * Consulta a API enviando o hash atual para o Protocolo Delta
+ */
+export async function getRoles(currentHash?: string) {
+  const headers: Record<string, string> = {
+    "X-Protocol-Mode": "DELTA_SYNC",
+  };
+  
+  if (currentHash) {
+    headers["If-None-Match"] = currentHash;
+  }
+
+  return await api("/vagas/roles/", { 
+    method: "GET",
+    headers 
+  });
 }
 
-// Função para criar um novo cargo padronizado "on-the-fly"
 export async function createRole(data: { name: string; category: string }) {
   return await api("/vagas/roles/", {
     method: "POST",

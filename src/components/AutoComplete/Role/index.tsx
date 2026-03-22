@@ -13,7 +13,7 @@ import {
 // Importações reais do projeto
 import { toast } from "@/components/Notification";
 import { useScheduleStore } from "@/store/useScheduleStore";
-import { useRoles } from "@/hooks/useRoles";
+import { useRoleStore } from "@/store/useRoleStore";
 import { createRole } from "@/services/roles";
 
 // --- INTERFACES ---
@@ -43,7 +43,7 @@ const RoleAutocomplete: React.FC<RoleAutocompleteProps> = ({ value, onChange, on
     const [category, setCategory] = useState("Geral");
     const [isCreating, setIsCreating] = useState(false);
 
-    const { roles } = useRoles();
+    const { roles } = useRoleStore();
 
     const filtered = useMemo(() => {
         if (!search || search === value) return [];

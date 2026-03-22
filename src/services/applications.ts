@@ -1,25 +1,7 @@
+import { ApplicationsResponse } from "@/interfaces/iApplication";
 import { api } from "@/lib/api";
 import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
 
-export interface Application {
-  id: string;
-  job_id: string;
-  candidate_id: string;
-  status: 'applied' | 'reviewing' | 'interview' | 'hired' | 'rejected';
-  created_at: string;
-  updated_at: string;
-  cargo_nome: string;
-  empresa_nome: string;
-}
-
-export interface ApplicationsResponse {
-  total: number;
-  pagina: number;
-  tamanho: number;
-  paginas_totais: number;
-  data_hash: string;
-  items: Application[];
-}
 
 const APPS_CACHE_KEY = "candidate_applications_data";
 const APPS_TS_KEY = "candidate_applications_sync_ts";

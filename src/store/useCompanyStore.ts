@@ -3,37 +3,7 @@ import { companyService } from "@/services/companies-service";
 import { memberService } from "@/services/members-service";
 import { toast } from "@/components/Notification";
 import { get as idbGet, set as idbSet, del as idbDel, keys as idbKeys } from "idb-keyval";
-
-interface CachedLayer {
-  data: any[];
-  timestamp: number;
-}
-
-interface CompanyState {
-  companies: any[];
-  activeCompany: any | null;
-  members: any[];
-  membersCount: number;
-  membersCache: Record<number, any[]>;
-  loading: boolean;
-  error: string | null;
-
-  // Ações
-  fetchCompanies: (page?: number, search?: string) => Promise<void>;
-  fetchCompanyDetails: (id: string) => Promise<void>;
-  fetchMembers: (companyId: string, page?: number, forceRefresh?: boolean) => Promise<void>;
-  updateCompanyStatus: (id: string, isActive: boolean) => Promise<void>;
-  updateMemberRole: (memberId: number, role: string) => Promise<void>;
-  addMember: (companyId: string, profileId: string, role: string) => Promise<void>;
-  removeMember: (memberId: number) => Promise<void>;
-  saveCompany: (id: string, data: any) => Promise<void>;
-
-  // Persistência e Cache
-  loadFromStorage: () => Promise<boolean>;
-  clearStorage: () => Promise<void>;
-  vacuumCache: () => Promise<void>;
-  clearCacheLayers: () => Promise<void>;
-}
+import { CachedLayer, CompanyState } from "@/interfaces/isCompanyState";
 
 const CACHE_EXPIRATION_MS = 30 * 60 * 1000; // 30 Minutos
 

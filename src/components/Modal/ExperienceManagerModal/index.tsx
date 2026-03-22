@@ -11,7 +11,7 @@ import { toast } from '@/components/Notification';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  profileId: string;
+  profileId?: string;
 }
 
 export const ExperienceManagerModal = ({ isOpen, onClose, profileId }: Props) => {
