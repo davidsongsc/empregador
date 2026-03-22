@@ -1,26 +1,46 @@
-import { Metadata } from "next"
+import type { Metadata, Viewport } from "next";
 import siteConfig from "@/config/site.json"
 
+export const viewport: Viewport = {
+  themeColor: "#FFB800", // Sua cor Delos Amber
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 export function constructMetadata({
   title = siteConfig.name,
   description = siteConfig.description,
   image = siteConfig.ogImage,
-  noIndex = false
+  noIndex = false,
 }: {
-  title?: string
-  description?: string
-  image?: string
-  noIndex?: boolean
+  title?: string;
+  description?: string;
+  image?: string;
+  noIndex?: boolean;
 } = {}): Metadata {
   return {
     title: {
       default: title,
-      template: `%s | ${siteConfig.name}`
+      template: `%s | ${siteConfig.name}`,
     },
     description,
     keywords: siteConfig.keywords,
-    authors: [{ name: "Sua Empresa ou Nome" }],
+    authors: [{ name: "FreelaCerto Team" }],
     creator: "Delos System",
+
+    // --- CONFIGURAÇÃO PWA CRÍTICA ---
+    manifest: "/manifest.json", // O arquivo que criaremos na public
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: title,
+    },
+    formatDetection: {
+      telephone: false, // Evita que o Safari mude a cor de números de telefone
+    },
+    // --------------------------------
+
     openGraph: {
       type: "website",
       locale: "pt_BR",
@@ -28,17 +48,17 @@ export function constructMetadata({
       title,
       description,
       siteName: title,
-      images: [{ url: image }]
+      images: [{ url: image }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
       images: [image],
-      creator: "@freelacerto"
+      creator: "@freelacerto",
     },
     icons: {
-      icon: "/favicon.png", 
+      icon: "/favicon.png",
       shortcut: "/favicon.png",
       apple: "/apple-touch-icon.png",
     },
@@ -46,8 +66,8 @@ export function constructMetadata({
     ...(noIndex && {
       robots: {
         index: false,
-        follow: false
-      }
-    })
-  }
+        follow: false,
+      },
+    }),
+  };
 }
