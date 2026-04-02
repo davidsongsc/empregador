@@ -22,26 +22,26 @@ export const useCorporateApplications = (filters: UseCorporateApplicationsProps 
 
     // Memoiza os filtros para evitar loops no useEffect
     const currentFilters = useMemo(() => ({
-        job: filters.jobId, // <-- Verifique se isso não está vindo como undefined e depois sendo preenchido
-        status: filters.status,
         page: filters.page,
         page_size: filters.pageSize,
-    }), [filters.jobId, filters.status, filters.page, filters.pageSize]);
+        job_id: filters.jobId,
+        status: filters.status,
+    }), [filters.page, filters.pageSize, filters.jobId, filters.status]);
 
     const loadData = useCallback(() => {
         // Só dispara se houver uma empresa selecionada (Lógica de Seleção de Empresa)
         if (activeCompanyId) {
-            fetchApplications(activeCompanyId, currentFilters);
+            fetchApplications(currentFilters);
         }
     }, [activeCompanyId, currentFilters, fetchApplications]);
 
     useEffect(() => {
         loadData();
     }, [loadData]);
-
+    console.log('candidatos', applications);
     return {
         candidatos: applications,
-        total: pagination.count,
+        total: pagination.total,
         loading,
         error,
         refresh: loadData,

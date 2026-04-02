@@ -30,9 +30,9 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
   const { benefitsByJob, fetchBenefits, loading: loadingBenefits } = useBenefitStore();
   const { experiences: remoteExperiences, fetchExperiences, loading: loadingExp } = useExperienceStore()
   const { questions, loadingQuestions, fetchQuestions } = useJobQuestionStore()
-
+  console.log('experiencias', remoteExperiences)
   // ESTADOS LOCAIS
-  const [experiences, setExperiences] = useState<any[]>([])
+  const [experiences, setExperiences] = useState<any[]>(remoteExperiences)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const { fetchApplications } = useApplicationStore();
   // 1. SINCRONIZAÇÃO DE DADOS (PERGUNTAS E EXPERIÊNCIAS)
@@ -163,13 +163,10 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
         const experienceTasks = experiences.map(exp => {
           if (!exp.empresa || !exp.cargo) return null;
 
-          // --- PROTOCOLO_DE_SANEAMENTO ---
-          // Removemos strings vazias das datas para evitar o erro 422 do FastAPI
+        
           const sanitizedExp = {
             ...exp,
             data_entrada: exp.data_entrada || null,
-            // Se estiver trabalhando atualmente, a saída DEVE ser null
-            // Caso contrário, se a string for vazia, enviamos null
             data_saida: exp.atualmente_trabalhando ? null : (exp.data_saida || null)
           };
 
@@ -188,19 +185,18 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
         }
       }
 
-      // --- 2. TRANSMISSÃO DA CANDIDATURA (Sempre ocorre) ---
       const formattedAnswers = Object.entries(answers).map(([id, text]) => ({
         question_uid: id,
         answer: text,
       }));
 
-      const targetJobId = job.id || job.uid;
+      const targetJobId = job.id ;
       await applicationService.applyToJob(targetJobId, formattedAnswers);
       sendGAEvent('event', 'conversion', {
         event_category: 'job_application_complete',
         event_label: job.cargo_nome,
         job_id: targetJobId,
-        boost_active: false, // Você pode capturar o estado do checkbox de impulsionar aqui
+        boost_active: false, 
         value: 1
       });
 
@@ -379,7 +375,7 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
                                 if (val.length === 1) {
                                   sendGAEvent('event', 'form_start_typing', {
                                     field_name: 'experience_company',
-                                    job_id: job?.id || job?.uid
+                                    job_id: job?.id
                                   });
                                 }
                               }}

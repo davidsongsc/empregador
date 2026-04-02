@@ -1,3 +1,11 @@
+export type ApplicationStatus =
+  | 'APPLIED'
+  | 'IN_REVIEW'
+  | 'APPROVED'
+  | 'REJECTED'
+
+
+
 export interface CandidateDetails {
   is_locked: boolean;
   name: string;
@@ -43,4 +51,26 @@ export interface ApplicationsResponse {
   next: string | null;
   previous: string | null;
   results: ApplicationResult[];
+}
+
+
+export interface JobApplication {
+  job_id: string
+  cover_letter: string | null
+  resume_url: string | null
+  id: string
+  candidate_id: string
+  status: ApplicationStatus
+  created_at: string
+  updated_at: string
+  cargo_nome: string
+  empresa_nome: string | null
+}
+export interface PaginatedResponse<T> {
+  total: number
+  page: number
+  page_size: number
+  total_pages: number
+  data_hash: string
+  items: T[]
 }

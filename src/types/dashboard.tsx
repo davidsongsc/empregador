@@ -4,9 +4,41 @@ export type StatusSummary = {
 };
 
 export type DashboardStats = {
-  total_vagas: number;
-  total_candidaturas: number;
-  novas_candidaturas: number;
-  vagas_com_processo_seletivo: number;
-  resumo_por_status: StatusSummary[];
+  status_servidor: {
+    uptime: string;
+    banco_dados: string;
+    scope: string;
+  };
+
+  totais: {
+    vagas: number;
+    candidatos: number;
+    empresas: number;
+    inscricoes: number;
+  };
+
+  analytics_periodo: {
+    tempo_real_48h: {
+      total_acumulado: number;
+      hoje: number;
+      ontem: number;
+      diff: number;
+      tendencia: "up" | "down" | "stable";
+    };
+
+    semanal: {
+      valor: number;
+      media_diaria: number;
+    };
+
+    mensal: {
+      valor: number;
+      media_diaria: number;
+    };
+  };
+
+  crescimento_diario: {
+    data: string;
+    quantidade: number;
+  }[];
 };

@@ -16,6 +16,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { registerUser } from "@/services/auth";
+import { sendGAEvent } from "@next/third-parties/google";
 
 const RegisterPage = () => {
   const router = useRouter();
@@ -31,51 +32,77 @@ const RegisterPage = () => {
     e.preventDefault();
     setError(null);
 
+    // --- VALIDAÇÕES DE FRONT-END (Rastrear Erros de UX) ---
     if (password !== confirmPassword) {
-      setError("VALIDATION_ERROR: As senhas não coincidem");
+      const msg = "VALIDATION_ERROR: As senhas não coincidem";
+      setError(msg);
+      sendGAEvent('event', 'form_error_validation', { type: 'password_mismatch' });
       return;
     }
+
     if (password.length < 8) {
-      setError("SECURITY_LOW: A senha deve ter pelo menos 8 caracteres");
+      const msg = "SECURITY_LOW: A senha deve ter pelo menos 8 caracteres";
+      setError(msg);
+      sendGAEvent('event', 'form_error_validation', { type: 'weak_password' });
       return;
     }
+
     if (!whatsapp || whatsapp.length < 10) {
-      setError("ID_INVALID: Informe um número de WhatsApp válido");
+      const msg = "ID_INVALID: Informe um número de WhatsApp válido";
+      setError(msg);
+      sendGAEvent('event', 'form_error_validation', { type: 'invalid_whatsapp' });
       return;
     }
 
     setLoading(true);
 
     try {
+      // Rastreia tentativa de registro
+      sendGAEvent('event', 'sign_up_attempt', { method: 'email_whatsapp' });
+
       const res = await registerUser(email, whatsapp, password);
 
       if (res?.user?.id) {
         setUser(res?.user);
+
+        // --- GA4: SUCESSO DE CONVERSÃO ---
+        sendGAEvent('event', 'sign_up_complete', {
+          user_id: res.user.id,
+          registration_date: new Date().toISOString()
+        });
+
         toast.success("Host registrado com sucesso!");
         router.push("/perfil");
         router.refresh();
       }
     } catch (err: any) {
-      // --- LÓGICA DE CAPTURA DE ERRO DO FASTAPI ---
-      let backendError = "CRITICAL_ERROR: Falha ao criar conta.";
+      let backendError = "CRITICAL_ERROR: Falha na operação.";
 
-      if (err.response?.data?.detail) {
-        const detail = err.response.data.detail;
+      const detail = err.errors?.detail || err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        // Opção A: Pegar apenas o primeiro erro (Mais limpo para a UI)
+        // Extraímos a mensagem e removemos o prefixo "Value error, " se existir
+        backendError = detail[0].msg.replace("Value error, ", "");
 
-        // Se for o array de erros do FastAPI (validação)
-        if (Array.isArray(detail)) {
-          backendError = `VALIDATION_ERROR: ${detail[0].msg}`;
-          toast.error(backendError);
-        } else {
-          // Se for uma mensagem simples (HTTPException)
-          backendError = detail;
-        }
-      } else {
-        backendError = err.message || backendError;
+        // Opção B: Se quiser mostrar TODOS os erros (ex: Senha + WhatsApp)
+        // backendError = detail.map(e => e.msg.replace("Value error, ", "")).join(" | ");
+      } else if (typeof detail === 'string') {
+        backendError = detail;
+      }
+
+      // --- GA4: Rastreamento de Erro de Validação ---
+      // Isso te diz qual campo (loc) está fazendo o usuário desistir
+      if (Array.isArray(detail)) {
+        detail.forEach(error => {
+          sendGAEvent('event', 'form_error_backend', {
+            field: error.loc[error.loc.length - 1], // ex: "whatsapp_number"
+            error_type: error.type
+          });
+        });
       }
 
       setError(backendError);
-      toast.error(backendError); // Agora a notificação mostra o erro real
+      toast.error(backendError);
     } finally {
       setLoading(false);
     }

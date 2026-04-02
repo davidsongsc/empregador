@@ -2,22 +2,16 @@
 
 import React, { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/useAuthStore";
 import { useCorporateApplications } from "@/hooks/useCorporateApplications";
 import { updateApplicationStatus } from "@/services/jobService";
 import { toast } from "@/components/Notification";
-import { GROUPED_STATUS, STATUS_CONFIG } from "@/data/statusLabels";
+import { FLOW_SEQUENCE, GROUPED_STATUS, STATUS_CONFIG } from "@/data/statusLabels";
 import { CandidateFilters } from "@/components/Candidate/Filters";
 import { CandidateList } from "@/components/Candidate/List";
 import { FooterHUD } from "@/components/Footer/System";
 import { Application } from "@/interfaces/aplications";
 import { checkLevel } from "@/utils/checkLevel";
 
-const FLOW_SEQUENCE = [
-  'applied', 'screening', 'reviewing', 'shortlisted',
-  'interview_scheduled', 'interviewing', 'technical_test',
-  'test_submitted', 'test_review', 'offer_sent', 'hired'
-];
 
 export default function CandidatosPage() {
   const params = useParams();
@@ -28,19 +22,21 @@ export default function CandidatosPage() {
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const { candidatos, total, loading, updateStatus } = useCorporateApplications({
-    jobId: jobId,
+
     status: filterStatus === "all" ? undefined : filterStatus,
     page: page,
-    pageSize: 10
+    pageSize: 10,
+    jobId: jobId
   });
 
   // Filtro de busca local (nome)
   const filteredCandidatos = useMemo(() => {
     return candidatos.filter(app =>
-      app.candidate_details?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      app.profile?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [candidatos, searchTerm]);
-
+  console.log('filteredCandidatos', filteredCandidatos);
+  console.log('candidatos', candidatos);
 
   const hasLowAccess = checkLevel("low")
   const hasMidAccess = checkLevel("mid")
@@ -48,7 +44,7 @@ export default function CandidatosPage() {
   const handleNextStep = async (app: Application) => {
     if (!hasMidAccess) {
       toast.error("Você não possui permissão para avançar o candidato de etapa!");
-      return; // <--- REMOVIDO O 'null'. Agora o TS entende como 'void'
+      return; 
     };
 
     if (isUpdating) return;
@@ -120,7 +116,7 @@ export default function CandidatosPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080808] text-slate-400 font-sans overflow-x-hidden pb-20 selection:bg-amber-500/30">
+    <div className="min-h-screen bg-delos-surface/70 text-slate-400 font-sans overflow-x-hidden pb-20 selection:bg-amber-500/30">
 
       {/* HEADER DINÂMICO DELOS */}
       <CandidateFilters

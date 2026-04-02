@@ -15,12 +15,16 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { use, useEffect } from "react";
 
 export default function ApplicationsPage() {
     const router = useRouter();
     const { data: applications, loading, fetchApplications } = useApplicationStore();
     const searchParams = useSearchParams();
+    useEffect(() => {
+        fetchApplications();
 
+    }, []);
     const statusFilter = searchParams.get("status") || undefined;
     const searchFilter = searchParams.get("search") || undefined;
     const removeFilter = (key: string) => {
@@ -28,7 +32,7 @@ export default function ApplicationsPage() {
         params.delete(key);
         router.push(`/painel/candidaturas?${params.toString()}`);
     };
-
+    console.log('Aplicações carregadas:', applications);
     return (
         <div className="p-4 sm:p-8 max-w-8xl mx-auto space-y-8 animate-in fade-in duration-700 selection:bg-amber-600/30">
 
@@ -125,13 +129,13 @@ export default function ApplicationsPage() {
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
                                             <h3 className="text-lg font-light text-slate-200 uppercase tracking-tight group-hover:text-white transition-colors italic">
-                                                {app.candidate_details?.name || "Anonymous_Unit"}
+                                                {app.profile?.name || "Anonymous_Unit"}
                                             </h3>
                                             <Fingerprint size={12} className="text-slate-800 group-hover:text-amber-600/50" />
                                         </div>
 
                                         <p className="text-[9px] font-mono font-bold text-slate-600 uppercase tracking-[0.1em]">
-                                            Candidato_Vaga: <span className="text-slate-400">{app.job_details?.cargo_nome || "UNDEFINED"}</span>
+                                            Candidato_Vaga: <span className="text-slate-400">{app.cargo_nome || "UNDEFINED"}</span>
                                         </p>
                                     </div>
                                 </div>
@@ -140,8 +144,8 @@ export default function ApplicationsPage() {
                                 <div className="flex items-center justify-between sm:justify-end gap-8 relative z-10">
                                     <div className="text-right flex flex-col items-end gap-1">
                                         <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] border ${app.status === 'hired' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]' :
-                                                app.status === 'rejected' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
-                                                    'bg-white/5 text-slate-500 border-white/10'
+                                            app.status === 'rejected' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
+                                                'bg-white/5 text-slate-500 border-white/10'
                                             }`}>
                                             {STATUS_LABELS[app.status] || app.status}
                                         </span>

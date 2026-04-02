@@ -35,8 +35,7 @@ export async function api(
 
             const cookieStore = await cookies();
 
-            const allCookies = cookieStore.toString();
-
+            const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
             if (allCookies) {
                 serverHeaders["Cookie"] = allCookies;
             }
@@ -49,6 +48,10 @@ export async function api(
     } else {
         activeCompanyId = useAuthStore.getState().activeCompanyId;
     }
+    console.log("activeCompanyId RAW:", activeCompanyId);
+    const sanitizedCompanyId = activeCompanyId
+        ? String(activeCompanyId).replace(/,$/, "").trim()
+        : null;
 
     const config: RequestInit = {
         credentials: "include",
@@ -56,7 +59,7 @@ export async function api(
         ...options,
         headers: {
             ...(isFormData ? {} : { "Content-Type": "application/json" }),
-            ...(activeCompanyId ? { "X-Company-ID": activeCompanyId } : {}),
+            ...(sanitizedCompanyId ? { "x-company-id": sanitizedCompanyId } : {}),
             ...serverHeaders,
             ...options.headers,
         },

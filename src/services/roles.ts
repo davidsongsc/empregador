@@ -1,27 +1,32 @@
 // @/services/roles.ts
 import { api } from "@/lib/api";
 
+interface GetRolesParams {
+  page?: number;
+  limit?: number;
+  busca?: string;
+  category?: string;
+}
 
-/**
- * Consulta a API enviando o hash atual para o Protocolo Delta
- */
-export async function getRoles(currentHash?: string) {
-  const headers: Record<string, string> = {
-    "X-Protocol-Mode": "DELTA_SYNC",
-  };
-  
-  if (currentHash) {
-    headers["If-None-Match"] = currentHash;
+export async function getRoles(params: GetRolesParams = {}) {
+  const query = new URLSearchParams();
+
+  if (params.page) query.append("page", String(params.page));
+  if (params.limit) query.append("limit", String(params.limit));
+  if (params.busca) query.append("busca", params.busca);
+  if (params.category) query.append("category", params.category);
+
+  const response = await api(`/api/v1/roles/roles/?${query.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(response.message || "Erro ao buscar roles");
   }
 
-  return await api("/vagas/roles/", { 
-    method: "GET",
-    headers 
-  });
+  return response;
 }
 
 export async function createRole(data: { name: string; category: string }) {
-  return await api("/vagas/roles/", {
+  return await api("/api/v1/roles/roles/", {
     method: "POST",
     body: JSON.stringify(data),
   });

@@ -14,13 +14,13 @@ import { ConfirmationModal } from "@/components/Modal/ConfirmationModal";
 export default function MembersPage() {
     // 1. EXTRAÇÃO DOS DADOS DA STORE (Garantindo que membersCount e fetchMembers existam)
     const {
-        members, 
-        membersCount, 
-        loading, 
+        members,
+        membersCount,
+        loading,
         fetchCompanyDetails,
         fetchMembers,
-        updateMemberRole, 
-        removeMember, 
+        updateMemberRole,
+        removeMember,
         loadFromStorage
     } = useCompanyStore();
 
@@ -33,23 +33,39 @@ export default function MembersPage() {
     const [memberToTerminate, setMemberToTerminate] = useState<{ id: number, name: string } | null>(null);
 
     const activeCompany = getActiveMembership();
-    const companyId = activeCompany?.id;
-    const companyName = activeCompany?.name;
-
+    console.log('membersCount', membersCount,
+        'members', members,
+        'activeCompany', activeCompany
+    );
+    const companyId = activeCompany?.company_id;
+    const companyName = activeCompany?.company_name;
     // Inicialização do Cluster
     useEffect(() => {
         const init = async () => {
-            await loadFromStorage();
-            if (companyId) await fetchCompanyDetails(companyId);
+            // 1. Primeiro garante que a Store carregou os dados do disco (IndexedDB)
+            const storageData = await loadFromStorage();
+
+            // 2. Tenta pegar o ID tanto do helper quanto do que acabou de vir do storage
+            const targetId = companyId || storageData?.activeCompanyId;
+
+            if (targetId) {
+                // Busca detalhes e membros em paralelo para performance
+                await Promise.all([
+                    fetchCompanyDetails(targetId),
+                    fetchMembers(1) // Garante que começa na página 1
+                ]);
+            }
         };
         init();
-    }, [companyId]);
+    }, [companyId, loadFromStorage, fetchCompanyDetails, fetchMembers]);
 
     // 3. GATILHO DE PAGINAÇÃO REAL (Sincroniza com o Backend)
     const handlePageChange = (newPage: number) => {
-        if (companyId && newPage !== currentPage) {
+        if (companyId && newPage !== currentPage && !loading) {
             setCurrentPage(newPage);
-            fetchMembers(companyId, newPage); // Busca a nova página no Django
+            fetchMembers(companyId, newPage);
+            // Scroll para o topo da tabela para feedback visual de que mudou de "camada"
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
@@ -57,16 +73,18 @@ export default function MembersPage() {
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, profileFilter]);
+    console.log('Membros carregados:', members);
 
     // 4. LÓGICA DE FILTRAGEM (Dados já vêm fatiados do servidor)
     const { paginatedMembers, totalPages, totalResults } = useMemo(() => {
         const list = Array.isArray(members) ? members : [];
 
-        // Filtro local refinado (Busca e Perfil)
+        // Filtro local (Busca e Perfil) dentro da página atual
         const filtered = list.filter(m => {
             const label = ROLE_LABELS[m.role] || m.role;
-            const matchesSearch = m.profile_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                 label.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesSearch =
+                m.profile_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                label.toLowerCase().includes(searchTerm.toLowerCase());
 
             let matchesProfile = true;
             if (profileFilter === 'CLIENT') matchesProfile = m.role.startsWith('CLIENT_');
@@ -78,8 +96,8 @@ export default function MembersPage() {
             return matchesSearch && matchesProfile;
         });
 
-        // O total de páginas é baseado no membersCount retornado pela API (count: 50)
-        const pages = Math.ceil(membersCount / 10); 
+        // IMPORTANTE: Use a lógica de teto baseada no count real do banco
+        const pages = Math.ceil(membersCount / 10);
 
         return {
             paginatedMembers: filtered,
@@ -115,7 +133,7 @@ export default function MembersPage() {
                             </span>
                         </div>
                         <h1 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none">
-                            Membros <span className="text-[var(--delos-grey)]">/</span> {activeCompany?.name || "Nexus_Hub"}
+                            Membros <span className="text-[var(--delos-grey)]">/</span> {activeCompany?.company_name || "Nexus_Hub"}
                         </h1>
                         <p className="text-[11px] font-bold text-[var(--delos-subtext)] uppercase tracking-widest italic">
                             Status: <span className={loading ? "text-blue-500" : "text-emerald-500"}>{loading ? "Sincronizando..." : "Dataframe_Ativo"}</span>
@@ -152,8 +170,8 @@ export default function MembersPage() {
                                 key={tab.id}
                                 onClick={() => setProfileFilter(tab.id as any)}
                                 className={`px-4 py-2 text-[9px] font-black uppercase tracking-widest transition-all ${profileFilter === tab.id
-                                        ? 'bg-[var(--delos-amber)] text-black'
-                                        : 'text-white/40 hover:text-white'
+                                    ? 'bg-[var(--delos-amber)] text-black'
+                                    : 'text-white/40 hover:text-white'
                                     }`}
                             >
                                 {tab.label}
@@ -168,7 +186,7 @@ export default function MembersPage() {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b-2 border-[var(--delos-black)] bg-gray-50/50">
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em]">Identidade_Node</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em]">Identificação</th>
                                     <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em]">Privilégio_Sistêmico</th>
                                     <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em]">Integridade</th>
                                     <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-right">Ações</th>
@@ -179,14 +197,14 @@ export default function MembersPage() {
                                     <tr>
                                         <td colSpan={4} className="py-32 text-center">
                                             <Loader2 className="w-8 h-8 animate-spin mx-auto text-[var(--delos-amber)] mb-4" />
-                                            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--delos-subtext)]">Lendo_Clusters...</p>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--delos-subtext)]">Lendo informação...</p>
                                         </td>
                                     </tr>
                                 ) : paginatedMembers.length === 0 ? (
                                     <tr>
                                         <td colSpan={4} className="py-32 text-center">
                                             <ShieldAlert className="w-12 h-12 mx-auto text-[var(--delos-grey)] opacity-20 mb-4" />
-                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--delos-subtext)]">Zero_Data_Found</p>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--delos-subtext)]">Zero_Dados_Encontrados</p>
                                         </td>
                                     </tr>
                                 ) : (
@@ -195,11 +213,11 @@ export default function MembersPage() {
                                             <td className="px-6 py-6">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-12 h-12 rounded-sm bg-[var(--delos-black)] flex items-center justify-center text-[var(--delos-surface)] font-black text-sm italic border-r-4 border-[var(--delos-amber)] shadow-inner shrink-0">
-                                                        {member.profile_name?.charAt(0)}
+                                                        {member.profile.name?.charAt(0)}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="text-sm font-black uppercase tracking-tighter text-[var(--delos-black)] truncate">{member.profile_name}</p>
-                                                        <p className="text-[9px] text-[var(--delos-subtext)] font-bold tracking-widest mt-0.5 italic">ID_HEX: #{member.id.toString(16).toUpperCase()}</p>
+                                                        <p className="text-sm font-black uppercase tracking-tighter text-[var(--delos-black)] truncate">{member.profile.name}</p>
+                                                        <p className="text-[9px] text-[var(--delos-subtext)] font-bold tracking-widest mt-0.5 italic">ID_HEX: #{member.profile.id.toString(16).toUpperCase()}</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -216,7 +234,10 @@ export default function MembersPage() {
                                                 {editingMemberId === member.id && (
                                                     <RoleSelectorPanel
                                                         currentRole={member.role}
-                                                        onSelect={(newRole) => updateMemberRole(member.id, newRole)}
+                                                        onSelect={async (newRole) => {
+                                                            await updateMemberRole(member.profile.id, newRole);
+                                                            setEditingMemberId(null); // Fecha o painel após atualizar
+                                                        }}
                                                         onClose={() => setEditingMemberId(null)}
                                                         companyName={companyName}
                                                     />
@@ -232,7 +253,7 @@ export default function MembersPage() {
 
                                             <td className="px-6 py-6 text-right">
                                                 <button
-                                                    onClick={() => handleOpenTerminateModal(member.id, member.profile_name)}
+                                                    onClick={() => handleOpenTerminateModal(member.id, member.profile.name || "Desconecido")}
                                                     className="p-3 text-[var(--delos-subtext)] hover:text-red-600 hover:bg-red-50 rounded-sm transition-all transform hover:scale-110 active:scale-95 group"
                                                 >
                                                     <Trash2 className="w-4 h-4 group-hover:drop-shadow-[0_0_8px_rgba(220,38,38,0.3)]" />

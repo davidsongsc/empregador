@@ -4,7 +4,11 @@ import {
   LayoutDashboard, FileText, Settings, CalendarDays,
   PhoneCallIcon, Globe, Plug, Wallet, Notebook,
   BarChart3, UserCheck, Users, CloudBackup, Workflow, Lock,
-  Headset, ShieldCheck, TrendingUp, Landmark, Eye, Filter
+  Headset, ShieldCheck, TrendingUp, Landmark, Eye, Filter,
+  Receipt,
+  ShieldAlert,
+  ClipboardCheck,
+  ListOrdered
 } from "lucide-react"
 
 import { usePathname, useRouter } from "next/navigation"
@@ -23,88 +27,100 @@ const SidebarNav = () => {
   const router = useRouter()
   const { activeCompany } = useCompanyStore()
   const activeMembership = getActiveMembership()
-  const role = activeMembership?.role
+  const userRole = activeMembership?.role
 
   // Aqui definimos o "poder" do usuário atual
   const hasLowAccess = checkLevel("low")
   const hasMidAccess = checkLevel("mid")
   const hasHighAccess = checkLevel("high")
   const access = {
-    admin: hasModuleAccess(role, Module.ADMIN_PANEL),
-    recruitment: hasModuleAccess(role, Module.RECRUITMENT),
-    supervision: hasModuleAccess(role, Module.SUPERVISION),
-    operational: hasModuleAccess(role, Module.OPERATIONAL),
-    atendiment: hasModuleAccess(role, Module.SUPPORT_PANEL),
-    sales: hasModuleAccess(role, Module.SALES),
-    finance: hasModuleAccess(role, Module.FINANCE),
-    moderation: hasModuleAccess(role, Module.SUPPORT_PANEL),
-    candidate: hasModuleAccess(role, Module.CANDIDATE_AREA)
-  }
+    admin: hasModuleAccess(userRole, Module.ADMIN_PANEL),
+    recruitment: hasModuleAccess(userRole, Module.RECRUITMENT),
+    supervision: hasModuleAccess(userRole, Module.SUPERVISION),
+    operational: hasModuleAccess(userRole, Module.OPERATIONAL),
+    support: hasModuleAccess(userRole, Module.SUPPORT_PANEL),
+    sales: hasModuleAccess(userRole, Module.SALES),
+    finance: hasModuleAccess(userRole, Module.FINANCE),
+    candidate: hasModuleAccess(userRole, Module.CANDIDATE_AREA),
+    compliance: hasModuleAccess(userRole, Module.COMPLIANCE) // Adicionado conforme solicitado antes
+  };
 
   const companyId = activeCompany?.id
 
 
   const menuGroupsTotais = [
+
     {
       /* ESSENCIAIS E OPERAÇÃO DIÁRIA */
-      title: "Core Operations",
-      visible: true,
+      title: "Operacional",
+      visible: access.operational.hasAccess,
       items: [
-        { label: "Overview", href: "/dashboard/home", icon: LayoutDashboard, disabled: !hasLowAccess },
-        { label: "Nexus Portal", href: "/vagas", icon: Globe, disabled: !hasLowAccess },
+        { label: "Dashboard", href: "/dashboard/home", icon: LayoutDashboard, disabled: !hasMidAccess },
+
         { label: "Escala de Serviço", href: "/dashboard/escala-de-servico", icon: CalendarDays, disabled: !hasMidAccess },
-        { label: "Filtros de Sistema", href: "/dashboard/filtros", icon: Filter, disabled: !hasMidAccess },
+        { label: "Faltas", href: "/dashboard/atendimento/tickets", icon: ClipboardCheck, disabled: !hasHighAccess },
+        { label: "Fila de Espera", href: "/dashboard/relatorio-de-faltas", icon: ListOrdered, disabled: !hasLowAccess },
+        { label: "Filtros ", href: "/dashboard/filtros", icon: Filter, disabled: !hasHighAccess },
       ]
     },
     {
       /* TUDO QUE ENVOLVE PESSOAS E CONTRATAÇÃO */
-      title: "Human Resources & Talent",
-      visible: access.recruitment || access.atendiment,
+      title: "Fale Conosco",
+      visible: access.support.hasAccess,
       items: [
-        { label: "Vagas Ativas", href: "/dashboard/painel/minhas-vagas", icon: FileText, disabled: !hasLowAccess },
-        { label: "Candidaturas", href: "/dashboard/painel/candidaturas", icon: Users, disabled: !hasMidAccess },
-        { label: "Equipe", href: "/dashboard/equipe", icon: UserCheck, disabled: !hasMidAccess },
-        { label: "Cronograma", href: "/dashboard/painel/eventos", icon: CalendarDays, disabled: !hasHighAccess },
+
         { label: "Suporte Central", href: "/dashboard/atendimento/tickets", icon: Headset, disabled: !hasLowAccess },
         { label: "Nexus AI (Bot)", href: "/dashboard/painel/whatsapp", icon: PhoneCallIcon, disabled: true },
       ]
     },
     {
-      /* ANÁLISE DE DADOS, BI E PERFORMANCE */
-      title: "Intelligence & Analytics",
-      visible: access.supervision || access.operational,
+      /* TUDO QUE ENVOLVE PESSOAS E CONTRATAÇÃO */
+      title: "Equipe & Recrutamento",
+      visible: access.recruitment.hasAccess,
       items: [
-        { label: "Análise de Unidades", href: "/dashboard/supervisao/unidades", icon: Eye, disabled: !hasHighAccess },
-        { label: "Performance Metrics", href: "/dashboard/supervisao/performance", icon: TrendingUp, disabled: !hasHighAccess },
+        { label: "Vagas Publicas", href: "/dashboard/painel/minhas-vagas", icon: FileText, disabled: !hasMidAccess },
+        { label: "Candidaturas", href: "/dashboard/painel/candidaturas", icon: Users, disabled: !hasMidAccess },
+        { label: "Equipe", href: "/dashboard/equipe", icon: UserCheck, disabled: !hasMidAccess },
+        { label: "Cronograma", href: "/dashboard/painel/eventos", icon: CalendarDays, disabled: !hasHighAccess }
+
+      ]
+    },
+    {
+      /* ANÁLISE DE DADOS, BI E PERFORMANCE */
+      title: "Supervisão",
+      visible: access.supervision.hasAccess,
+      items: [
+        { label: "Unidades", href: "/dashboard/supervisao/unidades", icon: Eye, disabled: !hasHighAccess },
+        { label: "Performance", href: "/dashboard/supervisao/performance", icon: TrendingUp, disabled: !hasHighAccess },
         { label: "Relatórios BI", href: "/dashboard/painel/relatorios", icon: BarChart3, disabled: !hasMidAccess },
       ]
     },
     {
       /* ÁREA FINANCEIRA E DE VENDAS */
-      title: "Capital & Revenue",
-      visible: access.sales || access.finance,
+      title: "Financeiro",
+      visible: access.finance.hasAccess,
       items: [
-        { label: "Pipeline de Vendas", href: "/dashboard/comercial/vendas", icon: TrendingUp, visible: access.sales, disabled: !hasMidAccess },
+        { label: "Caixa", href: "/dashboard/comercial/vendas", icon: Receipt, visible: access.sales, disabled: !hasMidAccess },
         { label: "Fluxo de Caixa", href: "/dashboard/financeiro/caixa", icon: Wallet, visible: access.finance, disabled: !hasLowAccess },
         { label: "Faturamento", href: "/dashboard/financeiro/faturamento", icon: Landmark, visible: access.finance, disabled: !hasHighAccess },
       ].filter(item => item.visible !== false)
     },
     {
       /* SEGURANÇA, MODERAÇÃO E COMPLIANCE */
-      title: "Compliance & Security",
-      visible: access.moderation || access.operational,
+      title: "Suporte Operacional",
+      visible: access.support.hasAccess || access.operational.hasAccess,
       items: [
-        { label: "Suporte Moderador", href: "/dashboard/suporte/moderador", icon: ShieldCheck, disabled: !hasMidAccess },
-        { label: "Moderação de Conteúdo", href: "/dashboard/moderacao", icon: ShieldCheck, visible: access.moderation, disabled: !hasLowAccess },
-        { label: "Segurança de Dados", href: "/dashboard/painel/seguranca", icon: CloudBackup, visible: access.operational, disabled: !hasHighAccess },
+        { label: "Suporte", href: "/dashboard/suporte/moderador", icon: ShieldCheck, disabled: !hasMidAccess },
+        { label: "Moderação", href: "/dashboard/moderacao", icon: ShieldAlert, visible: access.moderation, disabled: !hasLowAccess },
+        { label: "Segurança", href: "/dashboard/painel/seguranca", icon: CloudBackup, visible: access.operational, disabled: !hasHighAccess },
       ].filter(item => item.visible !== false)
     },
     {
       /* GESTÃO DA ESTRUTURA E CONFIGURAÇÕES */
-      title: "Corporate Management",
-      visible: access.admin || hasHighAccess,
+      title: "Administração",
+      visible: access.admin.hasAccess,
       items: [
-        { label: "Estrutura da Empresa", href: "/dashboard/painel/geral", icon: Workflow, disabled: !hasHighAccess },
+        { label: "Estrutura", href: "/dashboard/painel/geral", icon: Workflow, disabled: !hasHighAccess },
         { label: "Departamentos", href: "/dashboard/painel/departamentos", icon: Landmark, disabled: !hasHighAccess },
         { label: "Multinacionais", href: "/dashboard/admin/company", icon: Lock, disabled: !hasLowAccess },
         { label: "Ferramentas", href: "/dashboard/ferramentas", icon: Settings, disabled: !hasMidAccess },
@@ -112,13 +128,21 @@ const SidebarNav = () => {
     },
     {
       /* CONTROLE TOTAL - ACESSO ROOT */
-      title: "System Administration",
-      visible: access.admin,
+      title: "Admin Root",
+      visible: access.admin.hasAccess,
       items: [
-        { label: "Gestão Corporativa", href: companyId ? `/dashboard/painel/companies/` : "/dashboard/home", icon: Settings, disabled: !hasHighAccess },
-        { label: "Controle de Acessos", href: "/dashboard/painel/usuarios", icon: Users, disabled: !hasHighAccess },
-        { label: "Config. Planos", href: "/dashboard/admin/planos", icon: Notebook, disabled: !hasMidAccess },
-        { label: "Admin Root (Plug)", href: "/dashboard/admin", icon: Plug, disabled: !hasHighAccess },
+        { label: "Corporativa", href: companyId ? `/dashboard/painel/companies/` : "/dashboard/home", icon: Settings, disabled: !hasHighAccess },
+        { label: "Acessos", href: "/dashboard/painel/usuarios", icon: Users, disabled: !hasHighAccess },
+        { label: "Planos", href: "/dashboard/admin/planos", icon: Notebook, disabled: !hasMidAccess },
+        { label: "Externos", href: "/dashboard/admin", icon: Plug, disabled: !hasHighAccess },
+      ]
+    },
+    {
+      title: "Web",
+      visible: true,
+      items: [
+        { label: "Pagina Principal", href: "/vagas", icon: Globe, disabled: false },
+
       ]
     }
   ];
@@ -129,8 +153,8 @@ const SidebarNav = () => {
       {menuGroups.map((group, idx) => (
         <div key={idx} className="space-y-2">
           <div className="flex items-center gap-2 px-2 mb-4">
-            <div className="w-1 h-3 bg-amber-600/40" />
-            <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">
+            <div className="w-1 h-3 bg-delos-amber/40" />
+            <h3 className="text-[8px] font-black uppercase tracking-[0.3em] text-delos-indigo">
               {group.title}
             </h3>
           </div>
@@ -159,12 +183,12 @@ const SidebarNav = () => {
 
                   <Icon className={`
                     w-4 h-4 shrink-0
-                    ${isActive ? "text-amber-500" : "text-slate-600"}
+                    ${isActive ? "text-delos-amber" : "text-delos-grey"}
                   `} />
 
                   <span className={`
-                    text-[11px] uppercase tracking-widest font-bold
-                    ${isActive ? "text-white" : "text-slate-500"}
+                    text-[14px] uppercase tracking-widest font-bold
+                    ${isActive ? "text-delos-black underline underline-offset-4" : "text-delos-grey"}
                   `}>
                     {item.label}
                   </span>

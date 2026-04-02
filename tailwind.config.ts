@@ -20,6 +20,7 @@ const config: Config = {
           amber: "var(--delos-amber)",
           container: "var(--delos-container)",
           item: "var(--delos-item)",
+          green: "var(--delos-green)",
           // Adições: Variações de Âmbar para UI moderna
           "amber-soft": "var(--delos-amber-soft)",
           "amber-glow": "var(--delos-amber-glow)",

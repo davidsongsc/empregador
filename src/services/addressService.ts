@@ -66,3 +66,18 @@ export async function deleteAddress(id: string) {
     credentials: "include",
   });
 }
+
+/**
+ * Cria um endereço vinculado a uma Vaga (Job) específica.
+ * O backend associa o endereço ao job_id e atualiza o local_amigavel da vaga.
+ */
+export async function createJobAddress(jobId: string, addressData: Partial<Address>) {
+  return await api(`/api/v1/enderecos/job/${jobId}`, {
+    method: "POST",
+    body: JSON.stringify(addressData),
+    credentials: "include",
+    headers: { 
+        "Content-Type": "application/json" 
+    }
+  });
+}

@@ -6,7 +6,9 @@ export type Job = {
   role_details: { name: string, category: string } | null;
   tipo_vaga_display: string | null;
   cargo_nome: string;
-  tipo: string;
+  categoria_nome: string | null;
+  applications_count: number | null;
+  tipo_vaga: string;
   titulo_personalizado: string | null;
   salario: number | null;
   turno?: string;
@@ -15,6 +17,7 @@ export type Job = {
   endereco?: Address;
   categoria?: string;
   descricao: string;
+  is_active: boolean;
   requisitos?: string[];
   beneficios?: string[];
   perguntas?: string[];
@@ -36,12 +39,7 @@ export interface JobPayload {
   perguntas: any[];
 }
 
-export type PaginatedJobsResponse = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Job[];
-};
+
 
 export interface JobCacheEntry {
   results: JobResult[];

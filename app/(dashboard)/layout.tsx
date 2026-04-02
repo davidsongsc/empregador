@@ -26,6 +26,7 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
       <Suspense fallback={null}>
         <LoginTrigger />
       </Suspense>
+      
     </>
   );
 }

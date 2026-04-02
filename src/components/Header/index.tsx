@@ -2,35 +2,46 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Briefcase, User, Search, PlusCircle, X, Menu, LogOut, LayoutDashboard, Binary, LogIn } from 'lucide-react';
+import { Briefcase, User, Search, PlusCircle, X, Menu, LogOut, LayoutDashboard, Binary, LogIn, Building, LayoutDashboardIcon } from 'lucide-react';
 import Image from 'next/image';
 
 import { useAuthStore } from '@/store/useAuthStore';
 import { usePathname } from 'next/dist/client/components/navigation';
-import PostJobModal from '@/components/Modal/PostJobModal';
 import LogoFreelaCerto from '../MiniComponents/Logo';
 import { useUIStore } from '@/store/useUiStore';
 import checkModuleAccess from '@/utils/checkModuleAccess';
 import { Module } from '@/enum/moduleEnum';
 import { getActiveMembership } from '@/utils/userHelpers';
 import LoginModal from '../Modal/LoginModal';
-import { Button } from '../MiniComponents/Button';
+import SelectCompanyModal from '../Modal/SelectCompany';
+import hasModuleAccess from '@/utils/hasModuleAccess';
+import { useProfile } from '@/hooks/useProfile';
 
 const Header = () => {
     const isScrolled = useUIStore((state) => state.isScrolled);
     const setScrolled = useUIStore((state) => state.setScrolled);
+    const { profile } = useProfile();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isDockOpen, setIsDockOpen] = useState(false);
     const { user, isAuthenticated, logout } = useAuthStore();
     const pathname = usePathname();
     const isDashboardRoute = pathname.startsWith('/dashboard');
     const [isPostJobOpen, setIsPostJobOpen] = useState(false);
-
-    const isRecruiter = checkModuleAccess(
-        getActiveMembership()?.role ?? "GUEST",
-        Module.RECRUITMENT
-    );
-
+    const [isOpenModal, setIsOpenModal] = useState(false);
+    const userRole = getActiveMembership()?.role;
+    const isRecruiter = hasModuleAccess(userRole, Module.OPERATIONAL);
+    console.log("Acessos do usuário:", {
+        userRole, profile,
+        admin: hasModuleAccess(userRole, Module.ADMIN_PANEL),
+        recruitment: hasModuleAccess(userRole, Module.RECRUITMENT),
+        supervision: hasModuleAccess(userRole, Module.SUPERVISION),
+        operational: hasModuleAccess(userRole, Module.OPERATIONAL),
+        support: hasModuleAccess(userRole, Module.SUPPORT_PANEL),
+        sales: hasModuleAccess(userRole, Module.SALES),
+        finance: hasModuleAccess(userRole, Module.FINANCE),
+        candidate: hasModuleAccess(userRole, Module.CANDIDATE_AREA),
+        compliance: hasModuleAccess(userRole, Module.COMPLIANCE)
+    });
     useEffect(() => {
         const handleScroll = () => {
             const scrolled = window.scrollY > 20;
@@ -46,17 +57,16 @@ const Header = () => {
 
     const closeDock = () => setIsDockOpen(false);
 
-    // Classes utilitárias para o tema Delos
     const navItemBase = "px-6 py-2 rounded-sm text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300";
     const glassEffect = "backdrop-blur-xl border border-[var(--delos-border)] transition-all duration-700";
 
     return (
         <>
             {/* DESKTOP HEADER */}
-            <header className={`fixed top-0 w-full z-50 hidden md:block px-6 transition-all duration-700 ${isScrolled ? 'pt-2' : 'pt-6'}`}>
-                <div className={`max-w-7xl mx-auto flex items-center justify-between px-8 py-4 ${glassEffect} ${isScrolled
-                    ? 'bg-[var(--delos-surface)]/90 shadow-[0_10px_30px_rgba(0,0,0,0.1)]'
-                    : 'bg-[var(--delos-surface)]/40'
+            <header className={`fixed top-0 w-full z-50 hidden md:block px-6 transition-all duration-700 ${isScrolled ? 'pt-0' : 'pt-5'}`}>
+                <div className={` mx-auto flex items-center justify-between px-8  transition-all duration-700 ${glassEffect} ${isScrolled
+                    ? 'bg-[var(--delos-surface)]/90 max-w-8xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] py-0'
+                    : 'bg-[var(--delos-surface)]/40 max-w-7xl py-4'
                     }`}>
 
                     {/* LOGO */}
@@ -65,10 +75,11 @@ const Header = () => {
                     {/* NAVIGATION - Clinical Minimalist */}
                     <nav className="hidden lg:flex items-center gap-1 bg-[var(--delos-black)]/[0.03] p-1 border border-[var(--delos-border)]">
                         {[
-                            { name: 'Vagas', href: '/' },
+                            { name: 'Inicio', href: '/' },
+                            { name: 'Blog', href: '/blog' },
                             { name: 'Comercial', href: '/comercial/marketing' },
                             { name: 'Empresas', href: '/empresas' },
-                            { name: 'Blog', href: '/blog' },
+
                             { name: 'Contato', href: '/contato' },
                         ].map((item) => (
                             <Link
@@ -85,34 +96,49 @@ const Header = () => {
                     </nav>
 
                     <div className="flex-1 flex justify-end items-center gap-6">
-                        {/* SEARCH - Industrial Look 
-                        <div className="relative hidden xl:block group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--delos-grey)] group-focus-within:text-[var(--delos-amber)] transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="PROCURAR_PROTOCOLO..."
-                                className="w-48 bg-transparent border-b border-[var(--delos-border)] py-2 pl-10 pr-4 text-[9px] font-black uppercase tracking-widest outline-none focus:border-[var(--delos-amber)] transition-all duration-500 text-[var(--delos-black)] placeholder:text-[var(--delos-grey)]/50"
-                            />
-                        </div>
-*/}
+
+                        {isScrolled && (
+                            <div className="relative hidden xl:block group">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--delos-grey)] group-focus-within:text-[var(--delos-amber)] transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder="PROCURAR_PROTOCOLO..."
+                                    className="w-48 bg-transparent border-b border-[var(--delos-border)] py-2 pl-10 pr-4 text-[9px] font-black uppercase tracking-widest outline-none focus:border-[var(--delos-amber)] transition-all duration-500 text-[var(--delos-black)] placeholder:text-[var(--delos-grey)]/50"
+                                />
+                            </div>
+                        )}
+
+
                         {isAuthenticated ? (
                             <div className="flex items-center gap-2">
-                                {isRecruiter && (
-                                    <Link
-                                        href="/dashboard/home"
-                                        className="p-3 text-[var(--delos-black)] hover:bg-[var(--delos-black)]/5 transition-all"
-                                        title="Painel de Controle"
-                                    >
-                                        <Binary className="w-4 h-4" />
-                                    </Link>
+                                {isRecruiter.hasAccess && (
+                                    <>
+
+                                        <button
+                                            onClick={() => setIsOpenModal(true)}
+                                            className="p-3 text-[var(--delos-black)] hover:bg-[var(--delos-black)]/5 transition-all"
+                                            title="Selecionar Empresa"
+                                        >
+                                            <Building className="w-4 h-4" />
+                                        </button>
+                                        <Link
+                                            href="/dashboard/home"
+                                            className="p-3 text-[var(--delos-black)] hover:bg-[var(--delos-black)]/5 transition-all"
+                                            title="Painel de Controle"
+                                        >
+                                            <LayoutDashboardIcon className="w-4 h-4" />
+                                        </Link>
+
+
+                                    </>
                                 )}
                                 <Link href="/perfil" className="flex items-center gap-3 pl-4 group">
                                     <div className="flex flex-col items-end">
                                         <span className="text-[7px] font-black text-[var(--delos-amber)] uppercase tracking-tighter leading-none mb-1">
-                                            {isRecruiter ? "Staff" : "Candidato"}
+                                            {isRecruiter.hasAccess ? "Staff" : "Candidato"}
                                         </span>
                                         {user?.profile?.name && <span className="text-[10px] font-black text-[var(--delos-black)] uppercase leading-none">{user.profile.name.split(' ')[0]}</span>}
-                                    
+
                                     </div>
                                     <div className="w-9 h-9 bg-[var(--delos-black)] flex items-center justify-center text-[var(--delos-surface)] overflow-hidden shadow-xl group-hover:scale-105 transition-transform border border-[var(--delos-border)]">
                                         {user?.profile?.foto ? (
@@ -135,12 +161,7 @@ const Header = () => {
                                 Login
                             </button>
                         )}
-                        <button
-                            onClick={() => setIsPostJobOpen(true)}
-                            className="bg-[var(--delos-black)] text-[var(--delos-surface)] px-8 py-4 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[var(--delos-amber)] transition-all active:scale-95 shadow-2xl"
-                        >
-                            Publicar
-                        </button>
+
 
                     </div>
                 </div>
@@ -188,7 +209,7 @@ const Header = () => {
             <div className="md:hidden fixed bottom-10 right-8 flex flex-col items-end z-50">
                 <div className={`flex flex-col gap-4 mb-8 transition-all duration-500 ${isDockOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-20 scale-50 pointer-events-none'}`}>
                     {[
-                        ...(isRecruiter ? [{ icon: LayoutDashboard, label: 'Painel', href: '/dashboard/home', color: 'bg-[var(--delos-black)] text-[var(--delos-surface)]' }] : []),
+                        ...(isRecruiter.hasAccess ? [{ icon: LayoutDashboard, label: 'Painel', href: '/dashboard/home', color: 'bg-[var(--delos-black)] text-[var(--delos-surface)]' }] : []),
                         { icon: PlusCircle, label: 'Nova Vaga', href: '/anunciar', color: 'bg-[var(--delos-amber)] text-white' },
                         { icon: Briefcase, label: 'Ver Vagas', href: '/vagas', color: 'bg-[var(--delos-surface)] text-[var(--delos-black)]' },
                         { icon: User, label: 'Perfil', href: '/perfil', color: 'bg-[var(--delos-surface)] text-[var(--delos-black)]' },
@@ -218,11 +239,7 @@ const Header = () => {
                 <div className="fixed inset-0 bg-[var(--delos-surface)]/60 backdrop-blur-md z-40 md:hidden transition-all duration-500" onClick={closeDock} />
             )}
             {isAuthenticated ? (
-                <PostJobModal
-
-                    isOpen={isPostJobOpen}
-                    onClose={() => setIsPostJobOpen(false)}
-                />
+                <></>
             ) :
                 (
                     <LoginModal
@@ -231,7 +248,10 @@ const Header = () => {
                     />
                 )}
 
-
+            <SelectCompanyModal
+                isOpen={isOpenModal}
+                onClose={() => setIsOpenModal(false)}
+            />
 
         </>
     );

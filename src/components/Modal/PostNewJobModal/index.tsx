@@ -2,25 +2,38 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import {
-    Plus, X, Loader2, DollarSign, MapPin,
-    Clock10, ChevronRight, CheckCircle, ShieldCheck,
-    MessageSquare, Mail, Search, Sparkles, Terminal, Cpu,
-    Activity
+    Plus,
+    X,
+    Loader2,
+    DollarSign,
+    MapPin,
+    Clock10,
+    ChevronRight,
+    CheckCircle,
+    ShieldCheck,
+    MessageSquare,
+    Mail, Search,
+    Sparkles,
+    Terminal,
+    Cpu,
+    Activity,
+    LayoutGrid
 } from 'lucide-react';
-import { usePostJob } from '@/hooks/usePostJob';
 
+import { usePostJob } from '@/hooks/usePostJob';
+import { useRoleSearch } from "@/hooks/useRoleSearch";
 import { createRole } from '@/services/roles';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from '@/components/Notification';
 import { updateJob } from '@/services/jobs';
 import { useRoleStore } from '@/store/useRoleStore';
 import { useJobStore } from '@/store/useJobStore';
-import {  JobPayload } from '@/interfaces/iJob';
+import { useCategoryOptions } from '@/hooks/useCategoryOptions';
 
 interface PostJobModalProps {
     isOpen: boolean;
     onClose: () => void;
-    jobUid?: string;
+    jobUid?: string | null;
     activeCompanyId?: string
 }
 
@@ -28,34 +41,11 @@ const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobMo
     const { fetchJobById, loading, error } = useJobStore();
     const [vaga, setVaga] = useState<any>(null);
     const { roles, loading: rolesLoading, setInitialRoles, applyDelta, setLoading } = useRoleStore();
-    console.log(jobUid);
-    console.log(activeCompanyId);
-    useEffect(() => {
-        const carregarVaga = async () => {
-            try {
-                // Verificação explícita antes de chamar a função
-                if (jobUid && activeCompanyId) {
-                    const dados = await fetchJobById(jobUid, activeCompanyId);
-                    setVaga(dados);
-                }
-            } catch (error) {
-                console.error("Erro ao carregar detalhes da vaga:", error);
-            }
-        };
-
-        // Só dispara se ambos existirem
-        if (activeCompanyId && jobUid) {
-            carregarVaga();
-        }
-    }, [activeCompanyId, jobUid, fetchJobById]);
-
-    console.log(vaga)
-    const { user } = useAuthStore();
+    const { options: categoryOptions, loading: catLoading } = useCategoryOptions(activeCompanyId, isOpen);
+    console.log("categoryOptions", categoryOptions);
+    const [selectedCategoryUid, setSelectedCategoryUid] = useState('');
     const [step, setStep] = useState(1);
     const { postJob, loading: posting } = usePostJob();
-
-
-
     const [tipoVaga, setTipoVaga] = useState('FREELANCER');
     const [roleSearch, setRoleSearch] = useState('');
     const [selectedRoleUid, setSelectedRoleUid] = useState('');
@@ -73,52 +63,76 @@ const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobMo
     const [newRoleCategory, setNewRoleCategory] = useState('Geral');
     const [showCategorySelector, setShowCategorySelector] = useState(false);
     const [isActive, setIsActive] = useState(true);
+
+    useEffect(() => {
+        const carregarVaga = async () => {
+            try {
+                // Verificação explícita antes de chamar a função
+                if (jobUid && activeCompanyId) {
+                    const dados = await fetchJobById(jobUid, activeCompanyId);
+                    setVaga(dados);
+                }
+            } catch (error) {
+                console.error("Erro ao carregar detalhes da vaga:", error);
+            }
+        };
+
+        if (activeCompanyId && jobUid) {
+            carregarVaga();
+        }
+    }, [activeCompanyId, jobUid, fetchJobById]);
+
     useEffect(() => { if (!isOpen) setStep(1); }, [isOpen]);
     useEffect(() => {
-        if (isOpen && vaga) {
-            // MODO EDIÇÃO: Mapeia os dados da API para o formulário
-            setSelectedRoleUid(vaga.role_details?.uid || '');
-            setRoleSearch(vaga.role_details?.name || '');
-            setTituloPersonalizado(vaga.titulo_personalizado || '');
-            setSalario(vaga.salario?.toString() || '');
-            setLocal(vaga.endereco?.cidade || vaga.local || '');
-            setTurno(vaga.turno || '');
-            setDescricao(vaga.descricao || '');
-            setTipoVaga(vaga.tipo_vaga || 'FREELANCER');
-            setContatoOpt(vaga.metodo_contato || 'plataforma');
-            setIsActive(vaga.is_active);
+        if (isOpen) {
+            if (jobUid && vaga) {
+                const roleId = vaga.role_id || vaga.role?.id || '';
+                setSelectedRoleUid(roleId);
+                const roleName = vaga.role_nome || vaga.role?.name || vaga.cargo_fallback || '';
+                setRoleSearch(roleName);
+                setTituloPersonalizado(vaga.titulo_personalizado || '');
+                setSalario(vaga.salario?.toString() || '');
+                setLocal(vaga.endereco?.cidade || vaga.local || '');
+                setTurno(vaga.turno || '');
+                setDescricao(vaga.descricao || '');
+                setTipoVaga(vaga.tipo_vaga || 'FREELANCER');
+                setContatoOpt(vaga.metodo_contato || 'plataforma');
+                setIsActive(vaga.is_active);
+                setSelectedCategoryUid(vaga.category_id || '');
+                const reqs = vaga.requisitos?.map((r: any) => typeof r === 'string' ? r : r.description) || [];
+                const bens = vaga.beneficios?.map((b: any) => typeof b === 'string' ? b : b.description) || [];
 
-            // Sanitização de arrays (Benefícios e Requisitos)
-            // Se o backend enviar objetos [{description: '...'}], extraímos apenas a string
-            const reqs = vaga.requisitos?.map((r: any) => typeof r === 'string' ? r : r.description) || [];
-            const bens = vaga.beneficios?.map((b: any) => typeof b === 'string' ? b : b.description) || [];
+                setRequisitos(reqs);
+                setBeneficios(bens);
+            }
 
-            setRequisitos(reqs);
-            setBeneficios(bens);
-        } else if (isOpen && !vaga) {
-            // MODO CRIAÇÃO: Reset de todos os campos para o padrão Delos
-            setRoleSearch('');
-            setSelectedRoleUid('');
-            setTituloPersonalizado('');
-            setSalario('');
-            setDescricao('');
-            setIsCreatingRole(false)
+            else if (!jobUid) {
+                setRoleSearch('');
+                setSelectedRoleUid('');
+                setTituloPersonalizado('');
+                setSalario('');
+                setLocal('');
+                setTurno('6/1 Noturno');
+                setDescricao('');
+                setTipoVaga('FREELANCER');
+                setContatoOpt('plataforma');
+                setIsActive(true);
+                setRequisitos(['Ensino Médio Completo']);
+                setBeneficios(['Vale Transporte', 'Vale Alimentação']);
+                setIsCreatingRole(false);
+                setShowCategorySelector(false);
 
-            // ... resetar os demais estados
+            }
         }
-    }, [isOpen, vaga]);
+    }, [isOpen, vaga, jobUid]); // <-- Adicione jobUid aqui
 
     const modalTitle = vaga ? "Editar_Vaga" : "Criar_Vaga";
     const buttonLabel = vaga ? "Proximo" : "Avançar";
 
-    const filteredRoles = useMemo(() => {
-        if (!roleSearch || selectedRoleUid) return [];
-        return roles.filter(r => r.name.toLowerCase().includes(roleSearch.toLowerCase())).slice(0, 5);
-    }, [roles, roleSearch, selectedRoleUid]);
-    console.log(filteredRoles)
-    console.log(roles)
+    const { results: filteredRoles, loading: rolesSearching } = useRoleSearch(roleSearch);
+
     const handleSelectRole = (role: any) => {
-        setSelectedRoleUid(role.uid);
+        setSelectedRoleUid(role.id);
         setRoleSearch(role.name);
     };
 
@@ -130,7 +144,7 @@ const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobMo
         setIsCreatingRole(true);
         try {
             const newRole = await createRole({ name: roleSearch, category: newRoleCategory });
-            setSelectedRoleUid(newRole.uid);
+            setSelectedRoleUid(newRole.id);
             setRoleSearch(newRole.name);
             setShowCategorySelector(false);
             toast.success("Definition_Created");
@@ -149,13 +163,16 @@ const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobMo
     };
 
     const handleFinalizar = async () => {
-        const payload: JobPayload = {
-            role: selectedRoleUid,
+        const activeCompanyIdFromStore = useAuthStore.getState().activeCompanyId;
+
+        const payload: any = {
+            role_id: selectedRoleUid,
+            category_id: selectedCategoryUid,
             titulo_personalizado: tituloPersonalizado,
-            company: user?.profile?.empresas?.[0]?.id || "",
+            company_id: activeCompanyIdFromStore || activeCompanyId,
             salario: salario ? parseFloat(salario) : null,
             turno,
-            endereco: local.trim() ? { cidade: local } : null,
+            local_amigavel: local.trim() || null,
             descricao,
             beneficios: beneficios.map(b => ({ description: b })),
             requisitos: requisitos.map(r => ({ description: r })),
@@ -163,22 +180,29 @@ const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobMo
             tipo_vaga: tipoVaga,
             is_active: isActive,
             perguntas: []
-
         };
 
         try {
-            if (vaga?.uid) {
-                // Chamada de PATCH para Edição
-                await updateJob(vaga.uid, payload);
+            // 🔥 A MUDANÇA ESTÁ AQUI: Usamos jobUid (prop) em vez de vaga?.id (store)
+            if (jobUid) {
+                // MODO EDIÇÃO (PATCH)
+                const { company_id, ...updatePayload } = payload;
+
+                // Usamos o jobUid que o pai passou para garantir que é a vaga certa
+                await updateJob(jobUid, updatePayload);
                 toast.success("Unit_Reconfigured");
             } else {
-                // Chamada de POST para Criação
-                await postJob(payload);
+                // MODO CRIAÇÃO (POST)
+                // Se jobUid for null (como definido no handleCreate do pai), cai aqui obrigatoriamente
+                const newJob = await postJob(payload);
+                console.log("🚀 Nova_Instancia_Criada:", newJob);
                 toast.success("Instance_Deployed");
             }
+
             onClose();
         } catch (err) {
-            toast.error("Protocol_Execution_Failed");
+            console.error("Erro na operação:", err);
+            toast.error("Initialization_Error");
         }
     };
 
@@ -205,7 +229,7 @@ const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobMo
                         </div>
                         <div className="flex justify-between items-end">
                             <div>
-                                <h1 className="text-3xl font-light text-white tracking-tighter uppercase">Configurar <span className="font-black">Instância</span></h1>
+                                <h1 className="text-3xl font-light text-white tracking-tighter uppercase">Info <span className="font-black">Vaga</span></h1>
                                 <p className="text-[10px] font-mono text-slate-600 mt-1 uppercase tracking-widest italic">Protocol_ID: {Math.random().toString(16).slice(2, 8).toUpperCase()}</p>
                             </div>
                             <div className="flex gap-2 pb-2">
@@ -224,12 +248,35 @@ const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobMo
                                 <section>
                                     <div className="flex items-center gap-2 mb-6">
                                         <div className="w-1 h-4 bg-amber-600" />
-                                        <h2 className="text-[11px] font-black text-slate-200 uppercase tracking-[0.3em]">Mapeamento_Base</h2>
+                                        <h2 className="text-[11px] font-black text-slate-200 uppercase tracking-[0.3em]">Informações Básicas</h2>
                                     </div>
+                                    <div className="space-y-2 mb-4">
+                                        <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
+                                            <LayoutGrid size={10} className="text-amber-600" />
+                                            Categoria da Unidade
+                                        </label>
+                                        <div className="relative group">
+                                            <select
+                                                value={selectedCategoryUid}
+                                                onChange={(e) => setSelectedCategoryUid(e.target.value)}
+                                                className="w-full bg-[#161616] border border-white/5 p-4 font-bold text-xs text-white outline-none focus:border-amber-600/50 appearance-none cursor-pointer uppercase tracking-widest"
+                                            >
+                                                <option value="">-- SELECIONE A CATEGORIA --</option>
+                                                {categoryOptions.map(cat => (
+                                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                                ))}
+                                            </select>
+                                            {/* Seta customizada Delos */}
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-700">
+                                                {catLoading ? <Loader2 size={14} className="animate-spin" /> : <ChevronRight size={14} className="rotate-90" />}
+                                            </div>
+                                        </div>
+                                    </div>
+
 
                                     <div className="grid gap-8">
                                         <div className="space-y-2 relative">
-                                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Identificador de Cargo (Core_Definition)</label>
+                                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Identificador de Cargo </label>
                                             <div className="relative group">
                                                 <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${selectedRoleUid ? 'text-amber-500' : 'text-slate-800'}`} />
                                                 <input
@@ -240,41 +287,72 @@ const PostNewJobModal = ({ isOpen, onClose, jobUid, activeCompanyId }: PostJobMo
                                                 />
                                             </div>
 
-                                            {roleSearch && !selectedRoleUid && (
-                                                <div className="absolute z-30 w-full mt-1 bg-[#1A1A1A] border border-white/10 shadow-2xl overflow-hidden">
-                                                    {!showCategorySelector ? (
-                                                        <>
-                                                            {filteredRoles.map(r => (
-                                                                <button key={r.uid} onClick={() => handleSelectRole(r)} className="w-full p-4 text-left hover:bg-amber-600/10 flex justify-between items-center group border-b border-white/5 last:border-none transition-colors">
-                                                                    <div>
-                                                                        <p className="font-bold text-[10px] text-slate-200 uppercase tracking-widest group-hover:text-amber-500">{r.name}</p>
-                                                                        <p className="text-[8px] text-slate-600 uppercase font-black tracking-tighter">{r.category}</p>
-                                                                    </div>
-                                                                    <ChevronRight className="w-3 h-3 text-slate-800 group-hover:text-amber-600" />
-                                                                </button>
-                                                            ))}
-                                                            <button onClick={handleCreateNewRole} className="w-full p-4 text-left bg-amber-600 text-black flex items-center justify-between hover:bg-amber-500 transition-colors">
-                                                                <div className="flex items-center gap-3">
-                                                                    <Plus size={14} strokeWidth={3} />
-                                                                    <span className="font-black text-[9px] uppercase tracking-widest">Compilar "{roleSearch}"</span>
-                                                                </div>
-                                                                <Sparkles className="w-3 h-3 opacity-50" />
-                                                            </button>
-                                                        </>
-                                                    ) : (
-                                                        <div className="p-4 space-y-4 bg-[#141414]">
-                                                            <div className="flex items-center justify-between mb-2">
-                                                                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Set_Category: <span className="text-amber-600">{roleSearch}</span></p>
-                                                                <button onClick={() => setShowCategorySelector(false)}><X className="w-3 h-3 text-slate-600" /></button>
+                                            {rolesSearching ? (
+                                                <div className="p-4 flex items-center justify-center">
+                                                    <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+                                                </div>
+                                            ) : (
+                                                <div className="max-h-60 overflow-y-auto custom-scrollbar border-x border-b border-white/5 bg-[#121212]">
+                                                    {/* LISTA DE RESULTADOS ENCONTRADOS */}
+                                                    {filteredRoles.map(r => (
+                                                        <button
+                                                            key={r.id}
+                                                            onClick={() => handleSelectRole(r)}
+                                                            className="w-full p-4 text-left hover:bg-amber-600/10 flex justify-between items-center group border-b border-white/5 last:border-none transition-colors"
+                                                        >
+                                                            <div>
+                                                                <p className="font-bold text-[10px] text-slate-200 uppercase tracking-widest group-hover:text-amber-500">
+                                                                    {r.name}
+                                                                </p>
+                                                                <p className="text-[8px] text-slate-600 uppercase font-black tracking-tighter">
+                                                                    {r.category}
+                                                                </p>
                                                             </div>
-                                                            <select value={newRoleCategory} onChange={(e) => setNewRoleCategory(e.target.value)} className="w-full bg-black border border-white/10 p-3 font-bold text-[10px] text-slate-300 outline-none focus:border-amber-600 uppercase tracking-widest appearance-none">
-                                                                {["Geral", "Administrativo", "Tecnologia", "Manutenção", "Vendas", "Operacional", "Saúde", "Marketing", "Financeiro", "RH", "Educação", "Outros"].map(opt => (
-                                                                    <option key={opt} value={opt}>{opt}</option>
-                                                                ))}
-                                                            </select>
-                                                            <button onClick={handleCreateNewRole} disabled={isCreatingRole} className="w-full bg-amber-600 text-black py-3 font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2">
-                                                                {isCreatingRole ? <Loader2 className="w-3 h-3 animate-spin" /> : "Confirmar_Compilação"}
-                                                            </button>
+                                                            <ChevronRight className="w-3 h-3 text-slate-800 group-hover:text-amber-600" />
+                                                        </button>
+                                                    ))}
+
+                                                    {/* BOTÃO PARA CRIAR NOVO (APARECE SE NÃO HOUVER SELEÇÃO E HOUVER TEXTO) */}
+                                                    {roleSearch.length > 2 && !selectedRoleUid && (
+                                                        <div className="p-2 bg-amber-600/5 border-t border-amber-600/20">
+                                                            {!showCategorySelector ? (
+                                                                <button
+                                                                    onClick={() => setShowCategorySelector(true)}
+                                                                    className="w-full p-4 flex items-center gap-3 group hover:bg-amber-600 transition-all"
+                                                                >
+                                                                    <Plus className="w-4 h-4 text-amber-600 group-hover:text-black" />
+                                                                    <div className="text-left">
+                                                                        <p className="text-[10px] font-black text-white group-hover:text-black uppercase tracking-widest">
+                                                                            Novo Cargo: "{roleSearch}"
+                                                                        </p>
+                                                                        <p className="text-[7px] text-slate-500 group-hover:text-black/60 uppercase font-mono">
+                                                                            Cargo não encontrado.
+                                                                        </p>
+                                                                    </div>
+                                                                </button>
+                                                            ) : (
+                                                                <div className="p-4 space-y-4 animate-in slide-in-from-top-2">
+                                                                    <label className="text-[8px] font-black text-amber-600 uppercase tracking-widest">Selecione a Categoria da </label>
+                                                                    <div className="grid grid-cols-2 gap-2">
+                                                                        {['Geral', 'Operacional', 'Gestão', 'Técnico'].map((cat) => (
+                                                                            <button
+                                                                                key={cat}
+                                                                                onClick={() => setNewRoleCategory(cat)}
+                                                                                className={`p-2 text-[9px] font-bold uppercase border transition-all ${newRoleCategory === cat ? 'bg-amber-600 border-amber-600 text-black' : 'border-white/10 text-slate-500'}`}
+                                                                            >
+                                                                                {cat}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={handleCreateNewRole}
+                                                                        disabled={isCreatingRole}
+                                                                        className="w-full bg-white text-black py-3 font-black text-[9px] uppercase tracking-widest hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
+                                                                    >
+                                                                        {isCreatingRole ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Confirmar_Inicialização'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>

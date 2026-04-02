@@ -59,7 +59,7 @@ export const useCompanyStore = create<CompanyState>((set, get) => ({
   },
 
   // --- AÇÕES DE UNIDADE (COMPANY) ---
-  fetchCompanies: async (page = 1, search = "") => {
+  fetchCompanies: async (page = 1, search = "", pageSize = 10) => {
     if (page === 1 && !search) {
       const cached = await idbGet<any[]>("cached_companies");
       if (cached) set({ companies: cached });
@@ -78,39 +78,72 @@ export const useCompanyStore = create<CompanyState>((set, get) => ({
   fetchCompanyDetails: async (id: string) => {
     const state = get();
 
-    // PROTOCOLO DELTA: Se já temos a empresa certa e a página 1 no cache de memória, 
-    // não precisamos travar a UI com loading nem forçar fetch imediato.
-    if (state.activeCompany?.id === id && state.membersCache[1]) {
-      console.log("[DELTA_SYSTEM] Camada_1 já está aquecida. Ignorando fetch obrigatório.");
+    // AJUSTE: Se trocamos de empresa, precisamos limpar o cache de membros da anterior
+    if (state.activeCompany?.company_id !== id) {
+      console.log("[SYSTEM] Troca de contexto detectada. Resetando cache de membros.");
+      set({ members: [], membersCache: {}, membersCount: 0 });
+      // Não damos 'return' aqui, precisamos buscar os dados da nova empresa
+    } else if (state.membersCache[1]) {
+      // Se for a mesma empresa e já temos o dado, aí sim aplicamos o Delta
+      console.log("[DELTA_SYSTEM] Camada_1 já está aquecida.");
       set({ members: state.membersCache[1], loading: false });
-      return; // <--- O SEGREDO ESTÁ AQUI: Aborta se já tem o dado
+      return;
     }
 
     set({ loading: true });
     try {
+      // Passamos o ID para o getMembers para garantir que o backend filtre a empresa correta
       const [company, membersRes] = await Promise.all([
         companyService.getCompanyById(id),
-        memberService.getMembers(id, 1)
+        memberService.getMembers(1, 10)
       ]);
 
-      const membersArray = membersRes?.results || [];
-      const count = membersRes?.count || 0;
+      const membersArray = membersRes?.membros || []; // Alinhado com o seu JSON
+      const count = membersRes?.total || 0;
 
       set({
         activeCompany: company,
         members: membersArray,
         membersCount: count,
-        membersCache: { ...state.membersCache, 1: membersArray }, // Preserva outras páginas e atualiza a 1
+        membersCache: { 1: membersArray }, // Resetamos o cache para a nova empresa
         loading: false
       });
 
+      // Persistência atômica
       await Promise.all([
         idbSet("active_company", company),
         idbSet("members_count", count),
         idbSet("mem_layer_1", { data: membersArray, timestamp: Date.now() })
       ]);
     } catch (err) {
+      set({ loading: false, error: "FALHA_AO_SINCRONIZAR_UNIDADE" });
+    }
+  },
+
+  // --- MELHORIA NA REMOÇÃO ---
+  removeMember: async (memberId: number) => {
+    const active = get().activeCompany;
+    if (!active) return;
+
+    set({ loading: true });
+    try {
+      // Usamos o ID da empresa vindo do objeto ativo
+      await memberService.removeMember(active.company_id, memberId);
+
+      // Otimização: Em vez de invalidar tudo, removemos localmente para feedback instantâneo
+      const updatedMembers = get().members.filter(m => m.id !== memberId);
+      set(state => ({
+        members: updatedMembers,
+        membersCount: state.membersCount - 1,
+        loading: false
+      }));
+
+      // Invalida cache de disco para forçar novo fetch na próxima carga
+      await get().clearCacheLayers();
+      toast.success("MEMBRO_REMOVIDO.");
+    } catch (err) {
       set({ loading: false });
+      toast.error("FALHA_AO_REMOVER.");
     }
   },
 
@@ -124,7 +157,7 @@ export const useCompanyStore = create<CompanyState>((set, get) => ({
       );
 
       const active = get().activeCompany;
-      const updatedActive = active?.id === id ? { ...active, is_active: isActive } : active;
+      const updatedActive = active?.company_id === id ? { ...active, is_active: isActive } : active;
 
       set({ companies: updatedCompanies, activeCompany: updatedActive });
 
@@ -153,73 +186,78 @@ export const useCompanyStore = create<CompanyState>((set, get) => ({
   },
 
   // --- AÇÕES DE MEMBROS (PROTOCOLO DELTA) ---
-  fetchMembers: async (companyId: string, page = 1, forceRefresh = false) => {
-    const { membersCache } = get();
+  fetchMembers: async (page = 1, pageSize = 10, forceRefresh = false) => {
+    const { membersCache, membersCount } = get();
     const now = Date.now();
-
-    // 1. DEFINIÇÃO DE POLÍTICA: 
-    // Se os dados têm menos de 30 segundos, consideramos "Tempo Real" e damos RETURN.
-    // Isso evita fetch ao navegar entre abas/páginas rapidamente.
     const STALE_TIME_MS = 90 * 1000;
 
-    // Busca o timestamp da camada no disco para validar "frescor"
-    const diskCached = await idbGet<CachedLayer>(`mem_layer_${page}`);
+    // Busca cache no IndexedDB
+    const diskCached = await idbGet<any>(`mem_layer_${page}`);
     const isDataFresh = diskCached && (now - diskCached.timestamp < STALE_TIME_MS);
 
-    // 2. RESPOSTA INSTANTÂNEA (RAM ou DISCO)
+    // 1. RESPOSTA INSTANTÂNEA (RAM ou DISCO FRESCO)
     if (membersCache[page] && !forceRefresh && isDataFresh) {
-      console.log(`[DELTA_STABLE] Camada_${page} está fresca. Abortando rede.`);
+      console.log(`[DELTA_STABLE] Membros_Camada_${page} está fresca.`);
       set({ members: membersCache[page], loading: false });
-      return; // <--- O retorno volta para economizar o servidor
+      return;
     }
 
-    // 3. REVALIDAÇÃO (Caso os dados sejam antigos ou forceRefresh seja true)
-    // Se temos cache mas ele está "stale" (>30s), mostramos o cache e atualizamos em background
+    // 2. BACKGROUND REVALIDATION (SWR)
+    // Se temos dado antigo, mostra ele primeiro mas continua o fetch no fundo
     if (membersCache[page] || (diskCached && !forceRefresh)) {
       const dataToDisplay = membersCache[page] || diskCached?.data;
       set({ members: dataToDisplay, loading: false });
-      // Aqui NÃO damos return, o fetch corre no fundo para checar se o Junior virou Pleno
-      console.log(`[DELTA_REVALIDATE] Camada_${page} obsoleta. Checando mainframe...`);
+      console.log(`[DELTA_REVALIDATE] Membros_Camada_${page} obsoleta. Sincronizando...`);
     } else {
       set({ loading: true });
     }
 
     try {
-      const res = await memberService.getMembers(companyId, page);
-      const membersArray = res?.results || [];
+      // Chamada ao Service
+      const res = await memberService.getMembers(page, pageSize);
 
-      // 4. ATUALIZAÇÃO SENSÍVEL: Só altera o estado se o servidor mandar algo diferente
-      const hasChanged = JSON.stringify(get().membersCache[page]) !== JSON.stringify(membersArray);
+      // AJUSTE CRÍTICO: Mapeamento dos campos do seu JSON
+      const membersArray = res?.membros || []; // Antes estava res.results
+      const serverTotal = res?.total || 0;     // Antes estava res.count
+
+      // 3. CHECAGEM DE MUTAÇÃO (Comparação profunda via Hash ou JSON)
+      // Comparamos o que temos no cache de RAM com o que veio do servidor
+      const hasChanged = JSON.stringify(membersCache[page]) !== JSON.stringify(membersArray) || serverTotal !== membersCount;
 
       if (hasChanged || forceRefresh) {
+        console.log(`[DELTA_UPDATE] Dados alterados na rede. Atualizando UI.`);
         set((state) => ({
           members: membersArray,
-          membersCount: res.count,
+          membersCount: serverTotal,
           membersCache: { ...state.membersCache, [page]: membersArray },
           loading: false
         }));
 
+        // Persistência no Disco (IDB)
         await Promise.all([
           idbSet(`mem_layer_${page}`, { data: membersArray, timestamp: now }),
-          idbSet("members_count", res.count)
+          idbSet("members_count", serverTotal)
         ]);
       } else {
-        // Se for igual, apenas atualizamos o timestamp no disco para o dado ficar "fresco" +30s
+        // Se os dados são idênticos, apenas "empurramos" o timestamp para frente
+        console.log(`[DELTA_SYNC] Servidor e Cache idênticos. Renovando TTL.`);
         await idbSet(`mem_layer_${page}`, { data: membersArray, timestamp: now });
         set({ loading: false });
       }
     } catch (err) {
+      console.error("[DELTA_ERROR] Falha na sincronização de membros:", err);
       set({ loading: false });
     }
   },
 
-  updateMemberRole: async (memberId: number, role: string) => {
-    const active = get().activeCompany;
+  updateMemberRole: async (memberId: string, role: string) => {
+    const active = get().activeCompany.id;
+    console.log('activeCompany in updateMemberRole:', active);
     if (!active) return;
     const cleanRole = role.replace(/['"]+/g, '').trim();
 
     try {
-      await memberService.updateMemberRole(active.id, memberId, cleanRole);
+      await memberService.updateMemberRole(active, memberId, cleanRole);
       const updatedMembers = get().members.map((m) =>
         m.id === memberId ? { ...m, role: cleanRole } : m
       );
@@ -250,7 +288,7 @@ export const useCompanyStore = create<CompanyState>((set, get) => ({
     try {
       await memberService.removeMember(active.id, memberId);
       await get().clearCacheLayers();
-      await get().fetchMembers(active.id, 1, true);
+      await get().fetchMembers(1, 10, true);
       toast.success("MEMBRO_REMOVIDO.");
     } catch (err) {
       set({ loading: false });

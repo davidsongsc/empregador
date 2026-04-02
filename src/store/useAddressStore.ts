@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getUserAddresses } from '@/services/addressService';
+import { createAddress, getUserAddresses, updateAddress } from '@/services/addressService';
 import { get as idbGet, set as idbSet } from 'idb-keyval';
 import { toast } from '@/components/Notification';
 import { Address, PaginatedAddressResponse } from '@/interfaces/iAddress';
@@ -12,18 +12,18 @@ export const useAddressStore = create<AddressState>((set, get) => ({
   loading: false,
 
   fetchAddresses: async (usuarioId, page = 1) => {
-    // 1. REIDRATAÇÃO IMEDIATA: Se o store está vazio, tenta ler o IndexedDB primeiro
-    // Isso evita o "flash" de carregamento e o loading desnecessário
+    if (!usuarioId) {
+      return;
+    }
+
     if (get().addresses.length === 0) {
       const cachedData = await idbGet(`addr_data_${usuarioId}`) as Address[];
       const cachedHash = await idbGet(`addr_hash_${usuarioId}`);
       if (cachedData) {
         set({ addresses: cachedData, lastHash: cachedHash });
-        // Se o cache estiver "quente", você pode até decidir não chamar a API aqui
       }
     }
 
-    // 2. Trava de Requisição Duplicada
     if (get().loading) return;
     set({ loading: true });
 
@@ -31,18 +31,13 @@ export const useAddressStore = create<AddressState>((set, get) => ({
       const cachedHash = get().lastHash ?? undefined;
       const res: PaginatedAddressResponse = await getUserAddresses(usuarioId, page, cachedHash);
 
-      // 3. Lógica de Cache Hit (304 / Hash idêntico)
-      // Se a API retornar enderecos null, significa que o que temos no Store/IDB é o mais recente
+
       if (!res.enderecos) {
 
         set({ loading: false });
         return;
       }
 
-      // 4. Lógica de Cache Miss (Dados novos ou alterados)
-      console.log("📡 Protocolo Delta: Atualizando base de endereços.");
-
-      // Persistência Atômica no IndexedDB
       await Promise.all([
         idbSet(`addr_hash_${usuarioId}`, res.data_hash),
         idbSet(`addr_data_${usuarioId}`, res.enderecos)
@@ -56,12 +51,57 @@ export const useAddressStore = create<AddressState>((set, get) => ({
       });
 
     } catch (error) {
-      console.error("Erro na sincronização de endereços:", error);
-      toast.error("Erro na sincronização de endereços.");
       set({ loading: false });
     }
   },
+  addAddress: async (newAddressData: Address) => {
+    set({ loading: true });
+    try {
+      const created = await createAddress(newAddressData);
 
+      const updatedList = [...get().addresses, created];
+
+      set({
+        addresses: updatedList,
+        total: get().total + 1,
+        loading: false
+      });
+
+      // Sincroniza Cache Local
+      await idbSet(`addr_data_${created.usuario_id}`, updatedList);
+      return created;
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
+  },
+
+  // MÉTODO: EDITAR (PATCH)
+  editAddress: async (id: string, updateData: Partial<Address>) => {
+    set({ loading: true });
+    try {
+      const updated = await updateAddress(id, updateData);
+
+      const updatedList = get().addresses.map(addr =>
+        addr.id === id ? { ...addr, ...updated } : addr
+      );
+
+      set({
+        addresses: updatedList,
+        loading: false
+      });
+
+      // Sincroniza Cache Local
+      if (updatedList.length > 0) {
+        await idbSet(`addr_data_${updatedList[0].usuario_id}`, updatedList);
+      }
+
+      return updated;
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
+  },
   addAddressLocal: (newAddress) => {
     const updated = [...get().addresses, newAddress];
     set({ addresses: updated });

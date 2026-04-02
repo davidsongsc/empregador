@@ -86,9 +86,9 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                 // ... Lógica de redirecionamento (empresas, etc)
                 const userData = res.user || res.data?.user || res;
                 setUser(userData);
+                router.push("/perfil");
+                toast.info("Login efetuado com sucesso.");
 
-                toast.success("Sincronização realizada.");
-                router.push("/"); // Exemplo simplificado
             } else {
                 setError("ACESSO_NEGADO: Credenciais inválidas.");
             }
@@ -168,7 +168,7 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                                     Identification_Number (WhatsApp)
                                 </label>
                                 <div className="flex gap-2">
-                              
+
                                     <div className="relative flex-1">
                                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-delos-grey" />
                                         <input
@@ -269,7 +269,7 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                     </div>
                 </div>
             </div>
-            <ThemePanel />
+
 
         </div>
     );

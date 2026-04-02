@@ -9,7 +9,7 @@ import { toast } from "@/components/Notification";
 export function useProfile() {
   // Pegamos o refresh e o setUser do Store
   const { refresh, setUser, user } = useAuthStore();
-  
+
   // Inicializamos o perfil com o que já temos no cache do Store (Instantâneo!)
   const [profile, setProfile] = useState<UserProfile | null>(user?.profile || null);
   const [loading, setLoading] = useState(!user?.profile); // Se já tem cache, não mostra loading inicial
@@ -21,10 +21,10 @@ export function useProfile() {
     try {
       // Se não houver perfil no cache, ativamos o loading
       if (!profile) setLoading(true);
-      
+
       const data = await getMyProfile();
       setProfile(data);
-      
+
       // Sincroniza o Store caso os dados do servidor sejam diferentes do cache
       if (user) {
         setUser({ ...user, profile: data });
@@ -40,7 +40,7 @@ export function useProfile() {
     try {
       setIsSaving(true);
       setError(null);
-      
+
       // 1. Envia para o servidor
       const updatedProfile = await updateMyProfile(data);
 
@@ -51,7 +51,17 @@ export function useProfile() {
       // Em vez de dar um refreshSession() (outra chamada API),
       // atualizamos o Store manualmente com os dados que o servidor acabou de devolver.
       if (user) {
-        setUser({ ...user, profile: updatedProfile });
+        setUser({
+          ...user, profile: {
+            name: updatedProfile.name,
+            last_name: updatedProfile.last_name,
+            ocupation: updatedProfile.ocupation,
+            email_contato: updatedProfile.email_contato,
+            bio: updatedProfile.bio,
+            phone: updatedProfile.phone,
+            data_nascimento: updatedProfile.data_nascimento
+          }
+        });
       }
 
       return updatedProfile;

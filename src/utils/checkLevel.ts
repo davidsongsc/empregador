@@ -1,44 +1,55 @@
 import { getActiveMembership } from "./userHelpers";
+import { ROLE_MAP, RoleLevel } from "@/enum/permissionEnum";
+
+/**
+ * Define a hierarquia numérica dos níveis para comparação.
+ * Quanto maior o índice, maior a autoridade.
+ */
+const LEVEL_HIERARCHY: RoleLevel[] = [
+  RoleLevel.INTERN, // 0
+  RoleLevel.JR,     // 1
+  RoleLevel.PL,     // 2
+  RoleLevel.SR,     // 3
+  RoleLevel.LEAD,   // 4
+  RoleLevel.MANAGER,// 5
+  RoleLevel.DIRECTOR,// 6
+  RoleLevel.ADMIN    // 7
+];
+
+/**
+ * Mapeamento de requisitos para índices da hierarquia.
+ */
+const REQUIREMENT_MAP: Record<"low" | "mid" | "high", RoleLevel> = {
+  low: RoleLevel.INTERN, // Qualquer um entra
+  mid: RoleLevel.PL,     // Precisa ser no mínimo Pleno
+  high: RoleLevel.SR     // Precisa ser no mínimo Sênior
+};
 
 export const checkLevel = (requirement: "low" | "mid" | "high"): boolean => {
   const activeMembership = getActiveMembership();
-  const role = activeMembership?.role;
+  const roleStr = activeMembership?.role;
 
-  if (!role) return false;
+  if (!roleStr) return false;
+
+  // 1. SANITIZAÇÃO E BYPASS (God Mode)
+  const cleanRole = roleStr.replace(/['"]+/g, '').trim();
+  if (cleanRole === 'SUPER_ADMIN' || cleanRole === 'DEV_SR' || cleanRole === 'ADMIN_SAAS_N2') {
+    return true;
+  }
+
+  // 2. RECUPERAÇÃO DE DADOS DO ROLE_MAP
+  // Não precisamos mais de split('_') ou de pesos manuais!
+  const roleInfo = ROLE_MAP[cleanRole];
   
-  // 1. ACESSO TOTAL (GOD MODE)
-  if (role === "SUPER_ADMIN" || role === "ADMIN_SAAS_N2" || role === "DEV_SR") return true;
+  if (!roleInfo) {
+    console.warn(`[SECURITY] Role ${cleanRole} não encontrada no ROLE_MAP.`);
+    return false;
+  }
 
-  // 2. MAPEAMENTO DE PESOS (Expandido para os novos cargos)
-  const weights: Record<string, number> = {
-    'INTERN': 1, 
-    'JR': 2, 
-    'PL': 3, 
-    'SR': 4, 
-    'LEAD': 5,
-    'MANAGER': 6, // Gerente de Unidade / Cozinha
-    'ADMIN': 6, 
-    'DIRECTOR': 7,
-    'CUISINE': 6, // Para CLIENT_CHEF_DE_CUISINE
-    'VIP': 7      // CANDIDATE_VIP
-  };
+  // 3. COMPARAÇÃO HIERÁRQUICA
+  const userLevelIndex = LEVEL_HIERARCHY.indexOf(roleInfo.level);
+  const requiredLevelIndex = LEVEL_HIERARCHY.indexOf(REQUIREMENT_MAP[requirement]);
 
-  const minRequired: Record<string, number> = {
-    'low': 1,  
-    'mid': 3,  
-    'high': 4  
-  };
-
-  // 3. EXTRAÇÃO DE NÍVEL INTELIGENTE
-  const parts = role.split('_');
-  const level = parts[parts.length - 1]; // Pega a última parte
-
-  // 4. VALIDAÇÃO DE PESO
-  const userWeight = weights[level] ?? 0;
-  
-  // Caso especial para Cargos Únicos (Sem sufixo JR/SR)
-  if (role === 'CLIENT_CHEF_DE_CUISINE') return weights['CUISINE'] >= minRequired[requirement];
-  if (role === 'CLIENT_MANAGER') return weights['MANAGER'] >= minRequired[requirement];
-
-  return userWeight >= minRequired[requirement];
+  // Se o índice do usuário for maior ou igual ao exigido, retorna true
+  return userLevelIndex >= requiredLevelIndex;
 };

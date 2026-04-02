@@ -1,80 +1,76 @@
-import { Module } from "@/enum/moduleEnum"
+import { Module } from "@/enum/moduleEnum";
+import { RoleScope, RoleDepartment, RoleLevel } from "@/enum/permissionEnum";
 
-export const MODULE_PERMISSIONS: Record<Module, string[]> = {
-  [Module.DASHBOARD]: [
-    'CANDIDATE_VIP',
-    'CLIENT_OPERATIONAL_INTERN', 'CLIENT_OPERATIONAL_JR', 'CLIENT_OPERATIONAL_PL', 'CLIENT_OPERATIONAL_SR',
-    'CLIENT_FINANCE_JR', 'CLIENT_FINANCE_PL', 'CLIENT_FINANCE_SR',
-    'CLIENT_MANAGER', 'CLIENT_ADMIN',
-    // Novos Clientes/Hospitalidade
-    'CLIENT_RECRUITER_JR', 'CLIENT_RECRUITER_PL', 'CLIENT_RECRUITER_SR', 'CLIENT_RECRUITER_LEAD',
-    'CLIENT_COOK_JR', 'CLIENT_COOK_PL', 'CLIENT_COOK_SR', 'CLIENT_CHEF_DE_CUISINE',
-    'CLIENT_BARTENDER_JR', 'CLIENT_BARTENDER_PL', 'CLIENT_RECEPTIONIST_JR', 'CLIENT_ATTENDANT_JR',
-    // Internos SaaS
-    'RECRUITER_INTERN', 'RECRUITER_JR', 'RECRUITER_PL', 'RECRUITER_SR',
-    'FIN_JR', 'FIN_PL', 'FIN_SR', 'SALES_JR', 'SALES_PL', 'SALES_SR',
-    'SUPPORT_JR', 'SUPPORT_PL', 'SUPPORT_SR', 'OPS_SAAS_JR', 'OPS_SAAS_PL', 'OPS_SAAS_SR',
-    'ADMIN_SAAS_N1', 'ADMIN_SAAS_N2', 'SUPER_ADMIN', 'DEV_SR'
-  ],
+export type PermissionSchema = {
+  allowedRoles?: string[];           // Roles que têm acesso garantido (Bypass de depto)
+  allowedScopes?: RoleScope[];       // Filtro por Escopo (CLIENT, SAAS, CANDIDATE)
+  allowedDepartments?: RoleDepartment[]; // Departamentos autorizados
+  minLevel?: RoleLevel;              // Nível hierárquico mínimo para entrar
+};
 
-  [Module.CANDIDATE_AREA]: [
-    'CANDIDATE_INTERN', 'CANDIDATE_JR', 'CANDIDATE_PL', 'CANDIDATE_SR', 'CANDIDATE_VIP',
-    'SUPER_ADMIN', 'DEV_SR'
-  ],
+export const MODULE_PERMISSIONS: Record<Module, PermissionSchema> = {
+  [Module.DASHBOARD]: {
+    allowedScopes: [RoleScope.CLIENT, RoleScope.SAAS],
+    minLevel: RoleLevel.INTERN
+  },
 
-  [Module.RECRUITMENT]: [
-    // Operação Interna
-    'RECRUITER_INTERN', 'RECRUITER_JR', 'RECRUITER_PL', 'RECRUITER_SR', 'RECRUITER_LEAD',
-    // Operação do Cliente
-    'CLIENT_RECRUITER_INTERN', 'CLIENT_RECRUITER_JR', 'CLIENT_RECRUITER_PL', 'CLIENT_RECRUITER_SR', 'CLIENT_RECRUITER_LEAD',
-    'CLIENT_MANAGER', 'CLIENT_ADMIN',
-    'SUPER_ADMIN', 'DEV_SR'
-  ],
+  [Module.CANDIDATE_AREA]: {
+    allowedScopes: [RoleScope.CANDIDATE],
+    minLevel: RoleLevel.INTERN
+  },
 
-  [Module.SUPERVISION]: [
-    'RECRUITER_SR', 'RECRUITER_LEAD',
-    'CLIENT_RECRUITER_SR', 'CLIENT_RECRUITER_LEAD',
-    'CLIENT_ADMIN', 'ADMIN_SAAS_N1', 'ADMIN_SAAS_N2',
-    'SUPER_ADMIN', 'DEV_SR'
-  ],
+  [Module.RECRUITMENT]: {
+    allowedDepartments: [RoleDepartment.RECRUITMENT, RoleDepartment.MANAGEMENT, RoleDepartment.ADMIN_PANEL],
+    minLevel: RoleLevel.INTERN
+  },
 
-  [Module.COMPANY_MANAGEMENT]: [
-    'CLIENT_ADMIN', 'CLIENT_MANAGER',
-    'ADMIN_SAAS_N1', 'ADMIN_SAAS_N2',
-    'SUPER_ADMIN', 'DEV_SR'
-  ],
+  [Module.SUPERVISION]: {
+    allowedDepartments: [RoleDepartment.RECRUITMENT, RoleDepartment.MANAGEMENT, RoleDepartment.ADMIN_PANEL],
+    minLevel: RoleLevel.SR // Apenas Sênior ou superior supervisiona
+  },
 
-  [Module.SUPPORT_PANEL]: [
-    'SUPPORT_INTERN', 'SUPPORT_JR', 'SUPPORT_PL', 'SUPPORT_SR',
-    'ADMIN_SAAS_N1', 'ADMIN_SAAS_N2', 'SUPER_ADMIN', 'DEV_SR',
-    'RECRUITER_SR', 'RECRUITER_LEAD'
-  ],
+  [Module.COMPANY_MANAGEMENT]: {
+    allowedScopes: [RoleScope.CLIENT, RoleScope.SAAS],
+    allowedDepartments: [RoleDepartment.MANAGEMENT, RoleDepartment.ADMIN_PANEL],
+    minLevel: RoleLevel.MANAGER
+  },
 
-  [Module.FINANCE]: [
-    'FIN_INTERN', 'FIN_JR', 'FIN_PL', 'FIN_SR', 'FIN_MANAGER', 
-    'CLIENT_FINANCE_JR', 'CLIENT_FINANCE_PL', 'CLIENT_FINANCE_SR', 'CLIENT_ADMIN',
-    'SUPER_ADMIN', 'DEV_SR'
-  ],
+  [Module.SUPPORT_PANEL]: {
+    allowedDepartments: [RoleDepartment.SUPPORT_PANEL, RoleDepartment.TECH, RoleDepartment.ADMIN_PANEL],
+    minLevel: RoleLevel.JR
+  },
 
-  [Module.SALES]: [
-    'SALES_INTERN', 'SALES_JR', 'SALES_PL', 'SALES_SR', 'SALES_DIRECTOR',
-    'SUPER_ADMIN', 'DEV_SR'
-  ],
+  [Module.FINANCE]: {
+    allowedDepartments: [RoleDepartment.FINANCE, RoleDepartment.MANAGEMENT, RoleDepartment.ADMIN_PANEL],
+    minLevel: RoleLevel.JR
+  },
 
-  [Module.OPERATIONAL]: [
-    // Operacional Geral Cliente
-    'CLIENT_OPERATIONAL_INTERN', 'CLIENT_OPERATIONAL_JR', 'CLIENT_OPERATIONAL_PL', 'CLIENT_OPERATIONAL_SR',
-    // Hospitalidade Cliente
-    'CLIENT_COOK_JR', 'CLIENT_COOK_PL', 'CLIENT_COOK_SR', 'CLIENT_CHEF_DE_CUISINE',
-    'CLIENT_KITCHEN_ASSISTANT_JR', 'CLIENT_KITCHEN_ASSISTANT_PL', 'CLIENT_GRIDDLE_COOK_JR',
-    'CLIENT_BARTENDER_JR', 'CLIENT_BARTENDER_PL', 'CLIENT_RECEPTIONIST_JR', 'CLIENT_ATTENDANT_JR',
-    'CLIENT_CLEANING_ASSISTANT', 'CLIENT_MAINTENANCE_ASSISTANT',
-    // Operações Internas SaaS
-    'OPS_SAAS_JR', 'OPS_SAAS_PL', 'OPS_SAAS_SR',
-    'SUPER_ADMIN', 'DEV_SR'
-  ],
+  [Module.SALES]: {
+    allowedDepartments: [RoleDepartment.SALES, RoleDepartment.MANAGEMENT, RoleDepartment.ADMIN_PANEL],
+    minLevel: RoleLevel.JR
+  },
 
-  [Module.ADMIN_PANEL]: [
-    'ADMIN_SAAS_N1', 'ADMIN_SAAS_N2', 'SUPER_ADMIN', 'DEV_SR'
-  ]
-}
+  [Module.OPERATIONAL]: {
+    allowedDepartments: [
+      RoleDepartment.OPERATIONAL, 
+      RoleDepartment.HOSPITALITY, 
+      RoleDepartment.MAINTENANCE, 
+      RoleDepartment.FINANCE,
+      RoleDepartment.CLEANING,
+      RoleDepartment.OPS
+    ],
+    minLevel: RoleLevel.INTERN
+  },
+
+  [Module.COMPLIANCE]: {
+    allowedScopes: [RoleScope.SAAS],
+    allowedDepartments: [RoleDepartment.COMPLIANCE, RoleDepartment.ADMIN_PANEL, RoleDepartment.MANAGEMENT],
+    minLevel: RoleLevel.PL // Aqui o COMPLIANCE_SR passará pois SR > PL
+  },
+
+  [Module.ADMIN_PANEL]: {
+    allowedScopes: [RoleScope.SAAS],
+    allowedDepartments: [RoleDepartment.ADMIN_PANEL, RoleDepartment.DEV],
+    minLevel: RoleLevel.JR
+  }
+};

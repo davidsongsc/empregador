@@ -32,8 +32,8 @@ export function ThemePanel() {
               <Terminal size={16} className="text-delos-amber" />
             </div>
             <div>
-              <h2 className="text-xs font-black text-delos-black uppercase tracking-[0.3em]">System_Override</h2>
-              <p className="text-[8px] text-delos-grey font-mono uppercase tracking-widest mt-0.5">Console de Calibração</p>
+              <h2 className="text-xs font-black text-delos-black uppercase tracking-[0.3em]">Visual</h2>
+              <p className="text-[8px] text-delos-grey font-mono uppercase tracking-widest mt-0.5">Console Grafico</p>
             </div>
           </div>
         </div>
@@ -43,7 +43,7 @@ export function ThemePanel() {
           <div className="space-y-2">
             <div className="flex items-center gap-2 opacity-60">
               <Cpu size={10} className="text-delos-amber" />
-              <span className="text-[7px] text-delos-black uppercase tracking-widest">Proc_Load</span>
+              <span className="text-[7px] text-delos-black uppercase tracking-widest">Assuntos</span>
             </div>
             <div className="h-1 w-full bg-delos-grey/10 overflow-hidden">
               <div className="h-full bg-delos-amber/40 w-[65%] animate-pulse" />
@@ -53,7 +53,7 @@ export function ThemePanel() {
           <div className="space-y-2 border-l border-delos-grey/10 pl-4">
             <div className="flex items-center gap-2 opacity-60">
               <HardDrive size={10} className="text-delos-amber" />
-              <span className="text-[7px] text-delos-black uppercase tracking-widest">Mem_Sync</span>
+              <span className="text-[7px] text-delos-black uppercase tracking-widest">Pesquisa</span>
             </div>
             <div className="h-1 w-full bg-delos-grey/10 overflow-hidden">
               <div className="h-full bg-delos-amber/40 w-[42%] animate-pulse delay-700" />
@@ -65,7 +65,7 @@ export function ThemePanel() {
         <div className="p-6 space-y-4 relative bg-delos-surface">
           <div className="flex items-center gap-2 mb-2">
             <Zap size={10} className="text-delos-amber animate-bounce" />
-            <p className="text-[8px] font-black text-delos-grey uppercase tracking-[0.2em]">Visual_Domain_Selection</p>
+            <p className="text-[8px] font-black text-delos-grey uppercase tracking-[0.2em]">Escolha o Tema</p>
           </div>
           
           <div className="grid grid-cols-2 gap-3">
@@ -78,7 +78,7 @@ export function ThemePanel() {
               }`}
             >
               <Sun size={20} className={mounted && theme === "light" ? "text-white" : "group-hover:text-delos-amber"} />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Delos_White</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Light</span>
             </button>
 
             <button
@@ -90,7 +90,7 @@ export function ThemePanel() {
               }`}
             >
               <Moon size={20} className={mounted && theme === "dark" ? "text-white" : "group-hover:text-delos-amber"} />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Delos_Dark</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Dark</span>
             </button>
           </div>
         </div>

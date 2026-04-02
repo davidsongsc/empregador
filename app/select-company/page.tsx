@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 export default function SelectCompany() {
   const { user, setActiveCompany, activeCompanyId } = useAuthStore();
   const router = useRouter();
-  const empresas = user?.profile?.empresas || [];
+  const empresas = user?.profile?.memberships || [];
 
   const handleSelect = (id: string) => {
     setActiveCompany(id);
@@ -41,15 +41,15 @@ export default function SelectCompany() {
         {/* Lista de Empresas */}
         <div className="space-y-3">
           {empresas.map((emp, index) => {
-            const isSelected = activeCompanyId === emp.id;
+            const isSelected = activeCompanyId === emp.company_id;
 
             return (
               <motion.button
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                key={emp.id}
-                onClick={() => handleSelect(emp.id)}
+                key={emp.company_id}
+                onClick={() => handleSelect(emp.company_id)}
                 className={`
                   w-full group flex items-center justify-between p-6 rounded-sm border transition-all duration-500
                   ${isSelected 
@@ -70,7 +70,7 @@ export default function SelectCompany() {
                   <div className="text-left space-y-1">
                     <div className="flex items-center gap-2">
                       <p className="text-lg font-black uppercase italic tracking-tight leading-none">
-                        {emp.name}
+                        {emp.company_name}
                       </p>
                       {isSelected && (
                         <CheckCircle2 size={14} className="text-[var(--delos-amber)] animate-in zoom-in" />

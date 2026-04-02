@@ -13,9 +13,9 @@ export interface CompanyState {
     error: string | null;
 
     // Ações
-    fetchCompanies: (page?: number, search?: string) => Promise<void>;
+    fetchCompanies: (page?: number, search?: string, pageSize?: number) => Promise<void>;
     fetchCompanyDetails: (id: string) => Promise<void>;
-    fetchMembers: (companyId: string, page?: number, forceRefresh?: boolean) => Promise<void>;
+    fetchMembers: ( page?: number, pageSize?: number, forceRefresh?: boolean) => Promise<void>;
     updateCompanyStatus: (id: string, isActive: boolean) => Promise<void>;
     updateMemberRole: (memberId: number, role: string) => Promise<void>;
     addMember: (companyId: string, profileId: string, role: string) => Promise<void>;

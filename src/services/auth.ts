@@ -16,11 +16,8 @@ const DELTA_HEADERS = {
  * @param lastUpdated Timestamp da última atualização local.
  */
 export async function checkSession() {
-    // Se houver timestamp, enviamos como query param
-    const url = '/api/v1/auth/me';
-
-    // O wrapper 'api' deve usar credentials: "include" para enviar o cookie 'access'
-    return await api(url, { method: "GET" });
+    const url = '/api/v1/auth/session-check?last_updated=' + Date.now();
+    return await api(url, { method: "GET" }, true);
 }
 
 export async function getMyProfile(forceRefresh = false) {

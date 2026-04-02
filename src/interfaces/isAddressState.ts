@@ -10,4 +10,6 @@ export interface AddressState {
     fetchAddresses: (usuarioId: string, page?: number) => Promise<void>;
     addAddressLocal: (newAddress: Address) => void;
     clearCache: () => Promise<void>;
+    addAddress: (newAddress: Address) => Promise<void>;
+    editAddress: (id: string, updateData: Partial<Address>) => Promise<void>;
 }

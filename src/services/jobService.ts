@@ -70,13 +70,11 @@ export async function getMyJobs(params: MyJobsParams): Promise<JobsResponse> {
   // você pode passar o objeto direto. 
   const queryString = buildQuery(params);
 
-  return api(`/vagas/internas/?${queryString}`, {
+  return api(`/api/v1/jobs/managed/company?${queryString}`, {
     method: "GET",
     // Importante: No Next.js/Browser, 'include' permite enviar os cookies da sessão
     credentials: "include",
     headers: {
-      // O Header X-Company-Id é o que ativa o Mixin no Django
-      "X-Company-Id": String(params.company || ""),
       "Content-Type": "application/json",
     },
   });
@@ -99,16 +97,13 @@ export interface CorporateFilterParams {
  * @param filters Objeto contendo paginação e filtros de busca
  */
 
-export async function getCorporateApplications(companyId: string, filters: any) {
-  const cleanCompanyId = companyId.includes(',')
-    ? companyId.split(',')[0].trim()
-    : companyId;
+export async function getCorporateApplications(filters: any) {
 
+  console.log('filters', filters);
   const queryString = buildQuery(filters);
 
-  return api(`/vagas/corporate/candidaturas/?${queryString}`, {
+  return api(`/api/v1/applications-saas/listar${queryString ? `?${queryString}` : ''}`, {
     method: "GET",
-    headers: { "X-Company-Id": cleanCompanyId },
     credentials: "include",
   });
 }
@@ -120,7 +115,7 @@ export async function getCorporateApplications(companyId: string, filters: any) 
  */
 export async function updateApplicationStatus(applicationId: string, newStatus: string) {
   // A URL deve terminar com a barra "/" e NÃO conter QueryParams (?job=...)
-  const url = `/vagas/candidaturas/${applicationId}/`;
+  const url = `/api/v1/applications-saas/${applicationId}`;
 
   return api(url, {
     method: "PATCH",
@@ -144,10 +139,7 @@ export async function getJobCategories(page: number = 1): Promise<any> {
 export async function getOwnerJobs(companyId?: string): Promise<JobsResponse> {
   return api(`/vagas/owner/`, {
     method: "GET",
-    headers: {
-      // Se companyId for null/undefined, o backend cai na lógica de "vagas do user"
-      ...(companyId && { "X-Company-Id": companyId }),
-    },
+
   });
 }
 
@@ -157,24 +149,21 @@ export async function getJobById(uid: string, companyId: string): Promise<JobRes
   const cleanCompanyId = companyId.toString().replace(/["'“”]/g, '').split(',')[0].trim();
 
   // REMOVIDO o /editar/ para bater na rota limpa do Django
-  return api(`/vagas/internas/${uid}/`, {
+  return api(`/api/v1/jobs/getbyid/${uid}`, {
     method: "GET",
     credentials: "include",
-    headers: {
-      "X-Company-Id": cleanCompanyId,
-    },
+
   });
 }
 
 export async function patchJobDelta(uid: string, companyId: string, data: Partial<JobResult>) {
   const cleanCompanyId = companyId.toString().replace(/["'“”]/g, '').split(',')[0].trim();
 
-  return api(`/vagas/internas/${uid}/`, {
+  return api(`/api/v1/jobs/update/${uid}/`, {
     method: "PATCH",
     body: JSON.stringify(data),
     headers: {
       "Content-Type": "application/json",
-      "X-Company-Id": cleanCompanyId,
     },
     credentials: "include",
   });

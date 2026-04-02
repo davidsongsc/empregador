@@ -2,24 +2,23 @@
 
 import { sendGAEvent } from '@next/third-parties/google';
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Search, Loader2, SearchX, ArrowLeft, Zap, Briefcase, Users, ChevronRight } from 'lucide-react';
+import { Search, Loader2, SearchX, ArrowLeft, Zap, Briefcase, Users, ChevronRight, Terminal, Filter } from 'lucide-react';
 import JobApplyModal from '@/components/JobApplyModal';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useJobStore } from '@/store/useJobStore';
 import JobCard from '@/components/MiniComponents/JobCard';
 import JobCardSkeleton from '@/components/MiniComponents/JobCardSkeleton';
 import { useApplicationStore } from '@/store/useApplicationStore';
+import SelectCompanyModal from '@/components/Modal/SelectCompany';
 
 const VagasPage = () => {
   const { user } = useAuthStore();
-
-  // 1. ESTADOS DE CONTROLE
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryPage, setCategoryPage] = useState(1);
   const [pageSize] = useState(12);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [categoryDisplayName, setCategoryDisplayName] = useState<string | null>(null); // Nome para a UI
+  const [categoryDisplayName, setCategoryDisplayName] = useState<string | null>(null);
   const [openApply, setOpenApply] = useState(false);
   const [selectedJob, setSelectedJob] = useState<any>(null);
 
@@ -29,7 +28,6 @@ const VagasPage = () => {
     fetchCategories,
     categories,
     categoriesLoading,
-
     loading,
     globalTotal,
     total_vagas,
@@ -37,22 +35,17 @@ const VagasPage = () => {
     total_vagas_efetivo
   } = useJobStore();
 
-  // 2. CONFIGURAÇÃO DE VIEW MODE
   const viewMode = useMemo(() => {
     if (!selectedCategory && !search) return 'categories';
     return 'jobs';
   }, [selectedCategory, search]);
 
-  // 3. CACHE KEY (Usa o ID no background)
   const cacheKey = useMemo(() => {
-    const fieldsHash = 'f-all';
-    // Mude de -l para -s para bater com o Store
-    return `jobs-p${currentPage}-s${pageSize}-c${selectedCategory || "all"}-u${user?.id || "guest"}-${fieldsHash}`;
+    return `jobs-p${currentPage}-s${pageSize}-c${selectedCategory || "all"}-u${user?.id || "guest"}-f-all`;
   }, [currentPage, pageSize, selectedCategory, user]);
 
   const cachedEntry = cache[cacheKey];
-  console.log('cachedEntry', cachedEntry);
-  // 4. SINCRONIZAÇÃO DE DADOS
+
   useEffect(() => {
     fetchCategories(categoryPage);
   }, [fetchCategories, categoryPage]);
@@ -65,34 +58,24 @@ const VagasPage = () => {
         search: search.length > 2 ? search : undefined
       }, user, selectedCategory);
     }
-  }, [selectedCategory, search, currentPage, pageSize, viewMode, user]);
+  }, [selectedCategory, search, currentPage, pageSize, viewMode, user, fetchJobs]);
 
-  // 5. DATA SELECTOR
   const displayData = useMemo(() => {
-    if (viewMode === 'categories') {
-      return Array.isArray(categories) ? categories : [];
-    }
-    // Pega os resultados do cache baseados na categoria selecionada
+    if (viewMode === 'categories') return Array.isArray(categories) ? categories : [];
     return cachedEntry?.results || [];
   }, [viewMode, categories, cachedEntry]);
-  // 6. HANDLERS
+
   const handleAction = useCallback((item: any) => {
-    // Se for uma CATEGORIA
     if (item?.name && !item?.descricao) {
-      // Rastreia o clique na categoria
       sendGAEvent('event', 'select_content', {
         content_type: 'category',
         item_id: item.id,
         item_name: item.name
       });
-
       setSelectedCategory(item.id);
       setCategoryDisplayName(item.name);
       setCurrentPage(1);
-    }
-    // Se for uma VAGA (O JobCard interno já dispara o clique, 
-    // mas aqui rastreamos a abertura do Modal de aplicação)
-    else {
+    } else {
       sendGAEvent('event', 'view_item', {
         currency: 'BRL',
         value: item.salario ? Number(item.salario) : 0,
@@ -102,7 +85,6 @@ const VagasPage = () => {
           item_category: categoryDisplayName || 'Geral'
         }]
       });
-
       setSelectedJob(item);
       setOpenApply(true);
     }
@@ -111,64 +93,68 @@ const VagasPage = () => {
   const handleSearch = useCallback((val: string) => {
     setSearch(val);
     if (val.length > 3) {
-      // Rastreia o que as pessoas estão procurando (Valioso para saber demanda)
-      sendGAEvent('event', 'search', {
-        search_term: val
-      });
+      sendGAEvent('event', 'search', { search_term: val });
     }
     if (viewMode === 'categories') setCurrentPage(1);
   }, [viewMode]);
 
   const resetView = useCallback(() => {
     setSelectedCategory(null);
-    setCategoryDisplayName(null); // Reseta o nome amigável
+    setCategoryDisplayName(null);
     setSearch("");
     setCurrentPage(1);
   }, []);
+
   const handleCloseModal = () => {
     setOpenApply(false);
     useApplicationStore.getState().refresh();
   };
-  return (
-    <div className="min-h-screen bg-delos-surface pt-20 md:pt-32 pb-10 px-4 md:px-8 relative">
-      <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{
-        backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)',
-        backgroundSize: '40px 40px'
-      }} />
 
-      <div className="max-w-7xl mx-auto relative z-10">
-        <header className="mb-12 space-y-8">
-          <div className="flex flex-wrap gap-4 mb-4">
-            <StatCard icon={<Briefcase size={20} />} label="Total_Vagas" value={total_vagas} />
-            <StatCard icon={<Zap size={20} />} label="Freelancers" value={total_vagas_freela} color="amber" />
-            <StatCard icon={<Users size={20} />} label="Efetivos_CLT" value={total_vagas_efetivo} color="green" />
+  return (
+    <div className="min-h-screen bg-delos-surface pt-20 md:pt-32 pb-20 font-mono">
+      {/* SCANLINE OVERLAY */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-50 bg-[length:100%_2px,3px_100%]" />
+
+      <div className="md:max-w-7xl mx-auto px-4 md:px-8 relative z-10">
+
+        {/* HEADER & STATS */}
+        <header className="mb-12 space-y-10">
+          {/* STATS - Scrollable on Mobile */}
+          <div className="flex overflow-x-auto pb-4 gap-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+            <StatCard icon={<Briefcase size={16} />} label="Total_Vagas" value={total_vagas} />
+            <StatCard icon={<Zap size={16} />} label="Freelancers" value={total_vagas_freela} color="amber" />
+            <StatCard icon={<Users size={16} />} label="Efetivos_CLT" value={total_vagas_efetivo} color="indigo" />
           </div>
 
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-1.5 h-1.5 bg-delos-amber animate-pulse" />
-                <span className="text-[14px] font-black text-delos-amber uppercase tracking-[0.3em]">
-                  {viewMode === 'categories' ? 'Categorias' : 'Vagas encontradas para'}
+          <div className="flex flex-col gap-8">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Terminal size={12} className="text-delos-amber animate-pulse" />
+                <span className="text-[10px] font-black text-delos-amber uppercase tracking-[0.4em]">
+                  {viewMode === 'categories' ? 'Protocolo_Navegação' : 'Filtro_Ativo'}
                 </span>
               </div>
-              {/* INTERFACE: Exibe o nome amigável */}
-              <h1 className="text-4xl md:text-7xl font-black text-delos-black uppercase italic tracking-tighter leading-[0.85]">
-                {categoryDisplayName || "Area de Trabalho"}
+
+              <h1 className="text-4xl md:text-8xl font-black text-delos-black uppercase italic tracking-tighter leading-none">
+                {categoryDisplayName || "Matriz_Vagas"}
               </h1>
+
               {viewMode === 'jobs' && (
-                <button onClick={resetView} className="flex items-center gap-2 text-[11px] font-black text-delos-amber uppercase tracking-widest hover:underline mt-4">
-                  <ArrowLeft className="w-3 h-3" /> Voltar para categorias
+                <button onClick={resetView} className="flex items-center gap-2 text-[9px] font-black text-delos-black/40 hover:text-delos-amber uppercase tracking-widest mt-4 transition-colors">
+                  <ArrowLeft className="w-3 h-3" /> Reset_Terminal
                 </button>
               )}
             </div>
 
-            <div className="relative w-full lg:w-80">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-delos-grey w-3.5 h-3.5" />
+            {/* SEARCH BOX - Mobile First size */}
+            <div className="relative group w-full md:max-w-md">
+              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                <Search className="text-delos-black/20 group-focus-within:text-delos-amber w-4 h-4 transition-colors" />
+              </div>
               <input
                 type="text"
-                placeholder="PESQUISAR_NA_MATRIZ..."
-                className="w-full bg-white border border-gray-100 rounded-xl py-4 pl-12 pr-4 text-[11px] font-bold uppercase outline-none focus:border-delos-black transition-all shadow-sm"
+                placeholder="PROCURAR_CARGO_OU_ID..."
+                className="w-full bg-white border border-black/5 md:border-black/10 py-5 pl-12 pr-4 text-[11px] font-black uppercase tracking-widest outline-none focus:border-delos-amber focus:ring-1 focus:ring-delos-amber transition-all shadow-xl rounded-none"
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
               />
@@ -176,19 +162,18 @@ const VagasPage = () => {
           </div>
         </header>
 
-        <main>
-          {/* Se está carregando e não temos nada no cache ainda, mostra Skeleton */}
+        {/* MAIN GRID */}
+        <main className="min-h-[400px]">
           {((viewMode === 'categories' && categoriesLoading) || (viewMode === 'jobs' && loading && !cachedEntry)) ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
               {Array.from({ length: 8 }).map((_, index) => (
                 <JobCardSkeleton key={index} />
               ))}
             </div>
           ) : displayData.length === 0 ? (
-            // Se terminou de carregar (loading=false) e displayData continua vazio, aí sim é EmptyState
             <EmptyState onReset={resetView} />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
               {displayData.map((item: any) => (
                 <JobCard
                   key={item.id || item.uid}
@@ -201,61 +186,85 @@ const VagasPage = () => {
           )}
         </main>
 
-        <footer className="mt-20">
+        {/* PAGINATION - Ergonomic for thumbs */}
+        <footer className="mt-20 py-10 border-t border-black/5">
           <Pagination
             current={viewMode === 'categories' ? categoryPage : currentPage}
             onChange={viewMode === 'categories' ? setCategoryPage : setCurrentPage}
             total={viewMode === 'categories' ? null : globalTotal}
             pageSize={pageSize}
             hasMore={viewMode === 'categories' ? categories.length >= 10 : false}
-            label={viewMode === 'categories' ? "Listando categorias" : "Listando vagas"}
+            label={viewMode === 'categories' ? "DB_CATEGORIES" : "DB_JOBS_MATCH"}
           />
         </footer>
       </div>
-
+ 
       <JobApplyModal user={user} open={openApply} onClose={handleCloseModal} job={selectedJob} />
     </div>
   );
 };
 
-const StatCard = ({ icon, label, value, color = "gray" }: any) => (
-  <div className={`bg-${color === 'gray' ? 'white/50' : color + '-50'} px-4 py-3 rounded-2xl border border-${color === 'gray' ? 'gray-100' : color + '-100'} flex items-center gap-3`}>
-    <div className={`p-2 bg-${color === 'gray' ? 'gray-900' : color + '-500'} rounded-lg text-white`}>{icon}</div>
-    <div>
-      <p className="text-[8px] font-black uppercase text-gray-400 tracking-tighter">{label}</p>
-      <p className="text-sm font-black italic">{value || 0}</p>
+const StatCard = ({ icon, label, value, color = "black" }: any) => {
+  const colors: any = {
+    black: "bg-[var(--delos-black)] text-[var(--delos-surface)]",
+    amber: "bg-[var(--delos-amber)] text-white",
+    indigo: "bg-[var(--delos-indigo)] text-white",
+  };
+
+  return (
+    <div className={`${colors[color]} min-w-[140px] px-5 py-4 shadow-2xl flex flex-col justify-between h-24 border border-white/5`}>
+      <div className="opacity-40">{icon}</div>
+      <div>
+        <p className="text-[7px] font-black uppercase tracking-widest mb-1">{label}</p>
+        <p className="text-xl font-black italic leading-none">{value || 0}</p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Pagination = ({ current, onChange, total, pageSize, hasMore, label }: any) => {
   const totalPages = total ? Math.ceil(total / pageSize) : null;
+
   return (
-    <div className="flex flex-col items-center gap-6">
-      <div className="flex items-center gap-8">
-        <button onClick={() => onChange((p: number) => Math.max(1, p - 1))} disabled={current === 1} className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest disabled:opacity-20 transition-all">
-          <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" /> Anterior
+    <div className="flex flex-col items-center gap-8">
+      <div className="flex items-center gap-4 md:gap-12 w-full justify-between md:justify-center">
+        <button
+          onClick={() => onChange((p: number) => Math.max(1, p - 1))}
+          disabled={current === 1}
+          className="flex-1 md:flex-none flex items-center justify-center gap-3 py-4 md:py-2 border border-black/10 text-[10px] font-black uppercase tracking-widest disabled:opacity-10 active:bg-black active:text-white transition-all"
+        >
+          <ArrowLeft size={14} /> Back
         </button>
-        <div className="flex items-center gap-3">
-          <span className="text-[10px] font-black bg-black text-white px-2 py-1 rounded">{current.toString().padStart(2, '0')}</span>
+
+        <div className="flex items-center gap-3 px-6">
+          <span className="text-[12px] font-black text-delos-amber underline underline-offset-4">{current.toString().padStart(2, '0')}</span>
           {totalPages && (
-            <><div className="h-[1px] w-12 bg-gray-200" /><span className="text-[10px] font-black text-gray-300">{totalPages.toString().padStart(2, '0')}</span></>
+            <span className="text-[12px] font-black text-black/20 tracking-tighter">/ {totalPages.toString().padStart(2, '0')}</span>
           )}
         </div>
-        <button onClick={() => onChange((p: number) => p + 1)} disabled={totalPages ? current >= totalPages : !hasMore} className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest disabled:opacity-20 transition-all">
-          Próximo <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
+
+        <button
+          onClick={() => onChange((p: number) => p + 1)}
+          disabled={totalPages ? current >= totalPages : !hasMore}
+          className="flex-1 md:flex-none flex items-center justify-center gap-3 py-4 md:py-2 border border-black/10 text-[10px] font-black uppercase tracking-widest disabled:opacity-10 active:bg-black active:text-white transition-all"
+        >
+          Next <ChevronRight size={14} />
         </button>
       </div>
-      <p className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.3em] italic">/{label}</p>
+      <p className="text-[8px] font-black text-black/20 uppercase tracking-[0.5em] italic">//{label}_TRANS_ID_{Math.floor(Math.random() * 1000)}</p>
+
+
     </div>
   );
 };
 
 const EmptyState = ({ onReset }: any) => (
-  <div className="bg-white/50 border border-dashed border-gray-200 p-20 rounded-[40px] text-center flex flex-col items-center">
-    <SearchX className="w-12 h-12 text-gray-200 mb-4" />
-    <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">Vazio_na_Matriz</h3>
-    <button onClick={onReset} className="mt-4 text-delos-amber font-black text-[9px] uppercase tracking-widest hover:underline">Reiniciar Terminal</button>
+  <div className="bg-black/5 border-2 border-dashed border-black/5 py-24 md:py-40 text-center flex flex-col items-center px-6">
+    <SearchX className="w-16 h-16 text-black/10 mb-6" />
+    <h3 className="text-xs font-black uppercase tracking-[0.4em] text-black/40">Data_Not_Found_In_Matrix</h3>
+    <button onClick={onReset} className="mt-8 px-8 py-4 bg-delos-black text-white font-black text-[10px] uppercase tracking-widest hover:bg-delos-amber transition-colors">
+      Re-initialize_System
+    </button>
   </div>
 );
 

@@ -7,24 +7,24 @@ export const departmentService = {
 
   getDepartments: async (companyId: string): Promise<Department[]> => {
     // Agora a URL obrigatoriamente segue o padrão aninhado
-    const res = await api(`/company/companies/${companyId}/departments/`);
+    const res = await api(`/api/v1/departments/${companyId}`);
     return res.results || res;
   },
   createDepartment: async (companyId: string, data: Partial<Department>) => {
-    return await api(`/company/companies/${companyId}/departments/`, {
+    return await api(`/api/v1/departments/${companyId}`, {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
   updateDepartment: async (companyId: string, deptId: string, data: Partial<Department>) => {
-    return await api(`/company/companies/${companyId}/departments/${deptId}/`, {
+    return await api(`/api/v1/departments/${deptId}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     });
   },
   deleteDepartment: async (companyId: string, deptId: string) => {
-    return await api(`/company/companies/${companyId}/departments/${deptId}/`, {
+    return await api(`/api/v1/departments/${deptId}`, {
       method: "DELETE",
     });
   }
@@ -38,26 +38,26 @@ export const companyService = {
       ...(search && { search }),
       ...(activeOnly && { is_active: "true" })
     });
-    return await api(`/company/companies/?${params.toString()}`);
+    return await api(`/api/v1/companies/?${params.toString()}`);
   },
 
   getCompanyById: async (id: string) => {
-    return await api(`/company/companies/${id}/`);
+    return await api(`/api/v1/companies/${id}`);
   },
 
   getMyCompanies: async () => {
-    return await api("/company/companies/my-companies/");
+    return await api("/api/v1/companies/me");
   },
 
   createCompany: async (data: { name: string; is_active?: boolean }) => {
-    return await api("/company/companies/", {
+    return await api("/api/v1/companies/", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
   updateCompany: async (id: string, data: Partial<Company>) => {
-    return await api(`/company/companies/${id}/`, {
+    return await api(`/api/v1/companies/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     });

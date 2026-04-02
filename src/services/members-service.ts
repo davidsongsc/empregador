@@ -15,9 +15,9 @@ export const memberService = {
   /**
    * Recupera uma camada específica de membros (Pagination Layer).
    */
-  getMembers: async (companyId: string, page: number = 1): Promise<CompanyMemberDetail> => {
+  getMembers: async (page: number = 1, pageSize: number = 10): Promise<CompanyMemberDetail> => {
     // A query string ?page= garante que o Django Rest Framework ative o PaginationSerializer
-    return await api(`/company/companies/${companyId}/members/?page=${page}`, {
+    return await api(`/api/v1/members/?pagina=${page}&tamanho=${pageSize}`, {
       method: "GET",
       headers: { ...DELTA_HEADERS },
     });
@@ -30,7 +30,7 @@ export const memberService = {
     // Sanitização preventiva de aspas residuais (Protocolo 303)
     const cleanRole = data.role.replace(/['"]+/g, "").trim();
 
-    return await api(`/company/companies/${companyId}/members/`, {
+    return await api(`/api/v1/members/${companyId}`, {
       method: "POST",
       headers: { ...DELTA_HEADERS },
       body: JSON.stringify({
@@ -43,10 +43,10 @@ export const memberService = {
   /**
    * Atualização de privilégios via Delta Patch.
    */
-  updateMemberRole: async (companyId: string, memberId: number, role: string) => {
+  updateMemberRole: async (companyId: string, profileId: string, role: string) => {
     const sanitizedRole = role.replace(/['"]+/g, "").trim();
 
-    return await api(`/company/companies/${companyId}/members/${memberId}/`, {
+    return await api(`/api/v1/members/${companyId}/${profileId}`, {
       method: "PATCH",
       headers: {
         ...DELTA_HEADERS,
@@ -59,8 +59,8 @@ export const memberService = {
   /**
    * Encerramento definitivo de protocolo de acesso.
    */
-  removeMember: async (companyId: string, memberId: number) => {
-    return await api(`/company/companies/${companyId}/members/${memberId}/`, {
+  removeMember: async (companyId: string, profileId: string) => {
+    return await api(`/api/v1/members/${companyId}/${profileId}`, {
       method: "DELETE",
       headers: { ...DELTA_HEADERS },
     });

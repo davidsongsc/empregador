@@ -1,10 +1,26 @@
+import { JobApplication, PaginatedResponse } from "./applicationResult";
+
+export interface Pagination {
+  page: number
+  page_size: number
+  total: number
+  total_pages: number
+}
+
+export interface ApplicationState {
+  applications: JobApplication[]
+  pagination: Pagination
+  loading: boolean
+  error: string | null
+}
+
 export interface CorporateApplicationsState {
-  applications: any[];
-  pagination: { count: number; next: string | null; previous: string | null };
+  applications: JobApplication[];
+  pagination: PaginatedResponse<JobApplication>;
   loading: boolean;
   error: string | null;
-  
+
   // Ações
-  fetchApplications: (companyId: string, filters?: any) => Promise<void>;
+  fetchApplications: (filters?: any) => Promise<void>;
   updateApplicationStatusLocal: (applicationId: string, newStatus: string) => void;
 }

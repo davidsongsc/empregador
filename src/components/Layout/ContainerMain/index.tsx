@@ -13,7 +13,9 @@ interface ContainerProps {
 const ContainerMain = ({ children, className }: ContainerProps) => {
     return (
         <div className={cn(
-            "sm:py-16 max-w-8xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 bg-delos-surface",
+            `sm:p-4 max-w-8xl mx-auto space-y-8 animate-in
+             fade-in slide-in-from-bottom-4 duration-1000
+             bg-delos-surface `,
             className
         )}>
             {children}

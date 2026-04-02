@@ -1,7 +1,10 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import { LogOut, Thermometer } from "lucide-react";
 import SidebarNav from "@/components/MiniComponents/SidebarNav";
+import { useState } from "react";
+import SelectCompanyModal from "@/components/Modal/SelectCompany";
+import { ThemePanel } from "@/components/Modal/ThemeModal";
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -11,18 +14,19 @@ interface AdminSidebarProps {
 }
 
 export const AdminSidebar = ({ isOpen, isActive, onClose, onLogout }: AdminSidebarProps) => {
+  const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   return (
     <>
       {/* OVERLAY MOBILE */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-md z-40 lg:hidden transition-opacity duration-500"
+          className="fixed inset-0 bg-delos-surface/80 backdrop-blur-md z-40 lg:hidden transition-opacity duration-500"
           onClick={onClose}
         />
       )}
 
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-[#080808] border-r border-white/[0.03] 
+        fixed inset-y-0 left-0 z-50 w-72 bg-delos-surface border-r border-delos-amber/[0.03] 
         transform transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] lg:relative lg:translate-x-0
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
       `}>
@@ -30,25 +34,41 @@ export const AdminSidebar = ({ isOpen, isActive, onClose, onLogout }: AdminSideb
           {/* LOGO AREA */}
           <div className="p-8 pb-12">
             <div className="flex flex-col group cursor-default">
-              <div className="flex items-center text-[13px] font-black tracking-[0.4em] uppercase">
-                <span className={`px-3 py-1 transition-all duration-1000 ${isActive ? 'bg-amber-600 text-black shadow-[0_0_15px_rgba(217,119,6,0.3)]' : 'bg-white/10 text-white'}`}>
+              <button
+                onClick={() => setIsCompanyModalOpen(true)} // Altere para o nome da sua state que abre o modal
+                className="group flex items-center text-[13px] font-black tracking-[0.4em] uppercase transition-all active:scale-95 outline-none focus:ring-0"
+                title="Mudar Empresa"
+              >
+                {/* Parte "Freela" */}
+                <span className={`px-3 py-1 transition-all duration-500 ${isActive
+                  ? 'bg-delos-amber text-delos-black shadow-[0_0_15px_rgba(217,119,6,0.3)]'
+                  : 'bg-delos-black/10 text-delos-amber'
+                  } group-hover:bg-delos-amber group-hover:text-delos-black group-hover:shadow-[0_0_20px_rgba(217,119,6,0.5)]`}
+                >
                   Freela
                 </span>
-                <span className="border border-white/10 px-3 py-1 ml-1 text-white hover:bg-white hover:text-black transition-colors">
-                  Certo
+
+                {/* Parte "Facil" */}
+                <span className="border border-delos-black/10 px-3 py-1 ml-1 text-delos-black bg-transparent group-hover:bg-delos-black group-hover:text-delos-amber transition-all duration-300 flex items-center gap-2">
+                  Facil
+                  {/* Opcional: um pequeno ícone de troca para indicar que é clicável */}
+                  <div className="w-1 h-1 bg-delos-amber rounded-full animate-pulse opacity-0 group-hover:opacity-100" />
                 </span>
-              </div>
-              <div className="flex items-center gap-2 mt-2 opacity-50">
-                <div className={`h-[1px] bg-amber-600 transition-all duration-1000 ${isActive ? 'w-full' : 'w-0'}`} />
-                <span className="text-[8px] font-mono tracking-[0.5em] uppercase whitespace-nowrap">É Isso</span>
+              </button>
+              <div className="flex items-center gap-2 mt-0 opacity-90 relative left-1/2 transform -translate-x-1/2">
+                <div className={`h-[1px] bg-delos-amber transition-all duration-1000 ${isActive ? 'w-full' : 'w-0'}`} />
+
+                <span className="text-[11px] font-mono tracking-[0.5em] uppercase whitespace-nowrap">É Isso</span>
+
               </div>
             </div>
           </div>
+  
 
           {/* NAV DIRECTORIES */}
           <div className="flex-1 overflow-y-auto px-4 custom-scrollbar">
             <div className="mb-4 px-4">
-              <p className="text-[9px] font-bold text-slate-600 uppercase tracking-[0.3em] mb-4">Main Directories</p>
+              <p className="text-[13px] font-bold text-delos-grey uppercase tracking-[0.3em] mb-4">Menu Principal</p>
               <SidebarNav />
             </div>
           </div>
@@ -63,8 +83,17 @@ export const AdminSidebar = ({ isOpen, isActive, onClose, onLogout }: AdminSideb
               <LogOut className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
+          
         </div>
+        
       </aside>
+      
+      <SelectCompanyModal
+        isOpen={isCompanyModalOpen}
+        onClose={() => setIsCompanyModalOpen(false)}
+      />
+
     </>
+
   );
 };

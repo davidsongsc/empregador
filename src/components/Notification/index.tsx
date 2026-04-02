@@ -7,10 +7,24 @@ import { X, CheckCircle2, AlertCircle, ShieldAlert, Terminal, Activity } from "l
 // --- Tipagem e Estado Global (Singleton) ---
 export type NotificationType = "success" | "error" | "info" | "warning";
 
+// Erro de Validação (Pydantic/FastAPI)
+interface ValidationError {
+  loc: (string | number)[];
+  msg: string;
+  type: string;
+  input?: any;
+}
+
+// Erro de Status Simples (Sessão encerrada, etc)
+interface StatusError {
+  status: number;
+  message: string;
+}
+
 interface NotificationItem {
   id: string;
   type: NotificationType;
-  message: string;
+  message: string | { detail: ValidationError[] } | StatusError;
   duration?: number;
 }
 
@@ -47,46 +61,76 @@ const NotificationCard = ({ item, onClose }: { item: NotificationItem; onClose: 
     return () => clearTimeout(timer);
   }, [item.id, item.duration, onClose]);
 
+  const renderContent = () => {
+    const msg = item.message;
+
+    // CASO 1: String Simples
+    if (typeof msg === "string") {
+      return <p className="text-[11px] font-mono leading-tight text-slate-100/90 uppercase tracking-tight">{msg}</p>;
+    }
+
+    // CASO 2: Objeto de Erro de Validação ({ detail: [...] })
+    if (msg && typeof msg === "object" && "detail" in msg) {
+      return (
+        <div className="flex flex-col gap-1.5 mt-1">
+          {msg.detail.map((err, idx) => (
+            <div key={idx} className="bg-white/5 p-1.5 border-l border-white/10">
+              <span className="text-[9px] text-rose-400 font-bold block leading-none mb-1">
+                {err.loc.filter(l => l !== "body").join(" > ")}
+              </span>
+              <p className="text-[10px] text-slate-300 leading-tight">{err.msg}</p>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // CASO 3: Objeto de Status ({ status, message })
+    if (msg && typeof msg === "object" && "status" in msg) {
+      return (
+        <div className="flex flex-col gap-0.5 mt-0.5">
+          <span className="text-[10px] font-bold text-white/40">HTTP_CODE: {msg.status}</span>
+          <p className="text-[11px] font-mono text-slate-100 uppercase">{msg.message}</p>
+        </div>
+      );
+    }
+
+    return null;
+  };
   return (
     <motion.div
       layout
       initial={{ opacity: 0, x: 20, filter: "blur(4px)" }}
       animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
+      exit={{ opacity: 0, scale: 0.9 }}
       className={`
-        relative flex items-center gap-3 px-4 py-2
+        relative flex items-start gap-3 px-4 py-3
         bg-[#050505]/95 backdrop-blur-xl border border-white/10
-        border-l-2 ${config.border} shadow-[0_0_15px_rgba(0,0,0,0.5)]
-        pointer-events-auto min-w-[280px] overflow-hidden
+        border-l-2 ${config.border} shadow-[0_0_20px_rgba(0,0,0,0.6)]
+        pointer-events-auto min-w-[300px] max-w-[400px] overflow-hidden
       `}
     >
-      {/* Efeito de Scanline sutil (Westworld Style) */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
 
-      <config.icon className={`${config.color} w-4 h-4 flex-shrink-0 animate-pulse`} />
+      <config.icon className={`${config.color} w-4 h-4 mt-0.5 flex-shrink-0 animate-pulse`} />
 
-      <div className="flex flex-col gap-0.5 overflow-hidden">
-        <span className={`text-[8px] font-black font-mono tracking-widest ${config.color} uppercase`}>
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <span className={`text-[8px] font-black font-mono tracking-[0.2em] ${config.color} uppercase mb-1`}>
           {config.label}
         </span>
-        <p className="text-[11px] font-mono leading-tight text-slate-100/90 uppercase tracking-tight">
-          {item.message}
-        </p>
+
+        {renderContent()}
       </div>
 
-      <button
-        onClick={() => onClose(item.id)}
-        className="ml-auto pl-2 text-slate-500 hover:text-white transition-colors"
-      >
+      <button onClick={() => onClose(item.id)} className="text-slate-500 hover:text-white transition-colors">
         <X size={14} strokeWidth={3} />
       </button>
 
-      {/* Timer Bar Minimalista */}
       <motion.div
         initial={{ width: "100%" }}
         animate={{ width: "0%" }}
         transition={{ duration: (item.duration || 4000) / 1000, ease: "linear" }}
-        className={`absolute bottom-0 left-0 h-[2px] ${config.bar} opacity-40`}
+        className={`absolute bottom-0 left-0 h-[1px] ${config.bar} opacity-30`}
       />
     </motion.div>
   );

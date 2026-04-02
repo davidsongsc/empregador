@@ -3,7 +3,8 @@ import React, { useState, useEffect, useMemo } from "react"
 import {
   Plus, MapPin, Edit3, Trash2, Search,
   Loader2, ChevronLeft, ChevronRight, LayoutGrid, Zap,
-  Database, Activity, Terminal, Crosshair, BarChart2, MoreHorizontal
+  Database, Activity, Terminal, Crosshair, BarChart2, MoreHorizontal,
+  X
 } from "lucide-react"
 import { useMyJobsStore } from "@/hooks/useMyJobsStore"
 import PostNewJobModal from "@/components/Modal/PostNewJobModal"
@@ -15,18 +16,21 @@ import { Module } from "@/enum/moduleEnum"
 import { checkLevel } from "@/utils/checkLevel"
 import { useRouter } from "next/navigation"
 import ContainerMain from "@/components/Layout/ContainerMain"
-import { Job } from "@/interfaces/iJob"
+import SaasHeader from "@/components/MiniComponents/SaasHeader"
 
 const MinhasVagas = () => {
-
-  const { data, loading, fetchJobs } = useMyJobsStore()
+  const user = getActiveMembership();
+  const { data, loading, fetchJobs } = useMyJobsStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [jobEditing, setJobEditing] = useState<string>();
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [jobEditing, setJobEditing] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
   const canAccessSupervision = checkModuleAccess(getActiveMembership()?.role ?? "GUEST", Module.SUPERVISION);
-  const activeCompanyId = getActiveMembership()?.id
+  const activeCompanyId = getActiveMembership()?.company_id
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const listTopRef = React.useRef<HTMLDivElement>(null);
+  const listContainerRef = React.useRef<HTMLDivElement>(null);
   const router = useRouter();
   const {
     openDeleteConfirmation,
@@ -37,111 +41,121 @@ const MinhasVagas = () => {
   } = useManageJob();
 
   const handleEdit = (job: any) => {
-    setJobEditing(job.uid);
+    setJobEditing(job.id);
     setIsModalOpen(true);
   };
 
   const handleCreate = () => {
-    setJobEditing(""); // Limpa para modo criação
+    // Se o seu useJobStore tiver uma função de limpar, chame-a aqui:
+    // useJobStore.getState().clearVaga(); 
+
+    setJobEditing(null); // Garante que jobUid no modal seja null
     setIsModalOpen(true);
   };
+  useEffect(() => {
+    const scrollContainer = listTopRef.current?.closest('.overflow-y-auto');
+
+    if (scrollContainer) {
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [page]);
+
+  useEffect(() => {
+    if (listContainerRef.current) {
+      listContainerRef.current.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  }, [page, debouncedSearch]);
+
+  useEffect(() => {
+    if (searchTerm.length >= 3) {
+      const handler = setTimeout(() => {
+        setDebouncedSearch(searchTerm);
+        setPage(1);
+      }, 780);
+
+      return () => clearTimeout(handler);
+    }
+
+    if (searchTerm.length === 0) {
+      setDebouncedSearch("");
+      setPage(1);
+    }
+  }, [searchTerm]);
+
   const currentFilter = useMemo(() => ({
-    // O backend usará isso para filtrar o QuerySet
-    company: activeCompanyId,
     page: page,
     page_size: pageSize,
-    search: searchTerm
-  }), [activeCompanyId, page, pageSize, searchTerm])
+    search: debouncedSearch
+  }), [activeCompanyId, page, pageSize, debouncedSearch]);
 
   useEffect(() => {
     fetchJobs(currentFilter)
-  }, [currentFilter, fetchJobs, activeCompanyId])
-
-  const totalPages = Math.ceil((data?.count || 0) / pageSize)
-
+  }, [currentFilter, fetchJobs, activeCompanyId]);
+  const totalPages = data?.total_pages || 1;
 
   const hasLowAccess = checkLevel("low")
   const hasMidAccess = checkLevel("mid")
   const hasHighAccess = checkLevel("high")
+
   return (
     <ContainerMain className="">
 
       {/* HEADER ADAPTÁVEL */}
-      <header className="border-b border-white/[0.03] bg-delos-surface shrink-0 " >
-        <div className="w-full px-4 sm:px-6 py-2 flex justify-between items-center">
-          <div className="flex items-center gap-4 sm:gap-6">
-            <div className="flex flex-col">
-              <div >
-                <span className="text-[7px] sm:text-[14px] font-black tracking-[0.4em] text-delos-amber uppercase leading-none mb-1">Cadastro</span>
-                _
-                <span className="text-[7px] sm:text-[14px] font-mono text-delos-grey uppercase tracking-widest italic flex-1">
+      <SaasHeader
+        page={page}
+        count={data?.total_count || 0}
+        canAccess={canAccessSupervision}
+        onCreate={handleCreate}
+      />
 
-                  Página_{page}
-                </span>
-              </div>
-              <h1 className="text-lg sm:text-xl font-light text-delos-black tracking-tighter uppercase leading-none">
-                Gestão de <span className="font-black">Vagas</span>
-              </h1>
 
-            </div>
-
-            <div className="h-8 w-[1px] bg-delos-black hidden md:block" />
-            <div className="hidden md:flex items-center gap-2 ">
-              <Activity size={18} className="text-emerald-500 animate-pulse opacity-70" />
-              <span className="text-[16px] font-mono text-delos-grey uppercase tracking-widest flex-1">
-                {data?.count || 0} Ativas
-              </span>
-
-            </div>
-          </div>
-
-          <button
-            onClick={() => handleCreate()}
-            type="button"
-
-            className={`group bg-delos-black text-delos-white px-3 sm:px-5 py-2 transition-all hover:bg-amber-600 hover:text-white flex items-center gap-2 shadow-lg active:scale-95 rounded-sm ${!canAccessSupervision ? 'pointer-events-none opacity-50 bg-slate-800 cursor-not-allowed text-slate-400' : ''}`}
-            disabled={!canAccessSupervision}
-          >
-            <Plus size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
-            <span className="font-black text-[9px] uppercase tracking-[0.1em] hidden sm:inline">Nova Vaga</span>
-          </button>
-        </div>
-      </header>
-
-      <main className="flex-1 flex flex-col min-h-0 p-4 sm:p-6 overflow-hidden bg-delos-item">
+      <main className="flex-1 flex flex-col min-h-0 p-4 sm:p-1 overflow-hidden bg-delos-item">
 
         {/* BARRA DE FERRAMENTAS RESPONSIVA */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4 shrink-0">
-          <div className="relative flex-1 bg-delos-black border border-white/[0.03]">
+          <div className="relative flex-1 bg-delos-black border border-delos-grey group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-delos-grey" size={14} />
+
             <input
               type="text"
-              placeholder="BUSCAR ID_UNIDADE..."
-              className="w-full pl-10 pr-4 py-2.5 bg-delos-grey/80 outline-none font-bold text-[9px] tracking-widest uppercase text-delos-surface placeholder:text-delos-surface"
+              placeholder="PESQUISAR VAGAS..."
+              value={searchTerm}
+              className="w-full pl-10 pr-12 py-2.5 bg-delos-surface/90 outline-none font-bold text-[9px]
+               tracking-widest uppercase text-delos-black placeholder:text-delos-black transition-all 
+               focus:bg-delos-surface/60"
               onChange={(e) => setSearchTerm(e.target.value)}
+              // ADIÇÃO: LEITURA DE TECLADO
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setSearchTerm("");
+                  setDebouncedSearch("");
+                  setPage(1);
+                }
+              }}
             />
-          </div>
-          {/* PAGINAÇÃO FOOTER */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 shrink-0">
 
-            <div className="flex gap-1 w-full sm:w-auto">
+            {/* BOTÃO DE LIMPAR (X) */}
+            {searchTerm.length > 0 && (
               <button
-                onClick={() => setPage(p => p - 1)}
-                disabled={page === 1}
-                className="flex-1 h-10 sm:flex-none p-3 lg:p-1.5 border border-delos-black/5 bg-delos-surface hover:bg-delos-item text-slate-500 disabled:opacity-0 transition-all active:scale-95 flex justify-center items-center"
+                onClick={() => {
+                  setSearchTerm("");
+                  setDebouncedSearch("");
+                  setPage(1);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/10 rounded-full transition-all text-delos-grey hover:text-delos-amber group-active:scale-90"
+                title="Limpar busca (ESC)"
               >
-                <ChevronLeft size={25} />
+                <X size={14} strokeWidth={3} />
               </button>
-              <button
-                onClick={() => setPage(p => p + 1)}
-                disabled={page === totalPages}
-                className="flex-1 h-10 sm:flex-none p-3 lg:p-1.5 border border-delos-black/5 bg-delos-surface hover:bg-delos-item text-slate-500 disabled:opacity-0 transition-all active:scale-95 flex justify-center items-center"
-              >
-                <ChevronRight size={25} />
-              </button>
-            </div>
+            )}
           </div>
-          <div className="flex bg-delos-surface border border-delos-grey/[0.03] p-1 justify-center">
+
+          <div className="flex bg-delos-surface border border-delos-grey p-1 justify-center">
             {[10, 25, 50, 100].map((size) => (
               <button
                 key={size}
@@ -155,9 +169,9 @@ const MinhasVagas = () => {
         </div>
 
         {/* TABELA / GRID LIST */}
-        <div className="flex-1 flex flex-col border border-white/[0.03] bg-delos-container/90 overflow-hidden shadow-2xl shadow-delos-amber/20">
+        <div className="flex-1 flex flex-col border border-amber bg-delos-container overflow-hidden shadow-2xl shadow-delos-amber/20">
           {/* Header Visível apenas em Desktop */}
-          <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-2 bg-bg-delos-item border-b border-delos-amber text-[13px] font-black text-delos-item uppercase tracking-[0.2em] shrink-0">
+          <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-2 bg-delos-surface/90 border-b border-delos-amber text-[13px] font-black text-delos-black/90 uppercase tracking-[0.2em] shrink-0">
             <div className="col-span-1">Ficha</div>
             <div className="col-span-4">Cargo / Identificador</div>
             <div className="col-span-2 text-left">Tipo</div>
@@ -173,7 +187,10 @@ const MinhasVagas = () => {
           </div>
 
           {/* Lista Adaptável */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-white/[0.03] bg-delos-item/20">
+          <div
+            ref={listContainerRef}
+            className="flex-1 overflow-y-auto custom-scrollbar divide-y
+                        divide-delos-amber/30 bg-delos-surface/80">
             {loading ? (
               <div className="h-full flex items-center justify-center py-20">
                 <Loader2 className="w-6 h-6 text-amber-600 animate-spin opacity-40" />
@@ -181,18 +198,22 @@ const MinhasVagas = () => {
             ) : (
               data?.results.map((vaga) => (
                 <div
-                  key={vaga.uid}
-                  className="flex flex-col lg:grid lg:grid-cols-12 gap-4 px-4 sm:px-6 py-4 lg:py-2 items-start lg:items-center hover:bg-delos-container transition-colors group relative"
+                  key={vaga.id}
+                  className="flex flex-col lg:grid lg:grid-cols-12 gap-4 px-4 
+                  sm:px-6 py-4 lg:py-2 items-start lg:items-center hover:bg-delos-surface
+                   transition-colors group relative"
                 >
-                  <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-transparent group-hover:bg-amber-600 transition-all shadow-[0_0_8px_#d97706]" />
+                  <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-transparent 
+                  group-hover:bg-delos-amber transition-all shadow-[0_0_8px_#d97706]" />
 
                   {/* Top Mobile: ID e Badge */}
                   <div className="flex w-full justify-between items-center lg:col-span-1 mb-2 lg:mb-0">
                     <span className="font-mono text-[18px] text-delos-amber group-hover:text-amber-600">
-                      #{vaga.uid.substring(16, 23).toUpperCase()}
+                      #{vaga.id.substring(16, 23).toUpperCase()}
                     </span>
                     <div className="lg:hidden">
-                      <span className="px-2 py-0.5 border border-white/5 text-[12px] font-black text-amber-600 uppercase tracking-widest bg-amber-600/5">
+                      <span className="px-2 py-0.5 border border-delos-surface text-[12px] font-black 
+                                    text-amber-600 uppercase tracking-widest bg-delos-amber/5">
                         {vaga.tipo_vaga_display}
                       </span>
                     </div>
@@ -200,44 +221,55 @@ const MinhasVagas = () => {
 
                   {/* Informação Principal */}
                   <div className="w-full lg:col-span-4 flex flex-col min-w-0">
-                    <span className="text-[13px] lg:text-[16px] font-bold text-slate-200 uppercase tracking-tight truncate group-hover:text-white transition-colors">
+                    <span className="text-[13px] lg:text-[16px] font-bold text-delos-black
+                     uppercase tracking-tight truncate group-hover:text-delos-grey transition-colors ">
                       {vaga.cargo_nome}
                     </span>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[8px] lg:text-[10px] font-mono text-slate-400 uppercase tracking-tighter truncate">
-                        {vaga.categoria} // {vaga.turno}
+                      <span className="text-[12px] lg:text-[10px] font-mono text-delos-grey uppercase
+                       tracking-tighter truncate group-hover:text-delos-black ">
+                        {vaga.categoria_nome} // {vaga.turno}
                       </span>
                     </div>
                   </div>
 
                   {/* Badge Desktop */}
                   <div className="hidden lg:flex lg:col-span-2 justify-start">
-                    <span className="px-2 py-0.5 border border-white/5 text-[13px] font-bold text-delos-surface uppercase tracking-widest group-hover:border-amber-600/20 group-hover:text-amber-500 bg-delos-container/20 rounded-md">
-                      {vaga.tipo}
+                    <span className="px-2 py-0.5 border border-delos-surface/5 text-[13px] font-bold
+                     text-delos-surface uppercase tracking-widest group-hover:border-delos-amber 
+                     group-hover:text-delos-amber bg-delos-black/20 rounded-md shadow-md
+                     group-hover:shadow-delos-black transition-all duration-300 cursor-pointer">
+                      {vaga.tipo_vaga}
                     </span>
                   </div>
 
                   {/* Stats */}
                   <div className="flex items-center gap-4 lg:col-span-2 lg:justify-end my-3 lg:my-0 w-full lg:w-auto">
                     <div className="flex items-center gap-1.5 leading-none bg-white/5 lg:bg-transparent px-3 py-1.5 lg:p-0 rounded-sm">
-                      <BarChart2 size={10} className="text-emerald-500 opacity-50" />
-                      <span className="text-[20px] font-mono text-slate-400 font-bold group-hover:text-white">
-                        {String(vaga.candidatos_count || 0).padStart(2, '0')}
+                      <BarChart2 size={18} className="text-delos-amber opacity-50" />
+                      <span className="text-[20px] font-mono text-delos-black font-bold group-hover:text-delos-amber transition-colors">
+                        {String(vaga.applications_count || 0).padStart(2, '0')}
                       </span>
-                      <span className="lg:hidden text-[8px] text-slate-600 uppercase font-black ml-1">Inscrições</span>
+                      <span className="lg:hidden text-[12px] text-delos-black uppercase font-black ml-1">Inscrições</span>
                     </div>
                   </div>
 
                   {/* Ações Adaptáveis */}
                   {/* A lógica garante que se for undefined, o valor tratado será 0 */}
-                  {(vaga.candidatos_count ?? 0) > 0 ? (
+                  {(vaga.applications_count ?? 0) > 0 ? (
 
                     <button
                       disabled={!hasLowAccess}
                       onClick={() => {
-                        router.push(`/dashboard/painel/vagas/${vaga.uid}/candidatos`);
+                        router.push(`/dashboard/painel/vagas/${vaga.id}/candidatos`);
                       }}
-                      className={`w-full  flex items-center justify-center gap-2 text-[8px] font-black uppercase tracking-widest text-delos-surface px-4 py-3 lg:bg-white/5  lg:py-1.5  ${!hasLowAccess ? ' hover:text-slate-200 transition-colors  group-hover:bg-rose-600 group-hover:text-slate-400 opacity-40' : 'hover:text-white transition-colors bg-white/5 group-hover:bg-amber-600 group-hover:text-white'} border border-white/5 lg:border-transparent`}>
+                      className={`w-full  flex items-center justify-center gap-2 text-[11px] font-black
+                       uppercase tracking-widest text-delos-black px-4 py-3 lg:bg-delos-surface lg:py-1.5  
+                       shadow-md rounded-md group-hover:bg-amber-600 group-hover:text-white group-hover:border-delos-amber
+                     group-hover:shadow-delos-black transition-all duration-300 cursor-pointer
+                       ${!hasLowAccess ? ' hover:text-delos-black transition-colors  group-hover:bg-delos-red group-hover:text-delos-black opacity-40 cursor-not-allowed'
+                          :
+                          'hover:text-delos-black transition-colors bg-delos-grey group-hover:bg-amber-600 group-hover:text-delos-black cursor-not-allowed'} border border-delos-black lg:border-transparent`}>
                       <Crosshair size={12} /> Candidatos
                     </button>
                   ) : (
@@ -258,12 +290,12 @@ const MinhasVagas = () => {
                           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
                           : 'bg-red-500/10 border-red-500/20 text-red-500/70'
                         }
-    group-hover:border-amber-600/40 group-hover:text-amber-500
+    group-hover:border-amber-600/40 group-hover:text-delos-amber group-hover:bg-amber-600/10 group-hover:shadow-[0_0_15px_rgba(217,119,6,0.2)]
   `}>
                         {/* Ícone de pulso apenas se estiver ativo */}
                         <span className="flex items-center gap-1.5">
                           {vaga.is_active && (
-                            <span className="w-1 h-1 bg-emerald-500 rounded-full animate-ping" />
+                            <span className="w-1 h-1 bg-delos-green rounded-full animate-ping" />
                           )}
                           {vaga.is_active ? 'Online' : 'Offline'}
                         </span>
@@ -283,7 +315,7 @@ const MinhasVagas = () => {
                       disabled={!hasHighAccess}
                       title="Deletar Item"
 
-                      onClick={() => openDeleteConfirmation(vaga.uid)} // Passa o UID para o estado interno do hook
+                      onClick={() => openDeleteConfirmation(vaga.id)} // Passa o id para o estado interno do hook
                       className={`p-4 text-slate-600 transition-colors ${!hasHighAccess ? 'opacity-40 cursor-not-allowed hover:text-rose-500' : 'hover:text-rose-500'}`}
                     >
                       <Trash2 size={16} />
@@ -294,25 +326,52 @@ const MinhasVagas = () => {
             )}
           </div>
         </div>
+        {/* PAGINAÇÃO FOOTER */}
+        <div className="bg-delos-surface flex flex-col sm:flex-row items-center justify-between gap-4 px-2 shrink-0 py-2">
+          <div className="text-[14px] font-mono text-delos-grey uppercase tracking-widest">
+            Mostrando {data?.results.length || 0} de {data?.total_count || 0} registros
+          </div>
 
+          <div className="flex gap-1 w-full sm:w-auto">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1 || loading}
+              className="flex-1 h-10 sm:flex-none px-4 border border-delos-surface/5 bg-delos-surface hover:bg-delos-item text-slate-500 disabled:opacity-20 transition-all active:scale-95 flex justify-center items-center"
+            >
+              <ChevronLeft size={20} />
+            </button>
+
+            <div className="flex items-center px-4 bg-delos-surface border border-delos-surface/5 text-delos-amber font-mono text-xs">
+              {page} / {totalPages}
+            </div>
+
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages || loading}
+              className="flex-1 h-10 sm:flex-none px-4 border border-white/5 bg-delos-surface hover:bg-delos-item text-slate-500 disabled:opacity-20 transition-all active:scale-95 flex justify-center items-center"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        </div>
 
       </main>
 
       <PostNewJobModal
-        isOpen={isModalOpen} // Use o estado unificado
-        jobUid={jobEditing} // Passe o objeto da vaga ou null
-        activeCompanyId={activeCompanyId}
+        isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          setJobEditing("");
+          setJobEditing(null); // Use null em vez de "" para garantir o reset total
           fetchJobs(currentFilter, true);
         }}
+        jobUid={jobEditing}
+        activeCompanyId={activeCompanyId}
       />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={async () => {
-          // Esta função executa o deleteJob(uid) que está guardado no hook
+          // Esta função executa o deleteJob(id) que está guardado no hook
           const success = await confirmRemoval();
           if (success) {
             fetchJobs(currentFilter, true); // Recarrega a matriz de vagas

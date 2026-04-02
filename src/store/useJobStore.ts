@@ -236,15 +236,15 @@ export const useJobStore = create<JobState>()(
           const isFirstPage = key.includes("-p1-");
 
           patches.forEach(patch => {
-            const patchCategory = patch.data.categoria || "Geral";
-            const patchTipo = patch.data.tipo || "FREELANCER";
+            const patchCategory = patch.data.categoria_nome || "Geral";
+            const patchTipo = patch.data.tipo_vaga || "FREELANCER";
 
             if (patch.type === 'UPDATED') {
-              results = results.map(j => j.uid === patch.uid ? { ...j, ...patch.data } : j);
+              results = results.map(j => j.id === patch.uid ? { ...j, ...patch.data } : j);
             }
             else if (patch.type === 'DELETED') {
               const initialLen = results.length;
-              results = results.filter(j => j.uid !== patch.uid);
+              results = results.filter(j => j.id !== patch.uid);
               if (results.length < initialLen) {
                 countAdjust--;
                 newGlobalTotal--;
@@ -266,7 +266,7 @@ export const useJobStore = create<JobState>()(
                 c.name === patchCategory ? { ...c, total_vagas: c.total_vagas + 1 } : c
               );
 
-              if (isFirstPage && !results.find(j => j.uid === patch.uid)) {
+              if (isFirstPage && !results.find(j => j.id === patch.uid)) {
                 results = [patch.data as JobResult, ...results];
                 if (results.length > 20) results.pop();
                 countAdjust++;
@@ -304,7 +304,7 @@ export const useJobStore = create<JobState>()(
                 newCache[key].results = newCache[key].results.map((job) =>
                   // Fazemos o merge: mantemos o que já existia no cache (ex: tipo_vaga)
                   // e sobrescrevemos com os detalhes novos vindos da API
-                  job.uid === uid ? { ...job, ...fullJob } : job
+                  job.id === uid ? { ...job, ...fullJob } : job
                 );
               }
             });
@@ -339,7 +339,7 @@ export const useJobStore = create<JobState>()(
             // Passamos fields explicitamente para garantir que o TS veja os campos
             fields: ['uid', 'tipo', 'candidatos_count', 'cargo_exibicao', 'is_active']
           });
-
+          
           set((state) => {
             // Normalização para garantir que nenhum campo obrigatório falte
             const normalizedResults: JobResult[] = response.results.map((item: any) => ({

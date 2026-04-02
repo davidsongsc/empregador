@@ -43,6 +43,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
       set((state) => ({
         data: results,
         total: totalCount,
+        loading: false,
         currentRequest: null,
         cache: {
           ...state.cache,

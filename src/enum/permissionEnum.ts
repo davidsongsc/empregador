@@ -6,11 +6,14 @@ export enum RoleScope {
 
 export enum RoleDepartment {
   GENERAL = 'GENERAL',
-  OPERATIONS = 'OPERATIONS',
+  OPERATIONAL = 'OPERATIONAL',
   FINANCE = 'FINANCE',
   RECRUITMENT = 'RECRUITMENT',
   SALES = 'SALES',
   SUPPORT_PANEL = 'SUPPORT_PANEL',
+  COMPLIANCE = 'COMPLIANCE',
+  OPS = 'OPS',
+  DEV = 'DEV',
   TECH = 'TECH',
   MANAGEMENT = 'MANAGEMENT',
   ADMIN_PANEL = 'ADMIN_PANEL',
@@ -38,10 +41,10 @@ export type RoleEnum = {
 
 export const ROLE_MAP: Record<string, RoleEnum> = {
   // --- CLIENTES ---
-  'CLIENT_OPERATIONAL_INTERN': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONS, level: RoleLevel.INTERN },
-  'CLIENT_OPERATIONAL_JR': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONS, level: RoleLevel.JR },
-  'CLIENT_OPERATIONAL_PL': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONS, level: RoleLevel.PL },
-  'CLIENT_OPERATIONAL_SR': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONS, level: RoleLevel.SR },
+  'CLIENT_OPERATIONAL_INTERN': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONAL, level: RoleLevel.INTERN },
+  'CLIENT_OPERATIONAL_JR': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONAL, level: RoleLevel.JR },
+  'CLIENT_OPERATIONAL_PL': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONAL, level: RoleLevel.PL },
+  'CLIENT_OPERATIONAL_SR': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONAL, level: RoleLevel.SR },
   'CLIENT_FINANCE_JR': { scope: RoleScope.CLIENT, department: RoleDepartment.FINANCE, level: RoleLevel.JR },
   'CLIENT_FINANCE_PL': { scope: RoleScope.CLIENT, department: RoleDepartment.FINANCE, level: RoleLevel.PL },
   'CLIENT_FINANCE_SR': { scope: RoleScope.CLIENT, department: RoleDepartment.FINANCE, level: RoleLevel.SR },
@@ -66,8 +69,8 @@ export const ROLE_MAP: Record<string, RoleEnum> = {
   'CLIENT_GRIDDLE_COOK_JR': { scope: RoleScope.CLIENT, department: RoleDepartment.HOSPITALITY, level: RoleLevel.JR }, // Chapeiro
 
   // --- FRONT OF HOUSE / ATENDIMENTO ---
-  'CLIENT_RECEPTIONIST_JR': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONS, level: RoleLevel.JR },
-  'CLIENT_ATTENDANT_JR': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONS, level: RoleLevel.JR },
+  'CLIENT_RECEPTIONIST_JR': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONAL, level: RoleLevel.JR },
+  'CLIENT_ATTENDANT_JR': { scope: RoleScope.CLIENT, department: RoleDepartment.OPERATIONAL, level: RoleLevel.JR },
   'CLIENT_BARTENDER_JR': { scope: RoleScope.CLIENT, department: RoleDepartment.HOSPITALITY, level: RoleLevel.JR },
   'CLIENT_BARTENDER_PL': { scope: RoleScope.CLIENT, department: RoleDepartment.HOSPITALITY, level: RoleLevel.PL },
 
@@ -76,9 +79,10 @@ export const ROLE_MAP: Record<string, RoleEnum> = {
   'CLIENT_MAINTENANCE_ASSISTANT': { scope: RoleScope.CLIENT, department: RoleDepartment.MAINTENANCE, level: RoleLevel.JR },
   
   // --- SAAS (INTERNO) ---
-  'FIN_INTERN': { scope: RoleScope.SAAS, department: RoleDepartment.FINANCE, level: RoleLevel.INTERN },
-  'FIN_JR': { scope: RoleScope.SAAS, department: RoleDepartment.FINANCE, level: RoleLevel.JR },
-  'FIN_MANAGER': { scope: RoleScope.SAAS, department: RoleDepartment.FINANCE, level: RoleLevel.MANAGER },
+  'FINANCE_INTERN': { scope: RoleScope.SAAS, department: RoleDepartment.FINANCE, level: RoleLevel.INTERN },
+  'FINANCE_JR': { scope: RoleScope.SAAS, department: RoleDepartment.FINANCE, level: RoleLevel.JR },
+  'FINANCE_PL': { scope: RoleScope.SAAS, department: RoleDepartment.FINANCE, level: RoleLevel.PL },
+  'FINANCE_MANAGER': { scope: RoleScope.SAAS, department: RoleDepartment.FINANCE, level: RoleLevel.MANAGER },
 
   'SALES_JR': { scope: RoleScope.SAAS, department: RoleDepartment.SALES, level: RoleLevel.JR },
   'SALES_DIRECTOR': { scope: RoleScope.SAAS, department: RoleDepartment.SALES, level: RoleLevel.DIRECTOR },
@@ -90,4 +94,5 @@ export const ROLE_MAP: Record<string, RoleEnum> = {
 
   'ADMIN_SAAS_N1': { scope: RoleScope.SAAS, department: RoleDepartment.ADMIN_PANEL, level: RoleLevel.JR },
   'SUPER_ADMIN': { scope: RoleScope.SAAS, department: RoleDepartment.ADMIN_PANEL, level: RoleLevel.ADMIN },
+  'COMPLIANCE_SR': { scope: RoleScope.SAAS, department: RoleDepartment.COMPLIANCE, level: RoleLevel.PL }
 };

@@ -20,49 +20,71 @@ export const useExperienceStore = create<ExperienceState>()(
                 const { cache } = get();
                 const cachedEntry = cache[profileId];
                 const now = Date.now();
+                const CACHE_THRESHOLD = 90 * 1000; // 90 segundos para considerar estável
 
-                // Lógica de Cache Local (Pessimista)
+                // 1. Lógica de Cache Local (Pessimista/Instantânea)
                 if (!forceRefresh && cachedEntry && (now - cachedEntry.updatedAt < CACHE_THRESHOLD)) {
-                    set({ experiences: cachedEntry.data, total: cachedEntry.data.length, loading: false });
+                    console.log("[DELTA_SYSTEM] Memória estável. Pulando rede.");
+                    set({
+                        experiences: cachedEntry.data,
+                        total: cachedEntry.total || cachedEntry.data.length,
+                        loading: false
+                    });
                     return;
                 }
 
                 set({ loading: true, error: null });
 
                 try {
-                    // Passamos o hash para o ETag via options (If-None-Match)
+                    // 2. Chamada ao serviço passando o hash anterior para o If-None-Match
                     const response = await experienceService.listByProfile(
                         profileId,
-                        1, 50, forceRefresh
+                        1, 50,
+                        cachedEntry?.hash || null // Passa o hash se existir
                     );
 
-                    // Extração robusta de dados
-                    const newExperiences = response.experiences || (Array.isArray(response) ? response : []);
-                    const newHash = response.data_hash || "";
+                    // 3. MAPEAMENTO CRÍTICO (De acordo com o seu JSON)
+                    // O backend manda 'items', não 'experiences'
+                    const newExperiences = response.items || [];
+                    const newHash = response.data_hash || response.etag || "";
+                    const totalCount = response.total || newExperiences.length;
 
                     set((state) => ({
                         experiences: newExperiences,
-                        total: response.total || newExperiences.length,
+                        total: totalCount,
                         loading: false,
                         cache: {
                             ...state.cache,
                             [profileId]: {
                                 data: newExperiences,
                                 hash: newHash,
+                                total: totalCount, // Salva o total no cache também
                                 updatedAt: now,
                             },
                         },
                     }));
+
+                    console.log("[DELTA_SYNC] Dataframe de experiências atualizado.");
+
                 } catch (err: any) {
-                    // Tratamento de 304 (Not Modified) vindo do terminal
+                    // 4. Tratamento de 304 (Not Modified)
+                    // Se o servidor retornar 304, mantemos o que já temos e renovamos o timestamp
                     if (err.status === 304 && cachedEntry) {
-                        set({ experiences: cachedEntry.data, loading: false });
+                        console.log("[DELTA_STABLE] 304 Detectado. Mantendo cache.");
+                        set((state) => ({
+                            experiences: cachedEntry.data,
+                            loading: false,
+                            cache: {
+                                ...state.cache,
+                                [profileId]: { ...cachedEntry, updatedAt: now }
+                            }
+                        }));
                     } else {
+                        console.error("ERRO_DNA_SYNC:", err);
                         set({ error: "DNA_SYNC_FAILURE", loading: false });
                     }
                 }
             },
-
             addExperience: async (data) => {
                 set({ loading: true });
                 try {

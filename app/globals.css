@@ -3,25 +3,30 @@
 
 :root {
   /* --- DELOS LIGHT (Clean Room / Industrial) --- */
-  --delos-surface: #ffffff;        
+  --delos-surface: #ffffff;
   --delos-black: #0A0A0A;
-  --delos-container: #151515;    
-  --delos-item: #eeeeee;      
-  --delos-amber: #E17100;          
-  --delos-grey: #8E8E93;           
-  --delos-indigo: #0047FF;         
-  --delos-red: #D32F2F;            
+  --delos-container: #151515;
+  --delos-item: #eeeeee;
+  --delos-amber: #E17100;
+  --delos-grey: #8E8E93;
+  --delos-indigo: #0047FF;
+  --delos-red: #D32F2F;
   --delos-texto: #101011;
   --delos-border: rgba(0, 0, 0, 0.12);
   --delos-subtext: rgba(0, 0, 0, 0.55);
-
+  --delos-green: #53ec53;
   /* NOVAS ADIÇÕES LIGHT (Sem alterar nomes antigos) */
-  --delos-amber-soft: #FFF4E5;    /* Fundo de alertas leves */
-  --delos-grey-light: #F2F2F7;    /* Divisores sutis / Background de inputs */
-  --delos-indigo-soft: #E5EFFF;   /* Destaque de seleção biométrica */
-  --delos-success: #28A745;       /* Status: Terminal Operacional */
-  --delos-muted: #C7C7CC;         /* Placeholder e desabilitados */
-  
+  --delos-amber-soft: #FFF4E5;
+  /* Fundo de alertas leves */
+  --delos-grey-light: #F2F2F7;
+  /* Divisores sutis / Background de inputs */
+  --delos-indigo-soft: #E5EFFF;
+  /* Destaque de seleção biométrica */
+  --delos-success: #28A745;
+  /* Status: Terminal Operacional */
+  --delos-muted: #C7C7CC;
+  /* Placeholder e desabilitados */
+
   /* --- TROPICAL PALETTE (Mantida) --- */
   --tropical-surface: #F5EFE6;
   --tropical-sun: #FFB300;
@@ -33,24 +38,29 @@
 
 .dark {
   /* --- DELOS DARK (Deep Matrix / Subsolo) --- */
-  --delos-surface: #101010;        
-  --delos-black: #E5E5E7;          
-  --delos-amber: #FF9500;       
-  --delos-container: #eeeeee; 
-  --delos-item: #151515;  
-  --delos-grey: #a0a0bd;           
-  --delos-indigo: #757581;         
-  --delos-red: #FF453A;            
+  --delos-surface: #101010;
+  --delos-black: #E5E5E7;
+  --delos-amber: #FF9500;
+  --delos-container: #eeeeee;
+  --delos-item: #151515;
+  --delos-grey: #a0a0bd;
+  --delos-indigo: #757581;
+  --delos-red: #FF453A;
   --delos-texto: #E5E5E7;
   --delos-border: rgba(255, 255, 255, 0.1);
   --delos-subtext: rgba(255, 255, 255, 0.5);
-
+  --delos-green: #3c903c; /* Mantida para contraste em status */
   /* NOVAS ADIÇÕES DARK (Sem alterar nomes antigos) */
-  --delos-surface-elevated: #1C1C1E; /* Cards que "flutuam" sobre o fundo */
-  --delos-amber-glow: rgba(255, 149, 0, 0.15); /* Shadow para efeito neon */
-  --delos-success: #32D74B;          /* Status: Ativo em baixa luz */
-  --delos-grey-dark: #2C2C2E;        /* Inputs e Containers internos */
-  --delos-indigo-bright: #5E5CE6;    /* Link/Ação em Dark Mode */
+  --delos-surface-elevated: #1C1C1E;
+  /* Cards que "flutuam" sobre o fundo */
+  --delos-amber-glow: rgba(255, 149, 0, 0.15);
+  /* Shadow para efeito neon */
+  --delos-success: #32D74B;
+  /* Status: Ativo em baixa luz */
+  --delos-grey-dark: #2C2C2E;
+  /* Inputs e Containers internos */
+  --delos-indigo-bright: #5E5CE6;
+  /* Link/Ação em Dark Mode */
 
   /* --- TROPICAL DARK (Mantida) --- */
   --tropical-surface: #0D1B1E;
@@ -60,6 +70,7 @@
   --tropical-rain: #37474F;
   --tropical-accent: #FF8A65;
 }
+
 /* Scrollbar Delos Style - Mais fino e minimalista */
 .custom-scrollbar::-webkit-scrollbar {
   width: 3px;
@@ -92,7 +103,8 @@ button {
   color: var(--delos-black);
   /* Borda apenas embaixo ou muito fina para parecer um terminal de diagnóstico */
   border: 1px solid var(--delos-border);
-  border-radius: 2px; /* Quinas vivas, quase sem arredondamento */
+  border-radius: 2px;
+  /* Quinas vivas, quase sem arredondamento */
   padding: 0.5rem 0.75rem;
   outline: none;
   transition: all 0.2s ease-in-out;
@@ -101,26 +113,31 @@ button {
 .input-delos:focus {
   /* O foco da Delos é o Âmbar clássico de alerta/seleção */
   border-color: var(--delos-amber);
-  box-shadow: 0 0 0 1px var(--delos-amber); 
+  box-shadow: 0 0 0 1px var(--delos-amber);
 }
 
 .input-delos::placeholder {
   color: var(--delos-subtext);
-  text-transform: uppercase; /* Estética de log de sistema */
+  text-transform: uppercase;
+  /* Estética de log de sistema */
   font-size: 0.75rem;
   letter-spacing: 0.05em;
 }
 
 /* --- INPUTS ESTILO TROPICAL (Orgânico e Suave) --- */
 .input-tropical {
-  background-color: rgba(255, 255, 255, 0.5); /* Leve transparência para blend com o fundo */
+  background-color: rgba(255, 255, 255, 0.5);
+  /* Leve transparência para blend com o fundo */
   color: var(--tropical-ocean);
-  border: 2px solid transparent; /* Borda invisível até o foco */
-  border-radius: 12px; /* Bordas bem arredondadas, como pedras polidas pelo mar */
+  border: 2px solid transparent;
+  /* Borda invisível até o foco */
+  border-radius: 12px;
+  /* Bordas bem arredondadas, como pedras polidas pelo mar */
   padding: 0.6rem 1rem;
   outline: none;
   background-clip: padding-box;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03); /* Sombra suave como o sol */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  /* Sombra suave como o sol */
   transition: border-color 0.3s ease;
 }
 
@@ -132,7 +149,8 @@ button {
 
 .input-tropical::placeholder {
   color: var(--tropical-rain);
-  font-style: italic; /* Toque mais casual e humano */
+  font-style: italic;
+  /* Toque mais casual e humano */
 }
 
 /* Ajuste para Dark Mode nos Inputs Tropicais */

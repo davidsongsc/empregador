@@ -1,6 +1,7 @@
+"use client";
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { UserData } from '@/interfaces/userData';
 import { logout as apiLogout, checkSession } from '@/services/auth';
 import { getCookie, setCookie, deleteCookie } from "@/lib/cookies";
 import { toast } from '@/components/Notification';
@@ -18,26 +19,13 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user) =>
         set((state) => {
-          // 1. Verificação de Identidade e Integridade
-          // Se o usuário for o mesmo, não disparamos re-render desnecessário
+          // 1. Verificação de Identidade (Evita loops de re-render)
           if (user && state.user && state.user.id === user.id) {
-            // Se houver campos novos (Delta), fazemos o merge
             const hasChanges = JSON.stringify(state.user) !== JSON.stringify(user);
-            if (!hasChanges) return state;
-
+            if (!hasChanges) return { ...state, loading: false };
           }
 
-          const updatedUser = user ? { ...state.user, ...user } : null;
-          const empresas = updatedUser?.profile?.empresas || [];
-
-          // 2. Sincronização de Contexto da Empresa (Multi-tenant)
-          // Prioridade: Cookie > Estado Atual > Primeira empresa da lista
-          let activeId = getCookie("active_company") || state.activeCompanyId;
-
-          if (!activeId && empresas.length === 1) {
-            activeId = empresas[0].id;
-            setCookie("active_company", activeId, 7);
-          }
+          // 2. Protocolo de Logout (Limpeza Atômica)
           if (!user) {
             deleteCookie("active_company");
             return {
@@ -48,9 +36,37 @@ export const useAuthStore = create<AuthState>()(
               lastUpdated: Date.now()
             };
           }
+
+          // 3. Merge de Dados (Preserva campos locais se necessário)
+          const updatedUser = { ...state.user, ...user };
+          
+          // 4. Lógica Multi-tenant (Ajustada para Single vs Multi Company)
+          const memberships = updatedUser?.profile?.memberships || updatedUser?.memberships || [];
+          let activeId = getCookie("active_company") || state.activeCompanyId;
+
+          // --- AJUSTE SOLICITADO ---
+          if (memberships.length === 1) {
+            // Se só tem uma empresa, força ela como ativa (Protocolo de Conveniência)
+            activeId = memberships[0].company_id;
+            setCookie("active_company", activeId, 7);
+          } else if (memberships.length > 1) {
+            // Se tem várias, valida se a que está no cache/estado ainda é válida
+            const stillHasAccess = memberships.some((m: any) => m.company_id === activeId);
+            if (!stillHasAccess) {
+              // Se perdeu acesso ou não tem nada setado, não força a primeira
+              // Deixa o usuário escolher no seletor do Header
+              activeId = null;
+              deleteCookie("active_company");
+            }
+          } else {
+            // Caso raro: Usuário sem nenhuma membership
+            activeId = null;
+            deleteCookie("active_company");
+          }
+
           return {
             user: updatedUser,
-            isAuthenticated: !!updatedUser,
+            isAuthenticated: true,
             activeCompanyId: activeId,
             loading: false,
             lastUpdated: Date.now()
@@ -58,14 +74,26 @@ export const useAuthStore = create<AuthState>()(
         }),
 
       setActiveCompany: (id) => {
+        // 1. Sincronização de Persistência (Cookies para SSR/Middleware)
         if (id) {
+          // Definimos o cookie com path "/" para garantir que a API e o Next.js o vejam em qualquer rota
           setCookie("active_company", id, 7);
         } else {
           deleteCookie("active_company");
         }
 
-        set({ activeCompanyId: id });
+        // 2. Sincronização de Estado (Zustand para Client-side)
+        set({
+          activeCompanyId: id,
+          // Dica: Atualize o timestamp para forçar o 'refresh' da sessão se necessário
+          lastUpdated: Date.now()
+        });
+
         console.log(`[AUTH_STORE] DELTA_SYNC: Active_Company -> ${id}`);
+
+        // 3. (Opcional) Forçar Re-fetch de dados globais
+        // Se você tiver uma função que busca as vagas da empresa, 
+        // você pode disparar um evento aqui ou deixar que o useEffect dos componentes reaja ao activeCompanyId.
       },
 
       setLoading: (loading) => set({ loading }),
@@ -74,15 +102,12 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         try {
-          // Tenta avisar a VPS para invalidar a session/blacklist
           await apiLogout();
         } catch (err) {
-          console.warn("[AUTH_STORE] Erro ao comunicar logout com a VPS.");
+          console.warn("[AUTH_STORE] Erro ao comunicar logout com a API. Limpando localmente.");
         } finally {
-          // Limpeza atômica de persistência
           deleteCookie("active_company");
           localStorage.removeItem('freelacerto_auth_storage');
-
           set({
             user: null,
             activeCompanyId: null,
@@ -90,21 +115,15 @@ export const useAuthStore = create<AuthState>()(
             loading: false,
             lastUpdated: Date.now()
           });
-
         }
       },
 
-      // useAuthStore.ts
       refresh: async () => {
         const state = get();
+        if (!state.isHydrated) return;
 
-        // 1. BLOQUEIO DE SEGURANÇA: Se já estiver carregando ou não estiver hidratado, aborte.
-        if (state.loading || !state.isHydrated) return;
-
-        // 2. PROTOCOLO DELTA: Evite refresh se a última atualização foi há menos de 10 segundos
-        // Isso evita loops causados por re-renders rápidos do React
         const now = Date.now();
-        if (now - state.lastUpdated < 10000) {
+        if (now - state.lastUpdated < 10000 && state.user) {
           set({ loading: false });
           return;
         }
@@ -113,34 +132,22 @@ export const useAuthStore = create<AuthState>()(
         try {
           const data = await checkSession();
 
-          if (data?.no_changes) {
-            // Importante: Atualizamos o timestamp mesmo no no_changes 
-            // para reiniciar o contador de 1 minuto
-            set({ loading: false });
+          if (!data || data.authenticated === false) {
+            if (state.isAuthenticated) {
+              get().logout();
+            }
             return;
           }
 
-          const userData = data?.user || data;
+          const userData = data.user;
           if (userData) {
             get().setUser(userData);
           }
         } catch (err: any) {
-          let backendError = "Erro ao processar solicitação.";
-
-          // Se o FastAPI retornar erro de validação (422)
-          if (err.response?.data?.detail && Array.isArray(err.response.data.detail)) {
-            const errorDetail = err.response.data.detail[0];
-            const campo = errorDetail.loc[1]; // ex: "email"
-            const mensagem = errorDetail.msg;  // ex: "value is not a valid email address"
-
-            backendError = `Erro no campo ${campo}: ${mensagem}`;
+          if (state.isAuthenticated) {
+            console.error("[AUTH_STORE] Revalidação de sessão falhou.");
+            if (err.response?.status === 401) get().logout();
           }
-          // Se for um erro manual que você deu raise (400)
-          else if (err.response?.data?.detail) {
-            backendError = err.response.data.detail;
-          }
-
-          toast.error(backendError);
         } finally {
           set({ loading: false });
         }
@@ -149,7 +156,6 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'freelacerto_auth_storage',
       storage: createJSONStorage(() => localStorage),
-      // Partialize: O que realmente vai para o disco para o Delta X
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
@@ -158,12 +164,11 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
-
-        // Finaliza hidratação
         state.setHydrated(true);
 
-        // Se o cache diz que não está autenticado, encerra o loading imediatamente
-        if (!state.isAuthenticated) {
+        if (state.isAuthenticated) {
+          state.refresh();
+        } else {
           state.setLoading(false);
         }
       },

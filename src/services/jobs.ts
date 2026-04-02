@@ -7,7 +7,7 @@ export async function getJobs(page: number) {
 }
 
 export async function createJob(jobData: Job) {
-  return await api("/vagas/postar/", {
+  return await api("/api/v1/jobs/", {
     method: "POST",
     body: JSON.stringify(jobData),
     credentials: "include", // Envia cookies/session
@@ -15,28 +15,17 @@ export async function createJob(jobData: Job) {
   });
 }
 export async function updateJob(uid: string, jobData: JobPayload) {
-  return await api(`/vagas/${uid}/editar/`, {
+  return await api(`/api/v1/jobs/update/${uid}`, {
     method: "PATCH",
     body: JSON.stringify(jobData),
     credentials: "include", // Crucial para autorização do PATCH
     headers: { "Content-Type": "application/json" }
   });
 }
-export async function getCorporateApplications(companyId: string, jobId?: string): Promise<Job> {
-  const query = jobId ? `?job=${jobId}` : '';
-
-  return api(`/vagas/corporate/candidaturas/${query}`, {
-    method: "GET",
-    headers: {
-      "X-Company-Id": companyId, // Cabeçalho que a View espera
-    },
-    credentials: "include",
-  });
-}
 
 export async function deleteJob(uid: string) {
   // A URL deve ser idêntica à definida no path do Django
-  return await api(`/vagas/${uid}/editar/`, {
+  return await api(`/api/v1/jobs/delete/${uid}`, {
     method: "DELETE",
     credentials: "include",
   });
