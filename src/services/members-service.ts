@@ -59,8 +59,8 @@ export const memberService = {
   /**
    * Encerramento definitivo de protocolo de acesso.
    */
-  removeMember: async (companyId: string, profileId: string) => {
-    return await api(`/api/v1/members/${companyId}/${profileId}`, {
+  removeMember: async (profileId: string) => {
+    return await api(`/api/v1/members/${profileId}`, {
       method: "DELETE",
       headers: { ...DELTA_HEADERS },
     });

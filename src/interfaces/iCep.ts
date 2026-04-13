@@ -8,7 +8,12 @@ export interface CepResponse {
     bairro: string;
     localidade: string;
     uf: string;
+    estado: string;
+    regiao: string;
     ibge: string;
     ddd: string;
-    erro?: boolean; // Propriedade retornada pelo ViaCEP quando o CEP não existe
+    erro?: boolean; 
+    unidade?: string;
+    gia?: string;
+    siafi?: string;
 }

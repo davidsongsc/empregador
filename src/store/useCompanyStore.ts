@@ -121,14 +121,14 @@ export const useCompanyStore = create<CompanyState>((set, get) => ({
   },
 
   // --- MELHORIA NA REMOÇÃO ---
-  removeMember: async (memberId: number) => {
+  removeMember: async (memberId: string) => {
     const active = get().activeCompany;
     if (!active) return;
 
     set({ loading: true });
     try {
       // Usamos o ID da empresa vindo do objeto ativo
-      await memberService.removeMember(active.company_id, memberId);
+      await memberService.removeMember(memberId);
 
       // Otimização: Em vez de invalidar tudo, removemos localmente para feedback instantâneo
       const updatedMembers = get().members.filter(m => m.id !== memberId);
@@ -250,22 +250,25 @@ export const useCompanyStore = create<CompanyState>((set, get) => ({
     }
   },
 
-  updateMemberRole: async (memberId: string, role: string) => {
-    const active = get().activeCompany.id;
-    console.log('activeCompany in updateMemberRole:', active);
-    if (!active) return;
+  updateMemberRole: async (profileId: string, role: string) => {
+    const activeCompanyId = get().activeCompany?.id;
+    if (!activeCompanyId) return;
+
     const cleanRole = role.replace(/['"]+/g, '').trim();
 
     try {
-      await memberService.updateMemberRole(active, memberId, cleanRole);
+      await memberService.updateMemberRole(activeCompanyId, profileId, cleanRole);
+
+      // CORREÇÃO: Usar profile_id para garantir que o "nó" certo seja atualizado
       const updatedMembers = get().members.map((m) =>
-        m.id === memberId ? { ...m, role: cleanRole } : m
+        m.profile_id === profileId ? { ...m, role: cleanRole } : m
       );
+
       set({ members: updatedMembers });
-      await get().clearCacheLayers(); // Invalida cache para evitar dados antigos
-      toast.success("ROLE_ATUALIZADA.");
+      await get().clearCacheLayers();
+      toast.success("NÍVEL_OPERACIONAL_ATUALIZADO.");
     } catch (err) {
-      toast.error("ERRO_AO_ATUALIZAR.");
+      toast.error("FALHA_NA_ATUALIZAÇÃO.");
     }
   },
 
@@ -281,19 +284,7 @@ export const useCompanyStore = create<CompanyState>((set, get) => ({
     }
   },
 
-  removeMember: async (memberId: number) => {
-    const active = get().activeCompany;
-    if (!active) return;
-    set({ loading: true });
-    try {
-      await memberService.removeMember(active.id, memberId);
-      await get().clearCacheLayers();
-      await get().fetchMembers(1, 10, true);
-      toast.success("MEMBRO_REMOVIDO.");
-    } catch (err) {
-      set({ loading: false });
-    }
-  },
+  
 
   clearStorage: async () => {
     const allKeys = await idbKeys();

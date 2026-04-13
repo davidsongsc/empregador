@@ -66,10 +66,7 @@ export const CandidateList = ({
     handleNextStep,
     handleStatusChange
 }: CandidateListProps) => {
-    console.log('candidatos LIST COMPONENT', candidatos);
     const [isChangingStatus, setIsChangingStatus] = useState(false);
-    const { user } = useAuthStore();
-    // Estado para detecção de Mobile
     const [isMobile, setIsMobile] = useState(false);
     const canAccessSupervision = checkModuleAccess(
         getActiveMembership()?.role ?? "GUEST",
@@ -77,7 +74,7 @@ export const CandidateList = ({
     );
     useEffect(() => {
         const checkMobile = () => {
-            setIsMobile(window.innerWidth < 768); // Define 768px como breakpoint para mobile
+            setIsMobile(window.innerWidth < 768); 
         };
 
         checkMobile();
@@ -217,7 +214,7 @@ export const CandidateList = ({
                                                         <span className="text-[14px] text-delos-surface uppercase tracking-widest">Localização</span>
                                                     </div>
                                                     <span className="text-xs font-bold text-delos-surface uppercase">
-                                                        {isUnlocked ? details?.localizacao : "Cidade Protegida"}
+                                                        {isUnlocked ? details?.endereco?.cidade : "Cidade Protegida"}
                                                     </span>
                                                 </div>
                                             </div>

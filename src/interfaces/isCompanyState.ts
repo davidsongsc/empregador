@@ -17,9 +17,9 @@ export interface CompanyState {
     fetchCompanyDetails: (id: string) => Promise<void>;
     fetchMembers: ( page?: number, pageSize?: number, forceRefresh?: boolean) => Promise<void>;
     updateCompanyStatus: (id: string, isActive: boolean) => Promise<void>;
-    updateMemberRole: (memberId: number, role: string) => Promise<void>;
+    updateMemberRole: (profileId: string, role: string) => Promise<void>;
     addMember: (companyId: string, profileId: string, role: string) => Promise<void>;
-    removeMember: (memberId: number) => Promise<void>;
+    removeMember: (memberId: string) => Promise<void>;
     saveCompany: (id: string, data: any) => Promise<void>;
 
     // Persistência e Cache

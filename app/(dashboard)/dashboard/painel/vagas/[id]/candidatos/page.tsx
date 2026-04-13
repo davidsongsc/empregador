@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useCorporateApplications } from "@/hooks/useCorporateApplications";
 import { updateApplicationStatus } from "@/services/jobService";
 import { toast } from "@/components/Notification";
@@ -12,7 +12,6 @@ import { FooterHUD } from "@/components/Footer/System";
 import { Application } from "@/interfaces/aplications";
 import { checkLevel } from "@/utils/checkLevel";
 
-
 export default function CandidatosPage() {
   const params = useParams();
   const jobId = params.id as string;
@@ -21,30 +20,40 @@ export default function CandidatosPage() {
   const [page, setPage] = useState(1);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const { candidatos, total, loading, updateStatus } = useCorporateApplications({
 
+  const { candidatos, total, loading, updateStatus } = useCorporateApplications({
     status: filterStatus === "all" ? undefined : filterStatus,
     page: page,
     pageSize: 10,
     jobId: jobId
   });
 
-  // Filtro de busca local (nome)
+  /**
+   * REVISÃO DO FILTRO LOCAL:
+   * 1. Removemos candidatos com status 'HIRED' (Contratados)
+   * 2. Aplicamos a busca por nome
+   */
   const filteredCandidatos = useMemo(() => {
-    return candidatos.filter(app =>
-      app.profile?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [candidatos, searchTerm]);
-  console.log('filteredCandidatos', filteredCandidatos);
-  console.log('candidatos', candidatos);
+    return candidatos.filter(app => {
+      // 1. Condição de Exclusão: Se já foi contratado, sai da visualização de candidatos
+      // Certifique-se de que a string "HIRED" bate com o valor do seu backend/enum
+      const isHired = app.status === "HIRED" || app.status?.toString().endsWith("HIRED");
+      
+      if (isHired) return false;
 
-  const hasLowAccess = checkLevel("low")
-  const hasMidAccess = checkLevel("mid")
-  const hasHighAccess = checkLevel("high")
+      // 2. Filtro de Busca por nome
+      return app.profile?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+  }, [candidatos, searchTerm]);
+
+  // Níveis de acesso para operações
+  const hasMidAccess = checkLevel("mid");
+  const hasHighAccess = checkLevel("high");
+
   const handleNextStep = async (app: Application) => {
     if (!hasMidAccess) {
       toast.error("Você não possui permissão para avançar o candidato de etapa!");
-      return; 
+      return;
     };
 
     if (isUpdating) return;
@@ -53,7 +62,6 @@ export default function CandidatosPage() {
 
     if (currentIndex !== -1 && currentIndex < FLOW_SEQUENCE.length - 1) {
       const nextStatus = FLOW_SEQUENCE[currentIndex + 1];
-
       setIsUpdating(true);
 
       try {
@@ -78,31 +86,24 @@ export default function CandidatosPage() {
       toast.error("Você não possui permissão para alterar o status!");
       return null;
     };
-    if (isUpdating) return; // Bloqueio preventivo
+    if (isUpdating) return;
 
-    setIsUpdating(true); // Ativa o lock
+    setIsUpdating(true);
     try {
-      // Chamas a API
       await updateApplicationStatus(appId, newStatus);
-
-      // Atualiza o estado local (supondo que updateStatus venha de um hook ou prop)
       updateStatus(appId, newStatus);
 
-      // Feedback de sistema - Usando o label do config com fallback
       const statusLabel = STATUS_CONFIG[newStatus]?.label || newStatus;
       toast.success(`Protocolo reescrito para: ${statusLabel}`);
 
-      // Atualiza o objeto selecionado se ele for o que está sendo editado
       if (selectedApp?.id === appId) {
         setSelectedApp({ ...selectedApp, status: newStatus });
       }
-
-
     } catch (err) {
       toast.error("Erro na reescrita de dados do Host");
       console.error(err);
     } finally {
-      setIsUpdating(false); // Libera o lock
+      setIsUpdating(false);
     }
   };
 
@@ -117,14 +118,12 @@ export default function CandidatosPage() {
 
   return (
     <div className="min-h-screen bg-delos-surface/70 text-slate-400 font-sans overflow-x-hidden pb-20 selection:bg-amber-500/30">
-
-      {/* HEADER DINÂMICO DELOS */}
       <CandidateFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         filterStatus={filterStatus}
         setFilterStatus={setFilterStatus}
-        total={total}
+        total={filteredCandidatos.length}
         loading={loading}
       />
 
@@ -132,7 +131,7 @@ export default function CandidatosPage() {
         loading={loading}
         isUpdating={isUpdating}
         candidatos={candidatos}
-        filteredCandidatos={filteredCandidatos}
+        filteredCandidatos={filteredCandidatos} // Agora utiliza a lista filtrada sem os contratados
         selectedApp={selectedApp}
         setSelectedApp={setSelectedApp}
         STATUS_CONFIG={STATUS_CONFIG}
@@ -144,9 +143,6 @@ export default function CandidatosPage() {
         handleNextStep={handleNextStep}
         handleStatusChange={handleStatusChange}
       />
-
-      {/* DRAWER LATERAL: PAINEL DE CONTROLE DE HOST */}
-
 
       <FooterHUD />
     </div>

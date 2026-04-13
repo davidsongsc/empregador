@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Briefcase, User, Search, PlusCircle, X, Menu, LogOut, LayoutDashboard, Binary, LogIn, Building, LayoutDashboardIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -16,6 +16,7 @@ import LoginModal from '../Modal/LoginModal';
 import SelectCompanyModal from '../Modal/SelectCompany';
 import hasModuleAccess from '@/utils/hasModuleAccess';
 import { useProfile } from '@/hooks/useProfile';
+import { useJobStore } from '@/store/useJobStore';
 
 const Header = () => {
     const isScrolled = useUIStore((state) => state.isScrolled);
@@ -30,18 +31,9 @@ const Header = () => {
     const [isOpenModal, setIsOpenModal] = useState(false);
     const userRole = getActiveMembership()?.role;
     const isRecruiter = hasModuleAccess(userRole, Module.OPERATIONAL);
-    console.log("Acessos do usuário:", {
-        userRole, profile,
-        admin: hasModuleAccess(userRole, Module.ADMIN_PANEL),
-        recruitment: hasModuleAccess(userRole, Module.RECRUITMENT),
-        supervision: hasModuleAccess(userRole, Module.SUPERVISION),
-        operational: hasModuleAccess(userRole, Module.OPERATIONAL),
-        support: hasModuleAccess(userRole, Module.SUPPORT_PANEL),
-        sales: hasModuleAccess(userRole, Module.SALES),
-        finance: hasModuleAccess(userRole, Module.FINANCE),
-        candidate: hasModuleAccess(userRole, Module.CANDIDATE_AREA),
-        compliance: hasModuleAccess(userRole, Module.COMPLIANCE)
-    });
+    const {
+        fetchCategories
+    } = useJobStore();
     useEffect(() => {
         const handleScroll = () => {
             const scrolled = window.scrollY > 20;
@@ -52,7 +44,10 @@ const Header = () => {
         window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
     }, [setScrolled]);
-
+    const logoutRefreshCategory = useCallback(() => {
+        fetchCategories(1, true);
+        logout();
+    }, []);
     if (isDashboardRoute) return null;
 
     const closeDock = () => setIsDockOpen(false);
@@ -147,7 +142,7 @@ const Header = () => {
                                     </div>
                                 </Link>
                                 <button
-                                    onClick={logout}
+                                    onClick={logoutRefreshCategory}
                                     className="p-3 text-[var(--delos-grey)] hover:text-[var(--delos-red)] transition-colors"
                                 >
                                     <LogOut className="w-4 h-4" />

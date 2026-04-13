@@ -163,7 +163,7 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
         const experienceTasks = experiences.map(exp => {
           if (!exp.empresa || !exp.cargo) return null;
 
-        
+
           const sanitizedExp = {
             ...exp,
             data_entrada: exp.data_entrada || null,
@@ -190,13 +190,13 @@ const JobApplyModal = ({ user, open, onClose, job }: Props) => {
         answer: text,
       }));
 
-      const targetJobId = job.id ;
+      const targetJobId = job.id;
       await applicationService.applyToJob(targetJobId, formattedAnswers);
       sendGAEvent('event', 'conversion', {
         event_category: 'job_application_complete',
         event_label: job.cargo_nome,
         job_id: targetJobId,
-        boost_active: false, 
+        boost_active: false,
         value: 1
       });
 

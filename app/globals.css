@@ -8,6 +8,7 @@
   --delos-container: #151515;
   --delos-item: #eeeeee;
   --delos-amber: #E17100;
+  --delos-amber-soft: #1e8eff;
   --delos-grey: #8E8E93;
   --delos-indigo: #0047FF;
   --delos-red: #D32F2F;
@@ -16,7 +17,6 @@
   --delos-subtext: rgba(0, 0, 0, 0.55);
   --delos-green: #53ec53;
   /* NOVAS ADIÇÕES LIGHT (Sem alterar nomes antigos) */
-  --delos-amber-soft: #FFF4E5;
   /* Fundo de alertas leves */
   --delos-grey-light: #F2F2F7;
   /* Divisores sutis / Background de inputs */
@@ -41,6 +41,8 @@
   --delos-surface: #101010;
   --delos-black: #E5E5E7;
   --delos-amber: #FF9500;
+  --delos-amber-soft: #006aff;
+
   --delos-container: #eeeeee;
   --delos-item: #151515;
   --delos-grey: #a0a0bd;
@@ -49,7 +51,8 @@
   --delos-texto: #E5E5E7;
   --delos-border: rgba(255, 255, 255, 0.1);
   --delos-subtext: rgba(255, 255, 255, 0.5);
-  --delos-green: #3c903c; /* Mantida para contraste em status */
+  --delos-green: #3c903c;
+  /* Mantida para contraste em status */
   /* NOVAS ADIÇÕES DARK (Sem alterar nomes antigos) */
   --delos-surface-elevated: #1C1C1E;
   /* Cards que "flutuam" sobre o fundo */
@@ -157,4 +160,65 @@ button {
 .dark .input-tropical {
   background-color: rgba(0, 0, 0, 0.2);
   color: var(--tropical-sun);
+}
+
+/* --- DELOS SCROLL SYSTEM (Precision Design) --- */
+
+/* 1. BARRA PRINCIPAL DA PÁGINA (Quase invisível, ultra-fina) */
+html::-webkit-scrollbar {
+  width: 2px;
+  /* Espessura mínima para manter a funcionalidade */
+  height: 2px;
+}
+
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: var(--delos-border);
+  /* Cor sutil que se mistura à borda */
+  border-radius: 20px;
+  transition: background 0.3s ease;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: var(--delos-grey);
+  /* Ganha destaque apenas no hover */
+}
+
+/* 2. CLASSE UTILITÁRIA .custom-scrollbar (Para Paineis e Modais) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  /* Levemente mais larga para facilitar o uso em áreas internas */
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.02);
+  /* Leve trilha para Delos Light */
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  /* Leve trilha para Delos Dark */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--delos-muted);
+  border-radius: 10px;
+  border: 1px solid transparent;
+  /* Cria um respiro visual */
+  background-clip: content-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--delos-amber);
+  /* Feedback visual com a cor de destaque da Delos */
+}
+
+/* Firefox Support (Scrollbar-width) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--delos-muted) transparent;
 }
