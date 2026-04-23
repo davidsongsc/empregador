@@ -3,16 +3,17 @@ import { getMyJobs } from "@/services/jobService";
 import { JobsResponse } from "@/interfaces/ijobResponse";
 import { toast } from "@/components/Notification";
 
-const CACHE_TTL = 60 * 1000; // 1 minuto de frescor
+const CACHE_TTL = 60 * 1000; // 1 minuto
 
 interface MyJobsState {
   data: JobsResponse | null;
   loading: boolean;
   error: string | null;
   cache: Record<string, { data: JobsResponse; timestamp: number }>;
-  currentRequest: string | null; // Trava para evitar chamadas duplicadas
+  currentRequest: string | null;
 
-  fetchJobs: (filter: any, forceRefresh?: boolean) => Promise<void>;
+  // 🔹 Agora precisamos receber o companyId
+  fetchJobs: (companyId: string, filter: any, forceRefresh?: boolean) => Promise<void>;
   invalidateCache: () => void;
 }
 
@@ -23,18 +24,18 @@ export const useMyJobsStore = create<MyJobsState>((set, get) => ({
   cache: {},
   currentRequest: null,
 
-  fetchJobs: async (filter, forceRefresh = false) => {
-    const cacheKey = JSON.stringify(filter);
+  fetchJobs: async (companyId, filter, forceRefresh = false) => {
+    // 🔹 A chave do cache deve incluir o companyId para evitar misturar dados de empresas diferentes
+    const cacheKey = `${companyId}-${JSON.stringify(filter)}`;
     const now = Date.now();
 
-    // 1. BLOQUEIO DE DUPLICIDADE (Mata o refresh duplo na navegação)
+    // 1. BLOQUEIO DE DUPLICIDADE
     if (get().currentRequest === cacheKey) return;
 
     // 2. VERIFICAÇÃO DE CACHE
     if (!forceRefresh) {
       const cached = get().cache[cacheKey];
       if (cached && now - cached.timestamp < CACHE_TTL) {
-        // Se o dado no cache já é o que está em 'data', nem atualiza estado
         if (get().data !== cached.data) {
           set({ data: cached.data, loading: false, error: null });
         }
@@ -42,27 +43,32 @@ export const useMyJobsStore = create<MyJobsState>((set, get) => ({
       }
     }
 
-    // Marca que esta chave específica está sendo buscada
     set({ loading: true, error: null, currentRequest: cacheKey });
 
     try {
-      const response = await getMyJobs(filter);
-
+      // 🔹 PASSANDO O ID PARA O SERVICE (Crucial para o Header x-company-id)
+      const response = await getMyJobs({ ...filter }, companyId);
+      console.log("objeto companyId recebido no store", companyId);
       set((state) => ({
         data: response,
         loading: false,
-        currentRequest: null, // Libera a trava
+        currentRequest: null,
         cache: {
           ...state.cache,
           [cacheKey]: { data: response, timestamp: now }
         }
       }));
     } catch (err: any) {
-      const msg = err.message || "Erro ao carregar vagas";
+      // 🔹 Tratamento de erro padronizado com o seu novo backend
+      const msg = err.response?.data?.message || err.message || "Erro ao carregar vagas";
       set({ error: msg, loading: false, currentRequest: null });
-      toast.error(msg);
+      
+      // Evita mostrar toast se for cancelamento de requisição ou erro silencioso
+      if (msg !== "canceled") {
+          toast.error(msg);
+      }
     }
   },
 
-  invalidateCache: () => set({ cache: {}, data: null })
+  invalidateCache: () => set({ cache: {}, data: null, currentRequest: null })
 }));

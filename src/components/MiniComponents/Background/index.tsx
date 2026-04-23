@@ -1,57 +1,85 @@
 "use client";
 import React from "react";
+import { motion } from "framer-motion";
 
-const DelosBackground = () => {
+const DelosSpaceTimeBackground = () => {
   return (
-    <div className="fixed inset-0 -z-10 bg-delos-surface overflow-hidden">
-      {/* 1. O GRID TÉCNICO (Cálculos de Engenharia) */}
-      <div 
-        className="absolute inset-0 opacity-[0.15]" 
+    <div className="fixed inset-0 -z-10 bg-[#020202] overflow-hidden pointer-events-none">
+
+      {/* 1. O TECIDO (Com correção de compatibilidade de máscara) */}
+      <div
+        className="absolute inset-0 opacity-20" // Aumentei para 0.20 para teste inicial
         style={{
+          perspective: "1000px",
           backgroundImage: `
-            linear-gradient(var(--delos-amber) 1px, transparent 1px),
-            linear-gradient(90deg, var(--delos-amber) 1px, transparent 1px)
+            linear-gradient(to right, rgba(255,255,255,0.3) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255,255,255,0.3) 1px, transparent 1px)
           `,
-          backgroundSize: '100px 100px'
-        }} 
+          backgroundSize: '80px 80px',
+          // FIX DE COMPATIBILIDADE:
+          WebkitMaskImage: 'radial-gradient(circle at center, black 20%, transparent 80%)',
+          maskImage: 'radial-gradient(circle at center, black 20%, transparent 80%)',
+          transform: 'rotateX(25deg) scale(1.5)', 
+        }}
       />
-      
-      {/* 2. CÍRCULOS DE CALIBRAGEM (Referência ao Vitruvian Man do Westworld) */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-delos-amber/10 rounded-full animate-pulse-slow" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-delos-amber/5 rounded-full rotate-45 border-dashed" />
-      
-      {/* 3. PARTÍCULAS DE DADOS (Sinapses) */}
-      <div className="absolute inset-0">
-        {[...Array(20)].map((_, i) => (
-          <div
+
+      {/* 2. CÍRCULOS DE CALIBRAGEM (Curvatura) */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full flex items-center justify-center">
+        {[...Array(3)].map((_, i) => (
+          <motion.div
             key={i}
-            className="absolute bg-delos-amber/40 rounded-full blur-[1px] animate-float"
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{
+              opacity: [0, 0.2, 0],
+              scale: [0.5, 2],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              delay: i * 2,
+              ease: "linear"
+            }}
+            className="absolute border border-white/20 rounded-full"
             style={{
-              width: Math.random() * 3 + 'px',
-              height: Math.random() * 3 + 'px',
-              top: Math.random() * 100 + '%',
-              left: Math.random() * 100 + '%',
-              animationDuration: Math.random() * 10 + 10 + 's',
-              animationDelay: Math.random() * 5 + 's',
+              width: `${(i + 1) * 300}px`,
+              height: `${(i + 1) * 300}px`,
             }}
           />
         ))}
       </div>
 
-      {/* 4. SCANNER VERTICAL (Protocolo de Diagnóstico) */}
-      <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-delos-amber/20 to-transparent animate-scan-slow" />
-
-      {/* 5. TEXTO DE CÓDIGO SUBTIL (Logs de Sistema) */}
-      <div className="absolute bottom-10 left-10 font-mono text-[8px] text-delos-grey/20 uppercase tracking-[0.5em] space-y-1 select-none">
-        <p>System.Init(Host_01)</p>
-        <p>Calibration: 98.4%</p>
-        <p>Status: Synchronizing_Dream</p>
+      {/* 3. PONTOS DE LUZ (Estrelas/Dados) */}
+      <div className="absolute inset-0">
+        {[...Array(15)].map((_, i) => (
+          <motion.div
+            key={i}
+            animate={{
+              opacity: [0.1, 0.5, 0.1]
+            }}
+            transition={{
+              duration: 5 + i,
+              repeat: Infinity,
+            }}
+            className="absolute w-[1.5px] h-[1.5px] bg-white rounded-full shadow-[0_0_3px_white]"
+            style={{
+              top: `${(i * 7.7) % 100}%`,
+              left: `${(i * 13.3) % 100}%`,
+            }}
+          />
+        ))}
       </div>
 
-      {/* VIGNETTE (Escurece as bordas para focar no Modal) */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
+      {/* 4. SCANNER (Horizonte de Eventos) */}
+      <motion.div
+        animate={{ top: ["-10%", "110%"] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+        className="absolute left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"
+      />
+
+      {/* VIGNETTE (Sombreamento das bordas) */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,rgba(0,0,0,0.9)_100%)]" />
     </div>
   );
 };
 
-export default DelosBackground;
+export default DelosSpaceTimeBackground;

@@ -41,7 +41,7 @@ export const CandidateDrawer = ({
 
   return (
     <div className={`fixed inset-0 z-50 transition-all duration-500 flex items-center justify-center ${selectedApp ? 'visible' : 'invisible'}`}>
-      
+
       {/* Backdrop principal com desfoque */}
       <div
         className={`absolute inset-0 bg-black/90 backdrop-blur-sm transition-opacity duration-500 ${selectedApp ? 'opacity-100' : 'opacity-0'}`}
@@ -70,9 +70,9 @@ export const CandidateDrawer = ({
             <div className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.01] relative z-10">
               <div className="flex items-center gap-6">
                 <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-900 border border-amber-900/50 p-1 relative">
-                  {selectedApp.status !== 'applied' && selectedApp.candidate_details?.foto ? (
+                  {selectedApp.status !== 'applied' && selectedApp.profile?.foto_url ? (
                     <Image
-                      src={selectedApp.candidate_details.foto}
+                      src={selectedApp.profile?.foto_url}
                       alt="Avatar"
                       width={80}
                       height={80}
@@ -87,7 +87,7 @@ export const CandidateDrawer = ({
                 </div>
                 <div className="text-left">
                   <h2 className="text-lg md:text-xl font-black text-white uppercase tracking-widest leading-none">
-                    {selectedApp.status !== 'applied' ? selectedApp.candidate_details.name : "Candidato Oculto"}
+                    {selectedApp.status !== 'applied' ? selectedApp.profile?.name : "Candidato Oculto"}
                   </h2>
                   <div className="flex items-center gap-3 mt-3">
                     <span className="text-[9px] text-amber-600 font-black tracking-[0.2em] uppercase px-2 py-0.5 border border-amber-900/30">
@@ -109,7 +109,7 @@ export const CandidateDrawer = ({
 
             {/* Conteúdo Principal com Scroll Interno */}
             <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-10 md:space-y-12 relative z-10 custom-scrollbar">
-              
+
               {/* Bio Section */}
               <section className="text-left">
                 <div className="flex items-center gap-3 mb-6">
@@ -118,7 +118,7 @@ export const CandidateDrawer = ({
                 </div>
                 <div className="p-6 bg-white/[0.02] border border-white/5 rounded-sm">
                   <p className="text-sm text-slate-400 leading-relaxed font-light italic tracking-wide">
-                    "{selectedApp.candidate_details?.bio || "Nenhuma biografia registrada para esta unidade."}"
+                    "{selectedApp.profile?.bio || "Nenhuma biografia registrada para esta unidade."}"
                   </p>
                 </div>
               </section>
@@ -131,7 +131,7 @@ export const CandidateDrawer = ({
                     <span className="text-[8px] text-slate-600 uppercase tracking-widest block">Ocupação Atual</span>
                   </div>
                   <span className="text-xs font-bold text-slate-200 uppercase leading-tight">
-                    {selectedApp.candidate_details?.ocupation || "Não Informado"}
+                    {selectedApp.profile?.ocupation || "Não Informado"}
                   </span>
                 </div>
                 <div className="p-6 bg-[#080808] group hover:bg-white/[0.02] transition-colors text-left">
@@ -139,8 +139,10 @@ export const CandidateDrawer = ({
                     <MapPin size={12} className="text-amber-900/50" />
                     <span className="text-[8px] text-slate-600 uppercase tracking-widest block">Localização</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-200 uppercase leading-tight">
-                    {selectedApp.status !== 'applied' ? selectedApp.candidate_details?.localizacao : "Cidade Protegida"}
+                  <span className="text-xs font-bold text-delos-surface uppercase leading-tight">
+                    {selectedApp.status !== 'applied'
+                      ? (selectedApp.profile?.addresses?.[0]?.cidade || "Cidade não informada")
+                      : "Cidade Protegida"}
                   </span>
                 </div>
               </div>
@@ -153,8 +155,8 @@ export const CandidateDrawer = ({
                 </div>
 
                 <div className="space-y-4 text-left">
-                  {selectedApp.candidate_details.experiences && selectedApp.candidate_details.experiences.length > 0 ? (
-                    selectedApp.candidate_details.experiences.map((exp: any) => (
+                  {selectedApp.profile.experiences && selectedApp.profile.experiences.length > 0 ? (
+                    selectedApp.profile.experiences.map((exp: any) => (
                       <div key={exp.id} className="p-5 bg-white/[0.02] border border-white/5 relative group/exp hover:bg-white/[0.03] transition-colors">
                         <div className="flex justify-between items-start">
                           <div className="flex gap-4">
@@ -194,8 +196,8 @@ export const CandidateDrawer = ({
                   onClick={() => handleNextStep(selectedApp)}
                   disabled={loading || isUpdating || selectedApp.status === 'hired' || selectedApp.status === 'rejected'}
                   className={`w-full py-4.5 font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 active:scale-[0.98] ${isUpdating
-                      ? 'bg-gray-100 text-gray-400 cursor-wait'
-                      : 'bg-amber-600 hover:bg-amber-500 text-black shadow-[0_10px_30px_rgba(217,119,6,0.15)]'
+                    ? 'bg-gray-100 text-gray-400 cursor-wait'
+                    : 'bg-amber-600 hover:bg-amber-500 text-black shadow-[0_10px_30px_rgba(217,119,6,0.15)]'
                     } disabled:opacity-40 disabled:pointer-events-none`}
                 >
                   {isUpdating ? (
@@ -208,7 +210,7 @@ export const CandidateDrawer = ({
                 {/* Grid de Ações Secundárias */}
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => handleStatusChange(selectedApp.id, 'rejected')}
+                    onClick={() => handleStatusChange(selectedApp.profile_id, 'rejected')}
                     className="py-3.5 border border-rose-900/30 text-rose-500 text-[9px] font-bold uppercase tracking-widest text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center gap-2"
                   >
                     <Ban size={12} /> Reprovar
@@ -269,7 +271,7 @@ export const CandidateDrawer = ({
                                         key={key}
                                         disabled={isUpdating}
                                         onClick={() => {
-                                          handleStatusChange(selectedApp.id, key);
+                                          handleStatusChange(selectedApp.profile_id, key);
                                           setIsChangingStatus(false);
                                         }}
                                         className="group/btn flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 hover:border-amber-600/50 hover:bg-amber-600/5 transition-all rounded-xl disabled:opacity-20 text-left"
@@ -307,13 +309,13 @@ export const CandidateDrawer = ({
                   {selectedApp.status !== 'applied' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-in fade-in slide-in-from-bottom-2 duration-700">
                       <button
-                        onClick={() => window.open(`https://wa.me/${selectedApp.candidate_details.whatsapp}`, '_blank')}
+                        onClick={() => window.open(`https://wa.me/${selectedApp.profile.phone}`, '_blank')}
                         className="w-full py-3.5 bg-emerald-600/10 border border-emerald-600/20 text-emerald-500 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center gap-2"
                       >
                         <Phone size={14} /> WhatsApp
                       </button>
                       <button
-                        onClick={() => window.location.href = `mailto:${selectedApp.candidate_details.email}`}
+                        onClick={() => window.location.href = `mailto:${selectedApp.profile.email_contato}`}
                         className="w-full py-3.5 border border-white/5 text-slate-500 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-slate-300 transition-all flex items-center justify-center gap-2"
                       >
                         <Mail size={14} /> E-mail

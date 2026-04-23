@@ -9,7 +9,6 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { usePathname } from 'next/dist/client/components/navigation';
 import LogoFreelaCerto from '../MiniComponents/Logo';
 import { useUIStore } from '@/store/useUiStore';
-import checkModuleAccess from '@/utils/checkModuleAccess';
 import { Module } from '@/enum/moduleEnum';
 import { getActiveMembership } from '@/utils/userHelpers';
 import LoginModal from '../Modal/LoginModal';
@@ -17,11 +16,11 @@ import SelectCompanyModal from '../Modal/SelectCompany';
 import hasModuleAccess from '@/utils/hasModuleAccess';
 import { useProfile } from '@/hooks/useProfile';
 import { useJobStore } from '@/store/useJobStore';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 const Header = () => {
     const isScrolled = useUIStore((state) => state.isScrolled);
     const setScrolled = useUIStore((state) => state.setScrolled);
-    const { profile } = useProfile();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isDockOpen, setIsDockOpen] = useState(false);
     const { user, isAuthenticated, logout } = useAuthStore();
@@ -30,7 +29,7 @@ const Header = () => {
     const [isPostJobOpen, setIsPostJobOpen] = useState(false);
     const [isOpenModal, setIsOpenModal] = useState(false);
     const userRole = getActiveMembership()?.role;
-    const isRecruiter = hasModuleAccess(userRole, Module.OPERATIONAL);
+    const { modules, low, mid, high, isSuperAdmin } = useUserPermissions(userRole)
     const {
         fetchCategories
     } = useJobStore();
@@ -106,7 +105,7 @@ const Header = () => {
 
                         {isAuthenticated ? (
                             <div className="flex items-center gap-2">
-                                {isRecruiter.hasAccess && (
+                                {low && (
                                     <>
 
                                         <button
@@ -130,14 +129,14 @@ const Header = () => {
                                 <Link href="/perfil" className="flex items-center gap-3 pl-4 group">
                                     <div className="flex flex-col items-end">
                                         <span className="text-[7px] font-black text-[var(--delos-amber)] uppercase tracking-tighter leading-none mb-1">
-                                            {isRecruiter.hasAccess ? "Staff" : "Candidato"}
+                                            {low ? "Staff" : "Candidato"}
                                         </span>
                                         {user?.profile?.name && <span className="text-[10px] font-black text-[var(--delos-black)] uppercase leading-none">{user.profile.name.split(' ')[0]}</span>}
 
                                     </div>
                                     <div className="w-9 h-9 bg-[var(--delos-black)] flex items-center justify-center text-[var(--delos-surface)] overflow-hidden shadow-xl group-hover:scale-105 transition-transform border border-[var(--delos-border)]">
-                                        {user?.profile?.foto ? (
-                                            <Image src={user.profile.foto} alt="Avatar" width={36} height={36} className="object-cover" />
+                                        {user?.profile?.foto_url ? (
+                                            <Image src={user.profile.foto_url} alt="Avatar" width={36} height={36} className="object-cover" />
                                         ) : <User className="w-4 h-4" />}
                                     </div>
                                 </Link>
@@ -170,8 +169,8 @@ const Header = () => {
                         <Search className="w-5 h-5" />
                     </button>
                     <Link href="/perfil" className="w-10 h-10 bg-[var(--delos-black)] flex items-center justify-center overflow-hidden border border-[var(--delos-border)]">
-                        {user?.profile?.foto ? (
-                            <Image src={user.profile.foto} alt="Avatar" width={40} height={40} className="object-cover" />
+                        {user?.profile?.foto_url ? (
+                            <Image src={user.profile.foto_url} alt="Avatar" width={40} height={40} className="object-cover" />
                         ) : <User className="w-5 h-5 text-[var(--delos-surface)]" />}
                     </Link>
                 </div>
@@ -204,7 +203,7 @@ const Header = () => {
             <div className="md:hidden fixed bottom-10 right-8 flex flex-col items-end z-50">
                 <div className={`flex flex-col gap-4 mb-8 transition-all duration-500 ${isDockOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-20 scale-50 pointer-events-none'}`}>
                     {[
-                        ...(isRecruiter.hasAccess ? [{ icon: LayoutDashboard, label: 'Painel', href: '/dashboard/home', color: 'bg-[var(--delos-black)] text-[var(--delos-surface)]' }] : []),
+                        ...(low ? [{ icon: LayoutDashboard, label: 'Painel', href: '/dashboard/home', color: 'bg-[var(--delos-black)] text-[var(--delos-surface)]' }] : []),
                         { icon: PlusCircle, label: 'Nova Vaga', href: '/anunciar', color: 'bg-[var(--delos-amber)] text-white' },
                         { icon: Briefcase, label: 'Ver Vagas', href: '/vagas', color: 'bg-[var(--delos-surface)] text-[var(--delos-black)]' },
                         { icon: User, label: 'Perfil', href: '/perfil', color: 'bg-[var(--delos-surface)] text-[var(--delos-black)]' },

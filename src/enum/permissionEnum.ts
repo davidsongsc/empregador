@@ -36,7 +36,10 @@ export enum RoleLevel {
   PL = 'PL',
   SR = 'SR',
   LEAD = 'LEAD',
+  CONFIANCE_LEAD = 'CONFIANCE_LEAD',
+  ASSISTANT_MANAGER = 'ASSISTANT_MANAGER',
   MANAGER = 'MANAGER',
+  ASSISTANT_DIRECTOR = 'ASSISTANT_DIRECTOR',
   DIRECTOR = 'DIRECTOR',
   ADMIN = 'ADMIN'
 }
@@ -61,16 +64,16 @@ export const ROLE_MAP: Record<string, RoleEnum> = {
   'CLIENT_COOK_JR': { scope: RoleScope.CLIENT_KITCHEN, department: RoleDepartment.HOSPITALITY, level: RoleLevel.JR },
   'CLIENT_COOK_PL': { scope: RoleScope.CLIENT_KITCHEN, department: RoleDepartment.HOSPITALITY, level: RoleLevel.PL },
   'CLIENT_COOK_SR': { scope: RoleScope.CLIENT_KITCHEN, department: RoleDepartment.HOSPITALITY, level: RoleLevel.SR },
- 
+
   'CLIENT_KITCHEN_ASSISTANT_JR': { scope: RoleScope.CLIENT_KITCHEN, department: RoleDepartment.KITCHEN, level: RoleLevel.JR },
   'CLIENT_KITCHEN_ASSISTANT_PL': { scope: RoleScope.CLIENT_KITCHEN, department: RoleDepartment.KITCHEN, level: RoleLevel.PL },
   'CLIENT_KITCHEN_ASSISTANT_SR': { scope: RoleScope.CLIENT_KITCHEN, department: RoleDepartment.KITCHEN, level: RoleLevel.SR },
-  
+
   'CLIENT_CHEF_DE_CUISINE': { scope: RoleScope.CLIENT_KITCHEN, department: RoleDepartment.KITCHEN, level: RoleLevel.MANAGER },
   'CLIENT_GRIDDLE_COOK_JR': { scope: RoleScope.CLIENT_KITCHEN, department: RoleDepartment.KITCHEN, level: RoleLevel.JR },
   'CLIENT_GRIDDLE_COOK_PL': { scope: RoleScope.CLIENT_KITCHEN, department: RoleDepartment.KITCHEN, level: RoleLevel.PL },
   'CLIENT_GRIDDLE_COOK_SR': { scope: RoleScope.CLIENT_KITCHEN, department: RoleDepartment.KITCHEN, level: RoleLevel.SR },
- 
+
   'CLIENT_BARTENDER_JR': { scope: RoleScope.CLIENT_BAR, department: RoleDepartment.BAR, level: RoleLevel.JR },
   'CLIENT_BARTENDER_PL': { scope: RoleScope.CLIENT_BAR, department: RoleDepartment.BAR, level: RoleLevel.PL },
   'CLIENT_BARTENDER_SR': { scope: RoleScope.CLIENT_BAR, department: RoleDepartment.BAR, level: RoleLevel.SR },
@@ -100,7 +103,7 @@ export const ROLE_MAP: Record<string, RoleEnum> = {
 
   // Facilities
   'CLIENT_CLEANING_ASSISTANT': { scope: RoleScope.CLIENT_FACILITIES, department: RoleDepartment.CLEANING, level: RoleLevel.JR },
-  
+
   'CLIENT_CLEANING_SUPERVISOR': { scope: RoleScope.CLIENT_FACILITIES, department: RoleDepartment.CLEANING, level: RoleLevel.SR },
   'CLIENT_CLEANING_MANAGER': { scope: RoleScope.CLIENT_FACILITIES, department: RoleDepartment.CLEANING, level: RoleLevel.MANAGER },
 

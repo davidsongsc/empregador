@@ -13,17 +13,17 @@ export default function SelectCompany() {
   const handleSelect = (id: string) => {
     setActiveCompany(id);
     // Feedback tátil/visual imediato antes do push
-    router.push(`/dashboard/painel/companies/`);
+    // router.push(`/dashboard/painel/companies/`);
   };
 
   return (
     <div className="min-h-screen bg-[var(--delos-surface)] text-[var(--delos-black)] relative flex flex-col justify-center p-4 md:p-8 overflow-hidden">
-      
+
       {/* Grid de Calibração Delos (Fundo) */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[length:100px_100px] [background-image:linear-gradient(to_right,var(--delos-black)_1px,transparent_1px),linear-gradient(to_bottom,var(--delos-black)_1px,transparent_1px)]" />
 
       <div className="w-full max-w-lg mx-auto relative z-10">
-        
+
         {/* Header Estilo Terminal */}
         <header className="mb-12 space-y-4">
           <div className="flex items-center gap-3">
@@ -52,21 +52,21 @@ export default function SelectCompany() {
                 onClick={() => handleSelect(emp.company_id)}
                 className={`
                   w-full group flex items-center justify-between p-6 rounded-sm border transition-all duration-500
-                  ${isSelected 
-                    ? "border-[var(--delos-black)] bg-black/[0.03] shadow-2xl" 
+                  ${isSelected
+                    ? "border-[var(--delos-black)] bg-black/[0.03] shadow-2xl"
                     : "border-black/5 bg-transparent hover:border-[var(--delos-indigo)]/30 hover:bg-black/[0.01]"}
                 `}
               >
                 <div className="flex items-center gap-5">
                   <div className={`
                     w-12 h-12 flex items-center justify-center border transition-all duration-500
-                    ${isSelected 
-                      ? "bg-[var(--delos-black)] text-[var(--delos-surface)] border-[var(--delos-black)]" 
+                    ${isSelected
+                      ? "bg-[var(--delos-black)] text-[var(--delos-surface)] border-[var(--delos-black)]"
                       : "bg-transparent text-black/20 border-black/10 group-hover:border-[var(--delos-indigo)] group-hover:text-[var(--delos-indigo)]"}
                   `}>
                     <Building2 size={20} strokeWidth={isSelected ? 3 : 2} />
                   </div>
-                  
+
                   <div className="text-left space-y-1">
                     <div className="flex items-center gap-2">
                       <p className="text-lg font-black uppercase italic tracking-tight leading-none">
@@ -77,17 +77,17 @@ export default function SelectCompany() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                       <Binary size={10} className="opacity-30" />
-                       <p className="text-[9px] font-mono font-bold uppercase tracking-widest opacity-40">
-                         Access_Level::{emp.role || "Host"}
-                       </p>
+                      <Binary size={10} className="opacity-30" />
+                      <p className="text-[9px] font-mono font-bold uppercase tracking-widest opacity-40">
+                        Access_Level::{emp.role || "Host"}
+                      </p>
                     </div>
                   </div>
                 </div>
-                
-                <ArrowRight 
-                  className={`transition-transform duration-500 group-hover:translate-x-2 ${isSelected ? "text-[var(--delos-amber)]" : "opacity-10"}`} 
-                  size={18} 
+
+                <ArrowRight
+                  className={`transition-transform duration-500 group-hover:translate-x-2 ${isSelected ? "text-[var(--delos-amber)]" : "opacity-10"}`}
+                  size={18}
                 />
               </motion.button>
             );

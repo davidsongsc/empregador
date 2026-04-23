@@ -10,8 +10,8 @@ export type PermissionSchema = {
 
 export const MODULE_PERMISSIONS: Record<Module, PermissionSchema> = {
   [Module.DASHBOARD]: {
-    allowedScopes: [RoleScope.CLIENT, RoleScope.SAAS],
-    minLevel: RoleLevel.INTERN
+    allowedScopes: [RoleScope.CLIENT_OFFICE, RoleScope.SAAS],
+    minLevel: RoleLevel.JR
   },
 
   [Module.CANDIDATE_AREA]: {
@@ -21,7 +21,7 @@ export const MODULE_PERMISSIONS: Record<Module, PermissionSchema> = {
 
   [Module.RECRUITMENT]: {
     allowedDepartments: [RoleDepartment.RECRUITMENT, RoleDepartment.MANAGEMENT, RoleDepartment.ADMIN_PANEL],
-    minLevel: RoleLevel.INTERN
+    minLevel: RoleLevel.JR
   },
 
   [Module.SUPERVISION]: {
@@ -30,7 +30,7 @@ export const MODULE_PERMISSIONS: Record<Module, PermissionSchema> = {
   },
 
   [Module.COMPANY_MANAGEMENT]: {
-    allowedScopes: [RoleScope.CLIENT, RoleScope.SAAS],
+    allowedScopes: [RoleScope.CLIENT_OFFICE, RoleScope.SAAS],
     allowedDepartments: [RoleDepartment.MANAGEMENT, RoleDepartment.ADMIN_PANEL],
     minLevel: RoleLevel.MANAGER
   },
@@ -52,14 +52,14 @@ export const MODULE_PERMISSIONS: Record<Module, PermissionSchema> = {
 
   [Module.OPERATIONAL]: {
     allowedDepartments: [
-      RoleDepartment.OPERATIONAL, 
-      RoleDepartment.HOSPITALITY, 
-      RoleDepartment.MAINTENANCE, 
-      RoleDepartment.FINANCE,
+      RoleDepartment.OPERATIONAL,
+      RoleDepartment.HOSPITALITY,
+      RoleDepartment.MAINTENANCE,
+
       RoleDepartment.CLEANING,
       RoleDepartment.OPS
     ],
-    minLevel: RoleLevel.INTERN
+    minLevel: RoleLevel.JR
   },
 
   [Module.COMPLIANCE]: {

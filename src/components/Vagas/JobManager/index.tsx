@@ -62,7 +62,6 @@ export function JobManager({ viewMode, category, search, page }: any) {
         item_id: item.id,
         item_name: item.name
       });
-      // Em vez de state, navegamos via URL
       router.push(`?category=${item.id}`);
     } 
     // Se for VAGA

@@ -31,12 +31,10 @@ const cardVariants: Variants = {
 
 const JobCard = memo(({ type, data, onAction, index = 0 }: JobCardProps) => {
 
-  // --- MODO CATEGORIA ---
   if (type === 'category') {
     const count = data.total_jobs ?? 0;
 
     const handleCategoryClick = () => {
-      // 1. Rastreia o interesse por segmento (Exploração)
       sendGAEvent('event', 'select_content', {
         content_type: 'job_category',
         item_id: data.id,
@@ -136,10 +134,13 @@ const JobCard = memo(({ type, data, onAction, index = 0 }: JobCardProps) => {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-[9px] font-medium text-delos-grey uppercase tracking-tight italic">
-            <MapPin className="w-3.5 h-3.5" />
-            {job.local_amigavel}
-          </div>
+          {job.local_amigavel && (
+            <div className="flex items-center gap-1.5 text-[9px] font-medium text-delos-grey uppercase tracking-tight italic">
+              <MapPin className="w-3.5 h-3.5" />
+              {job.local_amigavel}
+            </div>
+          )}
+
         </div>
       </div>
 

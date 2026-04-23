@@ -154,7 +154,7 @@ export const useJobStore = create<JobState>()(
       /**
        * FETCH_CATEGORIES: Agora extrai todos os campos da sua nova Response
        */
-      fetchCategories: async (page = 1, force = false) => {
+      fetchCategories: async (page = 1, force = false, search = "", company_id = "") => {
         const now = Date.now();
         const cache = get().categoriesCache || {};
         const cachedPage = cache[page];
@@ -172,7 +172,7 @@ export const useJobStore = create<JobState>()(
 
         try {
           // Chamada para a API (certifique-se de passar a página)
-          const response = await getJobCategories(page);
+          const response = await getJobCategories(page, company_id); // Substitua pelo ID real da empresa
 
           // Agora mapeamos direto do topo da resposta
           const {

@@ -1,4 +1,3 @@
-// Sem "use client"
 import { StatCards } from '@/components/Vagas/StatCards';
 import { SearchBar } from '@/components/Vagas/SearchBar';
 import { JobManager } from '@/components/Vagas/JobManager';
@@ -24,7 +23,7 @@ export default async function VagasPage({
 
       <div className="md:max-w-7xl mx-auto px-4 md:px-8 relative z-10">
         <header className="mb-12 space-y-10">
-          <StatCards /> {/* Componente que pode buscar dados do DB direto no servidor */}
+          <StatCards /> 
 
           <div className="flex flex-col gap-8">
             <div className="space-y-2">
@@ -49,7 +48,6 @@ export default async function VagasPage({
         <main className="min-h-[400px]">
 
           <JobManager
-            // Agora usamos o params já "resolvido" para a key
             key={JSON.stringify(params)}
             viewMode={viewMode}
             category={category}

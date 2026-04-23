@@ -2,32 +2,27 @@
 @config "../tailwind.config.ts";
 
 :root {
-  /* --- DELOS LIGHT (Clean Room / Industrial) --- */
+  /* --- DELOS LIGHT (Industrial / Research Lab) --- */
   --delos-surface: #ffffff;
+  --delos-surface-elevated: #f4f4f7;
   --delos-black: #0A0A0A;
   --delos-container: #151515;
   --delos-item: #eeeeee;
   --delos-amber: #E17100;
   --delos-amber-soft: #1e8eff;
   --delos-grey: #8E8E93;
+  --delos-grey-light: #F2F2F7;
   --delos-indigo: #0047FF;
-  --delos-red: #D32F2F;
+  --delos-indigo-soft: #E5EFFF;
+  --delos-red: #D32F2F; /* Vermelho Administrativo */
   --delos-texto: #101011;
   --delos-border: rgba(0, 0, 0, 0.12);
   --delos-subtext: rgba(0, 0, 0, 0.55);
   --delos-green: #53ec53;
-  /* NOVAS ADIÇÕES LIGHT (Sem alterar nomes antigos) */
-  /* Fundo de alertas leves */
-  --delos-grey-light: #F2F2F7;
-  /* Divisores sutis / Background de inputs */
-  --delos-indigo-soft: #E5EFFF;
-  /* Destaque de seleção biométrica */
   --delos-success: #28A745;
-  /* Status: Terminal Operacional */
   --delos-muted: #C7C7CC;
-  /* Placeholder e desabilitados */
 
-  /* --- TROPICAL PALETTE (Mantida) --- */
+  /* --- TROPICAL PALETTE --- */
   --tropical-surface: #F5EFE6;
   --tropical-sun: #FFB300;
   --tropical-ocean: #001b1f;
@@ -37,35 +32,28 @@
 }
 
 .dark {
-  /* --- DELOS DARK (Deep Matrix / Subsolo) --- */
-  --delos-surface: #101010;
+  /* --- DELOS DARK (Deep Matrix / Protocolo Rehoboam) --- */
+  --delos-surface: #050505; /* Preto Absoluto para o fundo */
+  --delos-surface-elevated: #0d0d0d; /* Fundo de cards/tabelas */
   --delos-black: #E5E5E7;
   --delos-amber: #FF9500;
-  --delos-amber-soft: #006aff;
-
+  --delos-amber-glow: rgba(255, 149, 0, 0.15);
+  
   --delos-container: #eeeeee;
   --delos-item: #151515;
   --delos-grey: #a0a0bd;
+  --delos-grey-dark: #1a1a1c;
   --delos-indigo: #757581;
-  --delos-red: #FF453A;
-  --delos-texto: #E5E5E7;
-  --delos-border: rgba(255, 255, 255, 0.1);
-  --delos-subtext: rgba(255, 255, 255, 0.5);
-  --delos-green: #3c903c;
-  /* Mantida para contraste em status */
-  /* NOVAS ADIÇÕES DARK (Sem alterar nomes antigos) */
-  --delos-surface-elevated: #1C1C1E;
-  /* Cards que "flutuam" sobre o fundo */
-  --delos-amber-glow: rgba(255, 149, 0, 0.15);
-  /* Shadow para efeito neon */
-  --delos-success: #32D74B;
-  /* Status: Ativo em baixa luz */
-  --delos-grey-dark: #2C2C2E;
-  /* Inputs e Containers internos */
   --delos-indigo-bright: #5E5CE6;
-  /* Link/Ação em Dark Mode */
+  
+  --delos-red: #FF453A; /* Vermelho Crítico / Erro de Autenticação */
+  --delos-texto: #E5E5E7;
+  --delos-border: rgba(255, 255, 255, 0.08); /* Bordas ultra-finas */
+  --delos-subtext: rgba(255, 255, 255, 0.4);
+  --delos-success: #32D74B;
+  --delos-muted: #2C2C2E;
 
-  /* --- TROPICAL DARK (Mantida) --- */
+  /* --- TROPICAL DARK --- */
   --tropical-surface: #0D1B1E;
   --tropical-sun: #D4A017;
   --tropical-ocean: #26C6DA;
@@ -74,100 +62,9 @@
   --tropical-accent: #FF8A65;
 }
 
-/* Scrollbar Delos Style - Mais fino e minimalista */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 3px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--delos-grey);
-  border-radius: 4px;
-}
-
-/* Efeito de Vidro (Glassmorphism) para Delos */
-.delos-glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--delos-border);
-}
-
-button {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-/* --- INPUTS ESTILO DELOS (Minimalismo Corporativo) --- */
-.input-delos {
-  background-color: transparent;
-  color: var(--delos-black);
-  /* Borda apenas embaixo ou muito fina para parecer um terminal de diagnóstico */
-  border: 1px solid var(--delos-border);
-  border-radius: 2px;
-  /* Quinas vivas, quase sem arredondamento */
-  padding: 0.5rem 0.75rem;
-  outline: none;
-  transition: all 0.2s ease-in-out;
-}
-
-.input-delos:focus {
-  /* O foco da Delos é o Âmbar clássico de alerta/seleção */
-  border-color: var(--delos-amber);
-  box-shadow: 0 0 0 1px var(--delos-amber);
-}
-
-.input-delos::placeholder {
-  color: var(--delos-subtext);
-  text-transform: uppercase;
-  /* Estética de log de sistema */
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-}
-
-/* --- INPUTS ESTILO TROPICAL (Orgânico e Suave) --- */
-.input-tropical {
-  background-color: rgba(255, 255, 255, 0.5);
-  /* Leve transparência para blend com o fundo */
-  color: var(--tropical-ocean);
-  border: 2px solid transparent;
-  /* Borda invisível até o foco */
-  border-radius: 12px;
-  /* Bordas bem arredondadas, como pedras polidas pelo mar */
-  padding: 0.6rem 1rem;
-  outline: none;
-  background-clip: padding-box;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-  /* Sombra suave como o sol */
-  transition: border-color 0.3s ease;
-}
-
-.input-tropical:focus {
-  /* Foco no azul do oceano ou verde folha */
-  border-color: var(--tropical-ocean);
-  background-color: #ffffff;
-}
-
-.input-tropical::placeholder {
-  color: var(--tropical-rain);
-  font-style: italic;
-  /* Toque mais casual e humano */
-}
-
-/* Ajuste para Dark Mode nos Inputs Tropicais */
-.dark .input-tropical {
-  background-color: rgba(0, 0, 0, 0.2);
-  color: var(--tropical-sun);
-}
-
 /* --- DELOS SCROLL SYSTEM (Precision Design) --- */
-
-/* 1. BARRA PRINCIPAL DA PÁGINA (Quase invisível, ultra-fina) */
 html::-webkit-scrollbar {
   width: 2px;
-  /* Espessura mínima para manter a funcionalidade */
   height: 2px;
 }
 
@@ -177,48 +74,61 @@ html::-webkit-scrollbar-track {
 
 html::-webkit-scrollbar-thumb {
   background: var(--delos-border);
-  /* Cor sutil que se mistura à borda */
   border-radius: 20px;
-  transition: background 0.3s ease;
 }
 
-html::-webkit-scrollbar-thumb:hover {
-  background: var(--delos-grey);
-  /* Ganha destaque apenas no hover */
-}
-
-/* 2. CLASSE UTILITÁRIA .custom-scrollbar (Para Paineis e Modais) */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
-  /* Levemente mais larga para facilitar o uso em áreas internas */
-  height: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.02);
-  /* Leve trilha para Delos Light */
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-  /* Leve trilha para Delos Dark */
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--delos-muted);
-  border-radius: 10px;
-  border: 1px solid transparent;
-  /* Cria um respiro visual */
+  border-radius: 0px; /* Quinas vivas para o scroll interno */
   background-clip: content-box;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--delos-amber);
-  /* Feedback visual com a cor de destaque da Delos */
+  background: var(--delos-red); /* Hover vermelho para indicar erro/alerta */
 }
 
-/* Firefox Support (Scrollbar-width) */
+/* --- INPUTS ESTILO DELOS (Terminal de Diagnóstico) --- */
+.input-delos {
+  background-color: rgba(255, 255, 255, 0.02);
+  color: var(--delos-texto);
+  border: 1px solid var(--delos-border);
+  border-radius: 0px; /* Brutalismo: Sem arredondamento */
+  padding: 0.75rem 1rem;
+  outline: none;
+  font-family: var(--font-mono);
+  transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.input-delos:focus {
+  border-color: var(--delos-red);
+  background-color: rgba(255, 69, 58, 0.05);
+  box-shadow: 0 0 20px rgba(255, 69, 58, 0.1);
+}
+
+.input-delos::placeholder {
+  color: var(--delos-subtext);
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+}
+
+/* --- UTILS --- */
+.delos-glass {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(15px);
+  border: 1px solid var(--delos-border);
+}
+
+/* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--delos-muted) transparent;
+  scrollbar-color: var(--delos-border) transparent;
+}
+
+button {
+  cursor: pointer;
 }

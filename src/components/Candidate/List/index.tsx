@@ -10,10 +10,10 @@ import {
 import { CandidateDrawer } from '@/components/Candidate/Drawer';
 
 import { Application } from '@/interfaces/aplications';
-import { useAuthStore } from '@/store/useAuthStore';
 import checkModuleAccess from '@/utils/checkModuleAccess';
 import { getActiveMembership } from '@/utils/userHelpers';
 import { Module } from '@/enum/moduleEnum';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 // --- Interfaces ---
 interface Experience {
@@ -68,13 +68,17 @@ export const CandidateList = ({
 }: CandidateListProps) => {
     const [isChangingStatus, setIsChangingStatus] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const userRole = getActiveMembership()?.role || ""
+
+    const { modules, low, mid, high, veryHigh, isSuperAdmin } = useUserPermissions(userRole)
+
     const canAccessSupervision = checkModuleAccess(
         getActiveMembership()?.role ?? "GUEST",
         Module.SUPERVISION
     );
     useEffect(() => {
         const checkMobile = () => {
-            setIsMobile(window.innerWidth < 768); 
+            setIsMobile(window.innerWidth < 768);
         };
 
         checkMobile();
@@ -124,8 +128,8 @@ export const CandidateList = ({
 
                                 <div className="flex items-center gap-6">
                                     <div className="w-14 h-14 bg-delos-black  border border-delos-grey flex items-center justify-center grayscale group-hover:grayscale-0 transition-all duration-700 overflow-hidden">
-                                        {isUnlocked && details?.foto ? (
-                                            <Image src={details.foto} alt="Avatar" width={56} height={56} className=" object-cover h-full w-full" />
+                                        {isUnlocked && details?.foto_url ? (
+                                            <Image src={details.foto_url} alt="Avatar" width={56} height={56} className=" object-cover h-full w-full" />
                                         ) : (
                                             <User className={isExpanded ? 'text-delos-amber' : 'text-delos-surface'} size={24} />
                                         )}
@@ -236,9 +240,9 @@ export const CandidateList = ({
                                                                             <Briefcase size={14} className="text-amber-900/40 group-hover/exp:text-amber-600 transition-colors" />
                                                                         </div>
                                                                         <div>
-                                                                            <h5 className="text-[11px] font-black text-white uppercase tracking-wider">{exp.cargo}</h5>
-                                                                            <p className="text-[10px] text-amber-600/80 font-bold uppercase mt-0.5">{exp.empresa}</p>
-                                                                            <p className="text-[9px] text-slate-500 mt-2 leading-relaxed italic">{exp.descricao}</p>
+                                                                            <h5 className="text-[11px] font-black text-delos-black uppercase tracking-wider">{exp.cargo}</h5>
+                                                                            <p className="text-[10px] text-delos-amber font-bold uppercase mt-0.5">{exp.empresa}</p>
+                                                                            <p className="text-[9px] text-delos-black mt-2 leading-relaxed italic">{exp.descricao}</p>
                                                                         </div>
                                                                     </div>
                                                                     <div className="text-right">
@@ -267,15 +271,15 @@ export const CandidateList = ({
                                                 <button
                                                     onClick={() => handleStatusChange(app.id, 'HIRED')}
                                                     className={`py-3.5 border border-delos-red shadow-md hover:shadow-2xl
-                                                         ${!canAccessSupervision || app.status === 'HIRED' || app.status === 'rejected' ? 'bg-delos-surface text-delos-grey' : 'text-delos-black bg-delos-green/80 hover:bg-delos-amber hover:text-delos-surface border-delos-green'} text-[14px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2`}
-                                                    disabled={!canAccessSupervision || loading || isUpdating || app.status === 'HIRED' || app.status === 'rejected'}
+                                                         ${!high || app.status === 'HIRED' || app.status === 'rejected' ? 'bg-delos-surface text-delos-grey' : 'text-delos-black bg-delos-green/80 hover:bg-delos-amber hover:text-delos-surface border-delos-green'} text-[14px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2`}
+                                                    disabled={!high || loading || isUpdating || app.status === 'HIRED' || app.status === 'rejected'}
                                                 >
                                                     <Verified size={18} /> Aprovar
                                                 </button>
 
                                                 <button
                                                     onClick={() => setIsChangingStatus(true)}
-                                                    disabled={!canAccessSupervision || loading || isUpdating}
+                                                    disabled={!veryHigh || loading || isUpdating}
 
                                                     className={`w-full py-4.5 shadow-sm hover:shadow-2xl ${isUnlocked ? 'bg-delos-amber' : 'bg-delos-indigo text-delos-surface border border-delos-black'} hover:bg-amber-500 text-black font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all disabled:opacity-40`}
 
@@ -290,8 +294,8 @@ export const CandidateList = ({
                                             <div className="grid grid-cols-2 gap-3">
                                                 <button
                                                     onClick={() => handleStatusChange(app.id, 'rejected')}
-                                                    className={`py-3.5 border border-delos-red shadow-md hover:shadow-2xl ${!canAccessSupervision || app.status === 'HIRED' || app.status === 'rejected' ? 'bg-delos-surface text-delos-grey' : 'text-delos-red hover:bg-delos-red hover:text-delos-surface'} text-[14px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2`}
-                                                    disabled={!canAccessSupervision || loading || isUpdating || app.status === 'HIRED' || app.status === 'rejected'}
+                                                    className={`py-3.5 border border-delos-red shadow-md hover:shadow-2xl ${!mid || app.status === 'HIRED' || app.status === 'rejected' ? 'bg-delos-surface text-delos-grey' : 'text-delos-red hover:bg-delos-red hover:text-delos-surface'} text-[14px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2`}
+                                                    disabled={!mid || loading || isUpdating || app.status === 'HIRED' || app.status === 'rejected'}
                                                 >
                                                     <Ban size={18} /> Reprovar
                                                 </button>
@@ -299,8 +303,8 @@ export const CandidateList = ({
                                                 {/* Gatilho do Novo Modal de Override */}
                                                 <button
                                                     onClick={() => handleNextStep(app)}
-                                                    disabled={loading || isUpdating || app.status === 'HIRED'}
-                                                    className={`py-3.5 border bg-delos-amber text-[14px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all ${isChangingStatus ? 'bg-delos-amber text-delos-black' : 'border-delos-black text-delos-surface hover:bg-delos-black'}`}
+                                                    disabled={!mid || loading || isUpdating || app.status === 'HIRED'}
+                                                    className={`py-3.5 border bg-delos-amber text-[14px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all ${!mid ? 'bg-delos-amber/40 text-delos-black/40' : 'border-delos-black text-delos-surface hover:bg-delos-black'}`}
                                                 >
                                                     {isUpdating ? <Loader2 size={18} className="animate-spin" /> : <Zap size={14} fill={isUnlocked ? "black" : "none"} />}
                                                     {isUpdating ? "Sincronizando..." : !isUnlocked ? "Puxar Ficha" : "Avançar Etapa"}
@@ -388,10 +392,10 @@ export const CandidateList = ({
                                             <div className="pt-6 border-t border-white/5 space-y-3">
                                                 {isUnlocked ? (
                                                     <div className="flex gap-2">
-                                                        <button onClick={() => window.open(`https://wa.me/${details?.whatsapp}`)} className="flex-1 py-3 bg-emerald-600/10 text-emerald-500 border border-emerald-600/20 text-[15px] font-black uppercase flex items-center justify-center gap-2">
+                                                        <button onClick={() => window.open(`https://wa.me/${details?.phone}`)} className="flex-1 py-3 bg-emerald-600/10 text-emerald-500 border border-emerald-600/20 text-[15px] font-black uppercase flex items-center justify-center gap-2">
                                                             <Phone size={18} /> WhatsApp
                                                         </button>
-                                                        <button onClick={() => window.location.href = `mailto:${details?.email}`} className="flex-1 py-3 bg-delos-grey border border-white text-delos-surface text-[15px] font-black uppercase flex items-center justify-center gap-2">
+                                                        <button onClick={() => window.location.href = `mailto:${details?.email_contato}`} className="flex-1 py-3 bg-delos-grey border border-white text-delos-surface text-[15px] font-black uppercase flex items-center justify-center gap-2">
                                                             <Mail size={18} /> Email
                                                         </button>
                                                     </div>

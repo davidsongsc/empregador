@@ -7,19 +7,19 @@ interface UseCorporateApplicationsProps {
     status?: string;
     page?: number;
     pageSize?: number;
+    companyId?: string;
 }
 
 export const useCorporateApplications = (filters: UseCorporateApplicationsProps = {}) => {
-    const { user, activeCompanyId } = useAuthStore();
+    const { activeCompanyId: storeCompanyId } = useAuthStore();
+    const effectiveCompanyId = filters.companyId || storeCompanyId;
     const {
         applications,
         pagination,
         loading,
-        error,
         fetchApplications,
         updateApplicationStatusLocal
     } = useCorporateApplicationsStore();
-
     // Memoiza os filtros para evitar loops no useEffect
     const currentFilters = useMemo(() => ({
         page: filters.page,
@@ -30,10 +30,11 @@ export const useCorporateApplications = (filters: UseCorporateApplicationsProps 
 
     const loadData = useCallback(() => {
         // Só dispara se houver uma empresa selecionada (Lógica de Seleção de Empresa)
-        if (activeCompanyId) {
-            fetchApplications(currentFilters);
+        if (effectiveCompanyId) {
+            console.log("Carregando candidaturas para a empresa ID:", effectiveCompanyId, "com filtros:", currentFilters);
+            fetchApplications(effectiveCompanyId, currentFilters);
         }
-    }, [activeCompanyId, currentFilters, fetchApplications]);
+    }, [effectiveCompanyId, currentFilters, fetchApplications]);
 
     useEffect(() => {
         loadData();
@@ -43,7 +44,7 @@ export const useCorporateApplications = (filters: UseCorporateApplicationsProps 
         candidatos: applications,
         total: pagination.total,
         loading,
-        error,
+        
         refresh: loadData,
         updateStatus: updateApplicationStatusLocal
     };

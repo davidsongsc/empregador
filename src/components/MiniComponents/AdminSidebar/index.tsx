@@ -4,7 +4,6 @@ import { LogOut, Thermometer } from "lucide-react";
 import SidebarNav from "@/components/MiniComponents/SidebarNav";
 import { useState } from "react";
 import SelectCompanyModal from "@/components/Modal/SelectCompany";
-import { ThemePanel } from "@/components/Modal/ThemeModal";
 
 interface AdminSidebarProps {
   isOpen: boolean;

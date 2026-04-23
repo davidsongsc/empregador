@@ -86,7 +86,7 @@ export default function hasModuleAccess(
   return {
     hasAccess,
     isSaaS: roleInfo.scope === RoleScope.SAAS,
-    isClient: roleInfo.scope === RoleScope.CLIENT,
+    isClient: roleInfo.scope === RoleScope.CLIENT_OFFICE,
     isManagerUp,
     department: roleInfo.department,
     level: roleInfo.level

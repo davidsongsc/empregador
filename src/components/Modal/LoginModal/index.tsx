@@ -17,8 +17,8 @@ import {
 import { toast } from "@/components/Notification";
 import { useAuthStore } from "@/store/useAuthStore";
 import { login } from "@/services/login";
-import DelosBackground from "@/components/MiniComponents/Background";
 import { ThemePanel } from "../ThemeModal";
+import DelosSpaceTimeBackground from "@/components/MiniComponents/Background";
 
 const COUNTRIES = [
     { code: "55", name: "Brasil", flag: "🇧🇷" },
@@ -86,7 +86,8 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                 // ... Lógica de redirecionamento (empresas, etc)
                 const userData = res.user || res.data?.user || res;
                 setUser(userData);
-                router.push("/perfil");
+                onClose();
+                router.refresh();
                 toast.info("Login efetuado com sucesso.");
 
             } else {
@@ -122,14 +123,11 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
 
     return (
         <div className="flex justify-center items-center gap-4 fixed inset-0 z-[100] flex items-center justify-center p-4 font-mono">
-            {/* Overlay: Minimal Blur, Grayscale acinzentado e quase transparente */}
+            <DelosSpaceTimeBackground />
             <div
-                className="absolute inset-0 bg-slate-900/40 backdrop-blur-[22px] grayscale-[80%] transition-opacity duration-500"
-
-            >
-                <DelosBackground />
-            </div>
-
+                className="absolute inset-0 bg-slate-950/40 backdrop-blur-[6px] grayscale-[60%] transition-opacity duration-500 -z-10"
+                aria-hidden="true"
+            />
             {/* Container do Modal: Tematizado com Delos Colors */}
             <div className="relative w-full max-w-md bg-delos-surface rounded-none border border-white/10 shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in zoom-in duration-300">
 

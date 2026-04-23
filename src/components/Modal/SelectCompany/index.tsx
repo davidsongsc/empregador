@@ -21,8 +21,9 @@ export default function SelectCompanyModal({ isOpen, onClose }: SelectCompanyMod
         // Feedback tátil antes do redirecionamento
         setTimeout(() => {
             onClose();
-            //router.push(`/`);
+            router.refresh();
         }, 300);
+
     };
 
     return (
@@ -141,13 +142,13 @@ export default function SelectCompanyModal({ isOpen, onClose }: SelectCompanyMod
                             </footer>
                         </div>
 
-                        
+
                     </motion.div>
 
                 </div>
             )}
 
-          
+
         </AnimatePresence>
     );
 }

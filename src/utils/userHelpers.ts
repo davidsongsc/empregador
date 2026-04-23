@@ -3,14 +3,17 @@ import { RoleLevel, RoleScope, ROLE_MAP } from "@/enum/permissionEnum";
 
 // Pesos numéricos para comparação lógica de hierarquia
 const LEVEL_WEIGHT: Record<RoleLevel, number> = {
-  [RoleLevel.INTERN]: 1,
-  [RoleLevel.JR]: 2,
-  [RoleLevel.PL]: 3,
-  [RoleLevel.SR]: 4,
-  [RoleLevel.LEAD]: 5,
-  [RoleLevel.MANAGER]: 6,
-  [RoleLevel.DIRECTOR]: 7,
-  [RoleLevel.ADMIN]: 8,
+  [RoleLevel.INTERN]: 0,
+  [RoleLevel.JR]: 1,
+  [RoleLevel.PL]: 2,
+  [RoleLevel.SR]: 3,
+  [RoleLevel.LEAD]: 4,
+  [RoleLevel.CONFIANCE_LEAD]: 5,
+  [RoleLevel.ASSISTANT_MANAGER]: 6,
+  [RoleLevel.MANAGER]: 7,
+  [RoleLevel.ASSISTANT_DIRECTOR]: 8,
+  [RoleLevel.DIRECTOR]: 9,
+  [RoleLevel.ADMIN]: 10,
 };
 
 export const getActiveMembership = () => {

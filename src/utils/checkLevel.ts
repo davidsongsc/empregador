@@ -5,27 +5,33 @@ import { ROLE_MAP, RoleLevel } from "@/enum/permissionEnum";
  * Define a hierarquia numérica dos níveis para comparação.
  * Quanto maior o índice, maior a autoridade.
  */
-const LEVEL_HIERARCHY: RoleLevel[] = [
+export const LEVEL_HIERARCHY: RoleLevel[] = [
   RoleLevel.INTERN, // 0
   RoleLevel.JR,     // 1
   RoleLevel.PL,     // 2
   RoleLevel.SR,     // 3
   RoleLevel.LEAD,   // 4
-  RoleLevel.MANAGER,// 5
-  RoleLevel.DIRECTOR,// 6
-  RoleLevel.ADMIN    // 7
+  RoleLevel.CONFIANCE_LEAD, // 5
+  RoleLevel.ASSISTANT_MANAGER, // 6
+  RoleLevel.MANAGER,    // 7
+  RoleLevel.ASSISTANT_DIRECTOR, // 8
+  RoleLevel.DIRECTOR,   // 9
+  RoleLevel.ADMIN       // 9
 ];
 
 /**
  * Mapeamento de requisitos para índices da hierarquia.
  */
-const REQUIREMENT_MAP: Record<"low" | "mid" | "high", RoleLevel> = {
-  low: RoleLevel.INTERN, // Qualquer um entra
-  mid: RoleLevel.PL,     // Precisa ser no mínimo Pleno
-  high: RoleLevel.SR     // Precisa ser no mínimo Sênior
+const REQUIREMENT_MAP: Record<"veryLow" | "low" | "mid" | "high" | "veryHigh", RoleLevel> = {
+  veryLow: RoleLevel.INTERN,
+  low: RoleLevel.JR,
+  mid: RoleLevel.PL,
+  high: RoleLevel.SR,
+  veryHigh: RoleLevel.MANAGER
+
 };
 
-export const checkLevel = (requirement: "low" | "mid" | "high"): boolean => {
+export const checkLevel = (requirement: "veryLow" | "low" | "mid" | "high" | "veryHigh"): boolean => {
   const activeMembership = getActiveMembership();
   const roleStr = activeMembership?.role;
 
@@ -40,7 +46,7 @@ export const checkLevel = (requirement: "low" | "mid" | "high"): boolean => {
   // 2. RECUPERAÇÃO DE DADOS DO ROLE_MAP
   // Não precisamos mais de split('_') ou de pesos manuais!
   const roleInfo = ROLE_MAP[cleanRole];
-  
+
   if (!roleInfo) {
     console.warn(`[SECURITY] Role ${cleanRole} não encontrada no ROLE_MAP.`);
     return false;

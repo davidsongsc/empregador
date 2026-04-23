@@ -6,7 +6,7 @@ import {
   Database, Activity, Terminal, Crosshair, BarChart2, MoreHorizontal,
   X
 } from "lucide-react"
-import { useMyJobsStore } from "@/hooks/useMyJobsStore"
+import { useMyJobsStore } from "@/store/useMyJobsStore"
 import PostNewJobModal from "@/components/Modal/PostNewJobModal"
 import { useManageJob } from "@/hooks/useManageJob"
 import { ConfirmationModal } from "@/components/Modal/ConfirmationModal"
@@ -39,6 +39,18 @@ const MinhasVagas = () => {
     setIsDeleteModalOpen,
     loading: deleting
   } = useManageJob();
+
+  const currentFilter = useMemo(() => ({
+    page: page,
+    page_size: pageSize,
+    search: debouncedSearch
+  }), [activeCompanyId, page, pageSize, debouncedSearch]);
+
+  useEffect(() => {
+    if (activeCompanyId && typeof activeCompanyId === 'string' && activeCompanyId !== "[object Object]") {
+      fetchJobs(activeCompanyId, currentFilter);
+    }
+  }, [currentFilter, fetchJobs, activeCompanyId]);
 
   const handleEdit = (job: any) => {
     setJobEditing(job.id);
@@ -87,16 +99,7 @@ const MinhasVagas = () => {
     }
   }, [searchTerm]);
 
-  const currentFilter = useMemo(() => ({
-    page: page,
-    page_size: pageSize,
-    search: debouncedSearch
-  }), [activeCompanyId, page, pageSize, debouncedSearch]);
 
-  useEffect(() => {
-    fetchJobs(currentFilter)
-  }, [currentFilter, fetchJobs, activeCompanyId]);
-  const totalPages = data?.total_pages || 1;
 
   const hasLowAccess = checkLevel("low")
   const hasMidAccess = checkLevel("mid")
@@ -342,12 +345,12 @@ const MinhasVagas = () => {
             </button>
 
             <div className="flex items-center px-4 bg-delos-surface border border-delos-surface/5 text-delos-amber font-mono text-xs">
-              {page} / {totalPages}
+              {page} / {data?.total_pages || 1}
             </div>
 
             <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages || loading}
+              onClick={() => setPage(p => Math.min(data?.total_pages || 1, p + 1))}
+              disabled={page === data?.total_pages || loading}
               className="flex-1 h-10 sm:flex-none px-4 border border-white/5 bg-delos-surface hover:bg-delos-item text-slate-500 disabled:opacity-20 transition-all active:scale-95 flex justify-center items-center"
             >
               <ChevronRight size={20} />
@@ -361,20 +364,22 @@ const MinhasVagas = () => {
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          setJobEditing(null); // Use null em vez de "" para garantir o reset total
-          fetchJobs(currentFilter, true);
+          setJobEditing(null);
+          if (activeCompanyId) {
+            fetchJobs(activeCompanyId, currentFilter, true); // <--- Corrigido aqui
+          }
         }}
         jobUid={jobEditing}
         activeCompanyId={activeCompanyId}
       />
+
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={async () => {
-          // Esta função executa o deleteJob(id) que está guardado no hook
-          const success = await confirmRemoval();
-          if (success) {
-            fetchJobs(currentFilter, true); // Recarrega a matriz de vagas
+          const success = await confirmRemoval(activeCompanyId); // <--- Verifique se o hook aceita o ID
+          if (success && activeCompanyId) {
+            fetchJobs(activeCompanyId, currentFilter, true);
           }
         }}
         title="TERMINAR_INSTÂNCIA"
