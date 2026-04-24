@@ -1,31 +1,19 @@
-# Documentação do Projeto
+# Documentação do Projeto Freela Fácil
 
 ## Descrição do Projeto
-Este projeto tem como objetivo ...
+O Freela Fácil é uma plataforma SaaS de gestão de freelancers que utiliza Next.js, TypeScript e design Glassmorphism para proporcionar uma interface moderna e fácil de usar. A migração para FastAPI e o Protocolo Delta estão sendo implementados para melhorar a performance e escalabilidade do sistema.
 
 ## Recursos
-- Recurso 1
-- Recurso 2
-- Recurso 3
+- Gestão eficiente de projetos
+- Controle financeiro detalhado
+- Integração com plataformas de pagamento
+- Suporte a vários idiomas
 
 ## Tecnologias
-- Tecnologia 1
-- Tecnologia 2
-- Tecnologia 3
+- Next.js
+- TypeScript
+- FastAPI (para migração)
+- Delta Protocol (para migração)
 
 ## Instruções de Instalação
-1. Clone o repositório: `git clone https://github.com/davidsongsc/empregador`
-2. Navegue até o diretório do projeto: `cd empregador`
-3. Instale as dependências: `npm install`
-
-## Uso
-Para iniciar o projeto, use o comando: `npm start`
-
-## Diretrizes para Contribuição
-1. Faça um fork do projeto.
-2. Crie uma branch para sua feature: `git checkout -b minha-feature`
-3. Realize as mudanças e commit: `git commit -m 'Adicionando minha feature'`
-4. Envie suas mudanças para o repositório remoto: `git push origin minha-feature`
-5. Abra um pull request.
-
-Sinta-se à vontade para contribuir!
+1. Clone o repositório: `git clone https://github.<｜begin▁of▁sentence｜>com/davidsongsc/empregador
