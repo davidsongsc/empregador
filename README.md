@@ -12,8 +12,8 @@ O Freela Fácil é uma plataforma SaaS de gestão de freelancers que utiliza Nex
 ## Tecnologias
 - Next.js
 - TypeScript
-- FastAPI (para migração)
-- Delta Protocol (para migração)
+- FastAPI 
+- Delta Protocol 
 
 ## Instruções de Instalação
-1. Clone o repositório: `git clone https://github.<｜begin▁of▁sentence｜>com/davidsongsc/empregador
+1. Clone o repositório: `git clone https://github.com/davidsongsc/empregador`
