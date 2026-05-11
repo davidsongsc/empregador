@@ -1,4 +1,4 @@
-# Documentação do Projeto Freela Fácil
+# Documentação do Projeto Freela Fácil - Autor(a): [Seu Nome]
 
 ## Descrição do Projeto
 O Freela Fácil é uma plataforma SaaS de gestão de freelancers que utiliza Next.js, TypeScript e design Glassmorphism para proporcionar uma interface moderna e fácil de usar. A migração para FastAPI e o Protocolo Delta estão sendo implementados para melhorar a performance e escalabilidade do sistema.
