@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, FileText, Settings, CalendarDays, PhoneCallIcon,
-  Globe, Wallet, Notebook, UserCheck, Users, Workflow, Headset,
+  Globe, Wallet, UserCheck, Users, Workflow, Headset,
   Filter, Receipt, ListOrdered, ClipboardCheck,
   ShieldCheck
 } from "lucide-react";
@@ -12,7 +12,12 @@ import {
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { getActiveMembership } from "@/utils/userHelpers";
 
-const SidebarNav = () => {
+// Definindo a interface para receber o parâmetro de colapso
+interface SidebarNavProps {
+  isCollapsed?: boolean;
+}
+
+const SidebarNav = ({ isCollapsed = false }: SidebarNavProps) => {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -91,70 +96,77 @@ const SidebarNav = () => {
   }, [modules, low, mid, high, veryLow, isSuperAdmin]);
 
   return (
-    <aside className="flex flex-col h-screen w-full bg-white border-r border-slate-100 overflow-hidden">
-
-
-      {/* ÁREA DE SCROLL INDEPENDENTE */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2 no-scrollbar scroll-smooth space-y-8">
-        {menuGroups.map((group, idx) => (
-          <section key={idx} className="relative">
-            {/* Header de Grupo Sticky */}
-            <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-md px-3 py-2 mb-2 flex items-center gap-2">
+    // Removido o aside fixo para não conflitar com o container pai
+    <nav className={`flex-1 py-4 no-scrollbar scroll-smooth space-y-6 transition-all duration-500 ${isCollapsed ? 'px-0' : 'px-2'} h-100`}>
+      {menuGroups.map((group, idx) => (
+        <section key={idx} className="relative">
+          {/* Header de Grupo - Esconde quando colapsado */}
+          {!isCollapsed && (
+            <header className="px-3 py-2 mb-2 flex items-center gap-2">
               <div className="w-1 h-3 rounded-full bg-amber-500" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-900/60">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-delos-black/30">
                 {group.title}
               </span>
             </header>
+          )}
 
-            <ul className="space-y-[2px]">
-              {group.items.map((item) => {
-                const isActive = pathname === item.href;
-                const Icon = item.icon;
+          <ul className="space-y-[4px]">
+            {group.items.map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
 
-                return (
-                  <li key={item.label}>
-                    <button
-                      onClick={() => !item.disabled && router.push(item.href)}
-                      disabled={item.disabled}
-                      className={`
-                        w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200
-                        ${item.disabled
-                          ? "opacity-25 cursor-not-allowed grayscale"
-                          : "hover:bg-slate-50 active:scale-[0.98] group"}
-                        ${isActive ? "bg-amber-50 shadow-sm shadow-amber-200/20" : ""}
-                      `}
-                    >
-                      <Icon className={`
-                        w-4 h-4 transition-colors
-                        ${isActive ? "text-amber-600 stroke-[2.5px]" : "text-slate-400 group-hover:text-slate-600"}
-                      `} />
+              return (
+                <li key={item.label} className="flex justify-center">
+                  <button
+                    onClick={() => !item.disabled && router.push(item.href)}
+                    disabled={item.disabled}
+                    title={isCollapsed ? item.label : ""} // Tooltip apenas se colapsado
+                    className={`
+                      relative flex items-center transition-all duration-300
+                      ${item.disabled 
+                        ? "opacity-20 cursor-not-allowed" 
+                        : "hover:bg-delos-black active:scale-95 group"}
+                      ${isCollapsed 
+                        ? "w-10 h-10 justify-center rounded-lg" 
+                        : "w-full gap-3 px-4 py-2.5 rounded-lg"}
+                      ${isActive ? "bg-amber-500/10 border border-amber-500/20" : "border border-transparent"}
+                    `}
+                  >
+                    <Icon className={`
+                      w-4 h-4 transition-colors shrink-0
+                      ${isActive ? "text-amber-500 stroke-[2.5px]" : "text-slate-400 group-hover:text-white"}
+                    `} />
 
+                    {/* Texto do Label - Esconde com animação de opacidade */}
+                    {!isCollapsed && (
                       <span className={`
-                        text-xs font-bold tracking-tight uppercase transition-colors
-                        ${isActive ? "text-amber-700" : "text-slate-500 group-hover:text-slate-800"}
+                        text-[11px] font-bold tracking-tight uppercase transition-colors whitespace-nowrap
+                        ${isActive ? "text-amber-500" : "text-slate-400 group-hover:text-slate-200"}
                       `}>
                         {item.label}
                       </span>
+                    )}
 
-                      {isActive && (
-                        <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ))}
-      </nav>
+                    {/* Indicador Ativo */}
+                    {isActive && (
+                      <div className={`
+                        bg-amber-500 animate-pulse
+                        ${isCollapsed 
+                          ? "absolute -right-1 w-1 h-4 rounded-full" 
+                          : "ml-auto w-1 h-1 rounded-full"}
+                      `} />
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
 
-      {/* Rodapé fixo opcional */}
-      <div className="p-4 border-t border-slate-50 bg-slate-50/50">
-        <p className="text-[8px] text-center font-bold text-slate-400 uppercase tracking-widest">
-          v2.6.0 Protocol Nexus
-        </p>
-      </div>
-    </aside>
+          {/* Divisor minimalista entre grupos quando colapsado */}
+          {isCollapsed && <div className="h-[1px] w-8 mx-auto bg-white/5 my-4" />}
+        </section>
+      ))}
+    </nav>
   );
 };
 

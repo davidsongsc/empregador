@@ -11,7 +11,7 @@ interface AdminHUDProps {
 export const AdminHUD = ({ user, onOpenSidebar }: AdminHUDProps) => {
   const userRole = getActiveMembership()?.role;
   return (
-    <header className="h-20 bg-delos-surface border-b border-delos-black flex items-center justify-between px-6 sm:px-10 shrink-0 z-30">
+    <header className="h-8 bg-delos-surface border-b border-delos-black flex items-center justify-between px-6 sm:px-10 shrink-0 z-30">
       <div className="flex items-center gap-8">
         <button className="lg:hidden p-2 border border-delos-black hover:border-delos-amber transition-colors" onClick={onOpenSidebar}>
           <Menu className="w-4 h-4 text-delos-amber" />
@@ -24,9 +24,6 @@ export const AdminHUD = ({ user, onOpenSidebar }: AdminHUDProps) => {
       </div>
 
       <div className="flex items-center gap-6">
-        <div className="hidden lg:block pr-6 border-r border-white/5">
-          <span className="text-[9px] font-mono text-delos-grey uppercase tracking-tighter">COORD: 34.42 / 118.07</span>
-        </div>
 
         <button className="p-2 text-delos-grey hover:text-delos-amber transition-colors relative">
           <Terminal className="w-4 h-4" />
@@ -60,7 +57,7 @@ const StatusIndicator = ({ label, value, color, icon: Icon }: any) => (
 );
 
 const UserAvatar = ({ name }: { name?: string }) => (
-  <div className="relative group p-1">
+  <div className="relative group p-1 top-3">
     <div className="absolute inset-0 border border-delos-amber/10 group-hover:border-delos-amber/40 transition-all rounded-full" />
     <div className="w-10 h-10 rounded-full bg-delos-surface border border-white/10 flex items-center justify-center overflow-hidden relative font-black text-delos-amber text-[10px]">
       {name?.substring(0, 2).toUpperCase() || "DX"}
