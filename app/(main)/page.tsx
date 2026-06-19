@@ -3,19 +3,23 @@ import { SearchBar } from '@/components/Vagas/SearchBar';
 import { JobManager } from '@/components/Vagas/JobManager';
 import { ArrowLeft, ArrowLeftToLine, Terminal } from 'lucide-react';
 import Link from 'next/link';
-
+type PageProps = {
+  searchParams: Promise<{
+    category?: string;
+    search?: string;
+    page?: string;
+  }>;
+};
 export default async function VagasPage({
   searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
+}: PageProps) {
   const params = await searchParams;
-  const category = (params.category as string) || null;
-  const search = (params.search as string) || "";
-  const page = Number(params.page) || 1;
 
-  const viewMode = !category && !search ? 'categories' : 'jobs';
+  const category = params.category ?? null;
+  const search = params.search ?? "";
+  const page = Number(params.page ?? "1");
 
+  const viewMode = !category && !search ? "categories" : "jobs";
   return (
     <div className="min-h-screen bg-delos-surface pt-20 md:pt-32 pb-20 font-mono">
       {/* SCANLINE OVERLAY - Estático */}
@@ -23,7 +27,7 @@ export default async function VagasPage({
 
       <div className="md:max-w-7xl mx-auto px-4 md:px-8 relative z-10">
         <header className="mb-12 space-y-10">
-          <StatCards /> 
+          <StatCards />
 
           <div className="flex flex-col gap-8">
             <div className="space-y-2">
