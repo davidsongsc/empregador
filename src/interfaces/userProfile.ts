@@ -17,4 +17,5 @@ export type UserProfile = {
   addresses: Partial<Address>[]; // Use Partial se o backend ocultar campos por LGPD
   experiences: Experience[];
   educations?: Education[];
+  memberships: any[];
 };
