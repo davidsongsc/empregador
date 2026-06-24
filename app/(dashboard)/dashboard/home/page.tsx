@@ -55,7 +55,7 @@ export default function DashboardPage() {
     <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-500 font-mono p-20 border-2 border-dashed border-red-500/20 rounded-3xl">
       <AlertCircle className="w-16 h-16 text-red-500 mb-6 animate-bounce" />
       <h2 className="text-xl font-black text-white mb-2 uppercase tracking-tighter italic">Critical System Failure</h2>
-      <p className="text-xs text-slate-500 mb-6 font-mono">CODE: {error.message || "UNKNOWN_ERR"}</p>
+      <p className="text-xs text-slate-500 mb-6 font-mono">CODE: {error || "UNKNOWN_ERR"}</p>
       <button onClick={refresh} className="px-10 py-3 bg-delos-surface text-delos-black font-black uppercase text-xs hover:bg-delos-amber transition-all">Manual Reboot</button>
     </div>
   );
