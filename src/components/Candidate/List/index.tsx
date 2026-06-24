@@ -45,7 +45,7 @@ interface CandidateListProps {
     total: number;
     page: number;
     setPage: React.Dispatch<React.SetStateAction<number>>;
-    calculateAge: (data: any) => number | null;
+    calculateAge: (birthDate: string | null) => string;
     handleNextStep: (app: Application) => Promise<void> | void;
     handleStatusChange: (id: string, newStatus: string) => void;
 }
@@ -137,7 +137,7 @@ export const CandidateList = ({
 
                                     <div>
                                         <h3 className={`text-lg font-black  tracking-widest uppercase flex items-center gap-2 flex-col md:flex-row ${isExpanded ? 'text-delos-grey' : 'text-delos-black'}`}>
-                                            {isUnlocked ? details.name : `Ficha-${app.id.substring(14, 23).toUpperCase()}`}
+                                            {isUnlocked ? details.name : `Ficha-${app.id.toString().substring(14, 23).toUpperCase()}`}
                                             {isUnlocked && details?.data_nascimento && (
                                                 <span className="text-[15px] text-delos-black font-bold opacity-60 italic">
                                                     • {calculateAge(details.data_nascimento)} anos
@@ -218,7 +218,7 @@ export const CandidateList = ({
                                                         <span className="text-[14px] text-delos-surface uppercase tracking-widest">Localização</span>
                                                     </div>
                                                     <span className="text-xs font-bold text-delos-surface uppercase">
-                                                        {isUnlocked ? details?.endereco?.cidade : "Cidade Protegida"}
+                                                        {isUnlocked ? details?.addresses?.[0]?.cidade || "Nenhuma localização registrada para esta unidade." : "Cidade Protegida"}
                                                     </span>
                                                 </div>
                                             </div>
@@ -269,7 +269,7 @@ export const CandidateList = ({
                                             {/* Botão de Ação Principal */}
                                             <div className="grid grid-cols-2 gap-3">
                                                 <button
-                                                    onClick={() => handleStatusChange(app.id, 'HIRED')}
+                                                    onClick={() => handleStatusChange(app.id.toString(), 'HIRED')}
                                                     className={`py-3.5 border border-delos-red shadow-md hover:shadow-2xl
                                                          ${!high || app.status === 'HIRED' || app.status === 'rejected' ? 'bg-delos-surface text-delos-grey' : 'text-delos-black bg-delos-green/80 hover:bg-delos-amber hover:text-delos-surface border-delos-green'} text-[14px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2`}
                                                     disabled={!high || loading || isUpdating || app.status === 'HIRED' || app.status === 'rejected'}
@@ -293,7 +293,7 @@ export const CandidateList = ({
                                             {/* Grid de Ações Secundárias */}
                                             <div className="grid grid-cols-2 gap-3">
                                                 <button
-                                                    onClick={() => handleStatusChange(app.id, 'rejected')}
+                                                    onClick={() => handleStatusChange(app.id.toString(), 'rejected')}
                                                     className={`py-3.5 border border-delos-red shadow-md hover:shadow-2xl ${!mid || app.status === 'HIRED' || app.status === 'rejected' ? 'bg-delos-surface text-delos-grey' : 'text-delos-red hover:bg-delos-red hover:text-delos-surface'} text-[14px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2`}
                                                     disabled={!mid || loading || isUpdating || app.status === 'HIRED' || app.status === 'rejected'}
                                                 >
@@ -359,7 +359,7 @@ export const CandidateList = ({
                                                                                     <button
                                                                                         key={k}
                                                                                         onClick={() => {
-                                                                                            handleStatusChange(selectedApp?.id as string, k); // Usei selectedApp.id conforme sua estrutura anterior
+                                                                                            handleStatusChange(selectedApp?.id.toString() as string, k); // Usei selectedApp.id conforme sua estrutura anterior
                                                                                             setIsChangingStatus(false);
                                                                                         }}
                                                                                         className="group/item flex items-center justify-between p-4 bg-delos-grey border border-delos-black hover:border-delos-surface hover:bg-delos-muted transition-all text-left rounded-xl"

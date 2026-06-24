@@ -15,7 +15,7 @@ export function useManageJob() {
   };
 
   // 2. Executa a exclusão (Confirmar no Modal)
-  const confirmRemoval = async () => {
+  const confirmRemoval = async (jobToDelete: string) => {
     if (!jobToDelete) return false;
 
     setLoading(true);

@@ -112,7 +112,7 @@ const MinhasVagas = () => {
       <SaasHeader
         page={page}
         count={data?.total_count || 0}
-        canAccess={canAccessSupervision}
+        canAccess={hasHighAccess}
         onCreate={handleCreate}
       />
 
@@ -318,7 +318,7 @@ const MinhasVagas = () => {
                       disabled={!hasHighAccess}
                       title="Deletar Item"
 
-                      onClick={() => openDeleteConfirmation(vaga.id)} // Passa o id para o estado interno do hook
+                      onClick={() => openDeleteConfirmation(vaga.id)} 
                       className={`p-4 text-slate-600 transition-colors ${!hasHighAccess ? 'opacity-40 cursor-not-allowed hover:text-rose-500' : 'hover:text-rose-500'}`}
                     >
                       <Trash2 size={16} />
@@ -366,7 +366,7 @@ const MinhasVagas = () => {
           setIsModalOpen(false);
           setJobEditing(null);
           if (activeCompanyId) {
-            fetchJobs(activeCompanyId, currentFilter, true); // <--- Corrigido aqui
+            fetchJobs(activeCompanyId, currentFilter, true); 
           }
         }}
         jobUid={jobEditing}
@@ -377,7 +377,7 @@ const MinhasVagas = () => {
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={async () => {
-          const success = await confirmRemoval(activeCompanyId); // <--- Verifique se o hook aceita o ID
+          const success = await confirmRemoval(activeCompanyId); 
           if (success && activeCompanyId) {
             fetchJobs(activeCompanyId, currentFilter, true);
           }

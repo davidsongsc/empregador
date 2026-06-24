@@ -97,7 +97,7 @@ export async function getCorporateApplications(filters: any, companyId: string) 
 /**
  * ROTA CORPORATIVA: Atualizar Status
  */
-export async function updateApplicationStatus(applicationId: string, newStatus: string, companyId: string) {
+export async function updateApplicationStatus(applicationId: string | number, newStatus: string, companyId: string) {
   const url = `/api/v1/applications-saas/${applicationId}`;
   const cleanId = cleanProtocolId(companyId);
 

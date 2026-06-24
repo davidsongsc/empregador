@@ -9,9 +9,9 @@ import { FLOW_SEQUENCE, GROUPED_STATUS, STATUS_CONFIG } from "@/data/statusLabel
 import { CandidateFilters } from "@/components/Candidate/Filters";
 import { CandidateList } from "@/components/Candidate/List";
 import { FooterHUD } from "@/components/Footer/System";
-import { Application } from "@/interfaces/aplications";
 import { checkLevel } from "@/utils/checkLevel";
 import { getActiveMembership } from "@/utils/userHelpers"; // 🔹 Importante
+import { Application } from "@/interfaces/iApplication";
 
 export default function CandidatosPage() {
   const params = useParams();
@@ -46,7 +46,7 @@ export default function CandidatosPage() {
 
       // Se tiver nome, busca pelo nome. Se não, busca pelo ID (UID)
       const nameMatch = app.profile?.name?.toLowerCase().includes(search);
-      const uidMatch = app.id.toLowerCase().includes(search);
+      const uidMatch = app.id.toString().toLowerCase().includes(search);
 
       return nameMatch || uidMatch;
     });
@@ -108,9 +108,9 @@ export default function CandidatosPage() {
       updateStatus(appId, newStatus);
 
       toast.success("Protocolo de status reescrito.");
-
+      
       if (selectedApp?.id === appId) {
-        setSelectedApp(prev => prev ? { ...prev, status: newStatus } : null);
+        setSelectedApp({ ...selectedApp, status: newStatus });
       }
     } catch (err) {
       toast.error("Erro na atualização manual");
